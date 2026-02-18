@@ -19,13 +19,17 @@ controls.update()
 ;(window as any).__camera = camera
 ;(window as any).__controls = controls
 
-// Lighting for MeshStandardMaterial
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+// Lighting — high ambient with soft directional, similar to WoW's character panel
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
 scene.add(ambientLight)
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-directionalLight.position.set(2, 3, 4)
-scene.add(directionalLight)
+const frontLight = new THREE.DirectionalLight(0xffffff, 0.5)
+frontLight.position.set(3, 2, 0)
+scene.add(frontLight)
+
+const fillLight = new THREE.DirectionalLight(0xffffff, 0.3)
+fillLight.position.set(-2, 1, 0)
+scene.add(fillLight)
 
 // Grid for spatial reference (hidden during visual comparison)
 // const grid = new THREE.GridHelper(10, 10, 0x444444, 0x333333)

@@ -44,7 +44,7 @@ const DEFAULT_GEOSETS = new Set([
   401,   // bare hands
   501,   // bare feet / lower legs
   701,   // ears visible
-  903,   // kneepads — bridges gap between boots (Z 0.61) and body (Z 0.70)
+  903,   // kneepads — bridges gap between boots and body
   1002,  // undershirt base (fills upper back/chest gap)
   1102,  // underwear/pants (fills hip band)
 ]);
@@ -119,11 +119,9 @@ export async function loadModel(
   geometry.setAttribute('uv', new THREE.InterleavedBufferAttribute(interleavedBuffer, 2, 6));
   geometry.setIndex(new THREE.BufferAttribute(indexData, 1));
 
-  const material = new THREE.MeshStandardMaterial({
+  const material = new THREE.MeshLambertMaterial({
     map: skinTexture,
     side: THREE.DoubleSide,
-    roughness: 0.9,
-    metalness: 0.0,
   });
 
   const mesh = new THREE.Mesh(geometry, material);

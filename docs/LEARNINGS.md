@@ -155,3 +155,41 @@ These are composited into a single 256×256 atlas at runtime. Our patch data onl
 
 **Impact:** Cannot render standard vanilla skin without base MPQ extraction. Custom Turtle WoW skins work as standalone body textures. "HumanMale_Magic.blp" has the closest golden/warm tone to standard human skin.
 **Reference:** `data/dbc/CharSections.json`, M2 texture entries at header offset 92
+
+## [2026-02-18] Geoset "Skirt" Effect — Geometry vs Texture Problem
+
+**Context:** Rendering the naked human male with geosets 1002 (undershirt) and 1102 (pants) active
+**Finding:** The underwear/undershirt geosets are floating geometry bands that visually stick out from the body mesh, creating a "skirt" appearance. This is NOT a rendering bug — it's the actual geometry.
+
+In the WoW client, this is invisible because:
+1. The composite skin texture paints matching skin color across body→geoset boundaries
+2. The underwear region has specific painted underwear detail that blends with the surrounding geoset geometry
+3. Without these geosets, the body has large holes at hips (Z 0.70-1.10) and knees (Z 0.49-0.73)
+
+Removing 1002/1102/903 eliminates the skirt but creates massive hip/thigh holes. The geosets are required.
+
+**Impact:** The skirt effect cannot be fixed by geoset selection or render settings. It requires proper skin texture compositing from base MPQ textures. This is acceptable for now.
+**Reference:** e2e test screenshots, geoset spatial analysis
+
+## [2026-02-18] M2 Triangle Winding — Already CCW Compatible with Three.js
+
+**Context:** Tried reversing M2 triangle winding (clockwise → counter-clockwise) for proper FrontSide culling
+**Finding:** Despite M2 docs stating clockwise winding, the actual triangle data from HumanMale.m2 is already counter-clockwise when viewed from the model exterior. Reversing winding caused FrontSide rendering to show the INSIDE of the model instead of the outside.
+
+However, the model has inconsistent winding — some upper back triangles appear backfacing from certain angles. This is why DoubleSide is required; FrontSide creates holes in the upper back.
+
+**Impact:** Must use DoubleSide rendering. Do NOT reverse triangle winding.
+**Reference:** FrontSide vs DoubleSide comparison screenshots
+
+## [2026-02-18] Material Choice — MeshLambertMaterial Best for WoW Models
+
+**Context:** Comparing MeshBasicMaterial, MeshLambertMaterial, and MeshStandardMaterial
+**Finding:**
+- **MeshBasicMaterial**: Unlit, no muscle definition visible. Hides geometry issues but looks flat.
+- **MeshStandardMaterial**: PBR rendering creates harsh shadows that emphasize geometry seams and the skirt effect.
+- **MeshLambertMaterial**: Simple diffuse shading closest to WoW's own rendering. Shows muscle definition through normals without harsh PBR artifacts.
+
+Best lighting setup: High ambient (0.8) + front directional (0.5 from character face direction) + fill light (0.3 from behind).
+
+**Impact:** Use MeshLambertMaterial + DoubleSide for all character rendering.
+**Reference:** `src/loadModel.ts`, `src/main.ts` lighting setup
