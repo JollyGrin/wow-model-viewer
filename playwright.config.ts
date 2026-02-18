@@ -6,7 +6,12 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4173',
     launchOptions: {
-      args: ['--use-gl=swiftshader'],
+      args: [
+        '--enable-webgl',
+        '--use-angle=swiftshader',
+        '--ignore-gpu-blocklist',
+        '--disable-gpu-sandbox',
+      ],
     },
     viewport: { width: 1280, height: 720 },
   },

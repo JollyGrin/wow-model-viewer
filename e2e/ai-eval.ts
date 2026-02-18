@@ -1,7 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic();
-
 export interface EvalResult {
   pass: boolean;
   confidence: number;
@@ -10,11 +8,18 @@ export interface EvalResult {
   learnings: string;
 }
 
+/**
+ * Evaluate a screenshot using Claude Vision API.
+ * Requires ANTHROPIC_API_KEY env var. Optional — tests work without it
+ * by saving screenshots for manual/Claude Code review.
+ */
 export async function evaluateScreenshot(
   screenshotBuffer: Buffer,
   criteria: string,
   context: { previousLearnings?: string } = {},
 ): Promise<EvalResult> {
+  const client = new Anthropic();
+
   const response = await client.messages.create({
     model: 'claude-sonnet-4-5-20250929',
     max_tokens: 1024,

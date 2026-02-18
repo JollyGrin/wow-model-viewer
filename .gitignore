@@ -1,6 +1,8 @@
+*/**/.DS_STORE
 data/*
 node_modules
 dist/
 e2e/test-learnings.json
+screenshots/
 test-results/
 playwright-report/
