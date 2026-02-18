@@ -24,3 +24,8 @@
 - Status: done
 - Files changed: src/loadModel.ts, scripts/convert-textures.ts, docs/LEARNINGS.md, public/models/textures/human-male-hair.tex (new)
 - Notes: Parsed M2 batch data to discover texture-to-submesh mappings (texLookup=0 skin, texLookup=1 hair, texLookup=2 cape). All hairstyle geosets (2-13) use hair texture. Enabled geoset 5 (hairstyle index 4 = long braids) instead of geoset 1 (bald cap). Converted Hair04_07.blp (dark brown, color variant 7) as hair texture. Created separate hair material (MeshLambertMaterial, DoubleSide) and hair mesh layer in the model loader. Front and back views now show long dark braided hair matching the reference's hairstyle. Both geometry and texture are applied correctly.
+
+## [2026-02-18] Task: Improve lighting to match reference
+- Status: done
+- Files changed: src/main.ts, docs/LEARNINGS.md
+- Notes: Reduced ambient light from 0.8→0.55 and increased front directional from 0.5→0.75 to deepen muscle shadow contrast. Added warm tints to all three lights (ambient 0xfff5e6, front 0xfff0dd, fill 0xffe8d0) to match the reference's golden skin tone. Result: abs, pecs, biceps, and shoulder blades now show clearly visible shadow definition. Warm tint brings skin color closer to reference. Background color (0x333333) already matches reference's dark charcoal — no change needed. Grid was already commented out (task 6 confirmed complete).

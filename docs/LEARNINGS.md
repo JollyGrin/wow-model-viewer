@@ -272,3 +272,20 @@ Geoset 5 (hairstyle 4) has 148 triangles across 2 submeshes (348 + 96 indices). 
 
 **Impact:** Hair rendering requires a separate material with the hair texture, applied only to hair geosets (2-13). The model loader now creates three mesh layers: clothing (shrunk, FrontSide), body (polygonOffset, DoubleSide), and hair (DoubleSide with hair texture).
 **Reference:** `src/loadModel.ts`, `scripts/convert-textures.ts`, M2 batch parsing
+
+## [2026-02-18] Lighting Tuning — Lower Ambient for Muscle Definition
+
+**Context:** Comparing rendered output to reference screenshots. The reference shows clear muscle shadow contrast (abs, pecs, biceps) while our render looked washed out/flat.
+
+**Finding:** The original lighting (ambient 0.8 + directional 0.5 + fill 0.3) had too much ambient light, which floods shadow areas and reduces contrast. Lowering ambient to 0.55 and increasing the front directional to 0.75 produced significantly better muscle definition. Adding warm tints (0xfff5e6 ambient, 0xfff0dd front, 0xffe8d0 fill) better matches the reference's golden skin tone.
+
+| Light | Before | After |
+|-------|--------|-------|
+| Ambient | 0xffffff @ 0.8 | 0xfff5e6 @ 0.55 |
+| Front directional | 0xffffff @ 0.5 | 0xfff0dd @ 0.75 |
+| Fill directional | 0xffffff @ 0.3 | 0xffe8d0 @ 0.35 |
+
+The key insight: for low-poly models where muscle definition comes from vertex normals, directional light creates the shadows that reveal surface detail. Ambient light fills those shadows and flattens the appearance.
+
+**Impact:** Muscle grooves (abs, pecs, biceps, shoulder blades) are now clearly visible. Warm tint brings skin closer to reference tone.
+**Reference:** `src/main.ts` lines 22-32, comparison screenshots

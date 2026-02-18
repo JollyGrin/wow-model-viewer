@@ -19,15 +19,16 @@ controls.update()
 ;(window as any).__camera = camera
 ;(window as any).__controls = controls
 
-// Lighting — high ambient with soft directional, similar to WoW's character panel
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+// Lighting — warm-toned to match WoW character panel look
+// Lower ambient for deeper muscle shadows, stronger directional for definition
+const ambientLight = new THREE.AmbientLight(0xfff5e6, 0.55)
 scene.add(ambientLight)
 
-const frontLight = new THREE.DirectionalLight(0xffffff, 0.5)
+const frontLight = new THREE.DirectionalLight(0xfff0dd, 0.75)
 frontLight.position.set(3, 2, 0)
 scene.add(frontLight)
 
-const fillLight = new THREE.DirectionalLight(0xffffff, 0.3)
+const fillLight = new THREE.DirectionalLight(0xffe8d0, 0.35)
 fillLight.position.set(-2, 1, 0)
 scene.add(fillLight)
 
