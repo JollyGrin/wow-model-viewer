@@ -98,3 +98,60 @@ Default geosets for minimal naked character:
 ```
 
 **Reference:** `scripts/diagnose-geosets.ts`, `scripts/analyze-geosets.ts`
+
+## [2026-02-18] UV Coordinates in M2 Vertex Format
+
+**Context:** Adding texture mapping to the human male model
+**Finding:** M2 vertex format (48 bytes) includes UV coordinates at offset 32:
+- Position: 3 floats (12B) at offset 0
+- BoneWeights: 4 uint8 (4B) at offset 12
+- BoneIndices: 4 uint8 (4B) at offset 16
+- Normal: 3 floats (12B) at offset 20
+- UV1: 2 floats (8B) at offset 32
+- UV2: 2 floats (8B) at offset 40
+
+UV values are in [0,1] range and map correctly to a 256×256 texture atlas. Updated browser vertex stride from 24→32 bytes (pos3 + normal3 + uv2 = 8 floats).
+
+**Impact:** UVs enable texture mapping on the model.
+**Reference:** `scripts/convert-model.ts`, M2 vertex format spec
+
+## [2026-02-18] BLP ABGR8888 Format Byte Order
+
+**Context:** Converting BLP textures using @wowserhq/format
+**Finding:** `BLP_IMAGE_FORMAT.IMAGE_ABGR8888` describes the 32-bit integer layout (A=MSB bits 31-24, B=23-16, G=15-8, R=LSB bits 7-0). In memory on little-endian systems (JS typed arrays), the byte order is **R, G, B, A** — already RGBA. No swizzle needed.
+
+Initial attempt swizzled bytes as A,B,G,R → R,G,B,A which reversed channels and made the model appear too red/pink. Removing the swizzle produced correct colors.
+
+**Impact:** BLP conversion is a simple memcpy — no per-pixel processing required.
+**Reference:** `scripts/convert-textures.ts`
+
+## [2026-02-18] Character Model Faces +X Direction
+
+**Context:** Setting up camera for front/back views
+**Finding:** The HumanMale model faces +X in WoW coordinates (not +Y as commonly assumed). After the Z-up to Y-up rotation (`mesh.rotation.x = -Math.PI / 2`), the model faces +X in Three.js space.
+
+- Front view camera: position (3, 1, 0) looking at (0, 0.9, 0)
+- Back view camera: position (-3, 1, 0) looking at (0, 0.9, 0)
+
+Model bounding box (WoW coords): X [-0.49, 0.49], Y [-0.62, 0.62], Z [0, 2.03]
+
+**Impact:** Camera setup for viewer and e2e tests.
+**Reference:** `src/main.ts`, e2e screenshots
+
+## [2026-02-18] M2 Texture Types — Character Skin is Runtime-Composited
+
+**Context:** Parsing M2 texture entries for the human male model
+**Finding:** The M2 file has 3 texture slots, all runtime-resolved (no hardcoded filenames):
+- Texture 0: type=1 (Character Skin) — body base from CharSections.dbc
+- Texture 1: type=6 (Character Hair) — hair from CharSections.dbc
+- Texture 2: type=2 (Cape) — from equipment data
+
+The standard WoW character skin is a COMPOSITE of multiple layers:
+- BaseSection 0: Body skin base (e.g., `HumanMaleSkin00_00.blp`)
+- BaseSection 1: Face (lower + upper textures overlaid on face region)
+- BaseSection 4: Underwear (overlaid on pelvis region)
+
+These are composited into a single 256×256 atlas at runtime. Our patch data only has custom Turtle WoW skins (101, 102, etc.), not the standard vanilla base skins (00-09) which are in unextracted base MPQs.
+
+**Impact:** Cannot render standard vanilla skin without base MPQ extraction. Custom Turtle WoW skins work as standalone body textures. "HumanMale_Magic.blp" has the closest golden/warm tone to standard human skin.
+**Reference:** `data/dbc/CharSections.json`, M2 texture entries at header offset 92

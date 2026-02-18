@@ -28,7 +28,7 @@ interface TextureSource {
 const TEXTURES: TextureSource[] = [
   {
     name: 'human-male-skin',
-    blpPath: 'data/patch/patch-8/Character/Human/Male/HumanMaleSkin00_101.blp',
+    blpPath: 'data/patch/patch-3/Character/Human/Male/HumanMale_Magic.blp',
   },
 ];
 
@@ -38,22 +38,12 @@ function convertBlpToTex(blpPath: string, outPath: string) {
   blp.load(blpData);
 
   // Get ABGR8888 pixel data (mip level 0)
+  // Despite the name, ABGR8888 describes the 32-bit int layout (A=MSB, R=LSB).
+  // In memory on little-endian systems (JS typed arrays), bytes are: R, G, B, A.
+  // This is already RGBA byte order — no swizzle needed.
   const image = blp.getImage(0, BLP_IMAGE_FORMAT.IMAGE_ABGR8888);
   const { width, height, data } = image;
-  const abgr = new Uint8Array(data);
-
-  // Swizzle ABGR → RGBA
-  const rgba = new Uint8Array(width * height * 4);
-  for (let i = 0; i < width * height; i++) {
-    const a = abgr[i * 4 + 0];
-    const b = abgr[i * 4 + 1];
-    const g = abgr[i * 4 + 2];
-    const r = abgr[i * 4 + 3];
-    rgba[i * 4 + 0] = r;
-    rgba[i * 4 + 1] = g;
-    rgba[i * 4 + 2] = b;
-    rgba[i * 4 + 3] = a;
-  }
+  const rgba = new Uint8Array(data);
 
   // Write .tex file: 4-byte header (uint16 width + uint16 height) + RGBA pixels
   const header = new Uint8Array(4);
