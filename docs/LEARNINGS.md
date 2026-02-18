@@ -57,3 +57,44 @@ Confirmed by checking offset gaps between submeshes array and batches array: `0x
 
 **Impact:** Model is the right size/shape for a character. Z-up to Y-up rotation confirmed necessary.
 **Reference:** `scripts/convert-model.ts` output, `public/models/human-male.json`
+
+## [2026-02-18] Geoset System — Body Mesh Has Intentional Holes
+
+**Context:** Rendering HumanMale.m2 untextured with geoset filtering. Multiple iterations showed missing body parts.
+**Finding:** The body mesh (geoset 0) has **intentional holes** designed to be filled by equipment geosets. Z-binned triangle analysis reveals:
+
+| Z Range (height) | Body (id=0) | What Fills It |
+|-------------------|-------------|---------------|
+| 0.00–0.20 | 102 tris (feet) | — |
+| 0.20–0.60 | **0 tris** (HOLE) | Boots geoset (501=bare feet, covers Z 0.13–0.61) |
+| 0.60–0.70 | **0 tris** (HOLE) | **Nothing bare** — only equipment: kneepads 903, robe 1301, high boots 503/504 |
+| 0.70–0.90 | 114 tris (waist/hips) | — |
+| 0.90–1.10 | 54 tris (lower torso) | Undershirt 1002 (Z 0.93–1.11), Pants 1102 (Z 0.81–1.11) |
+| 1.10–1.30 | 34 tris (sparse upper back) | Sleeves 802/803 cover arms, NOT the back |
+| 1.30–1.70 | 178 tris (torso/shoulders) | — |
+| 1.70–2.00 | 142 tris (head/face) | Hairstyles (1–13), Facial (101/201/301), Ears (701) |
+
+Key gaps in "naked" configuration:
+1. **Knee gap (Z 0.60–0.70)**: No bare geoset exists. Boots 501 stops at Z 0.61, body starts at Z 0.70. The game hides this with shared boundary vertices + skin texture continuity.
+2. **Scalp**: Body has only 20 tris at Z 1.90–2.00. Hairstyle geoset 1 (44 tris, Z 1.90–2.02) provides the bald scalp cap. Geoset 0 is the body, NOT "bald hairstyle."
+3. **Upper back (Z 1.10–1.30)**: Only 34 sparse body tris. No bare geoset fills it. Hidden by textures in-game.
+4. **"Skirt" appearance**: Body waist ring (Z 0.70–0.90) + pants 1102 hip band (Z 0.81–1.11) appear as a floating skirt when rendered without textures, because the thigh area has no connecting geometry.
+
+**Impact:** For untextured rendering, the "naked" character will always have visible seams at knees and sparse back. Bridging the knee gap requires adding kneepads (903, Z 0.49–0.73, 32 tris). The bald scalp requires hairstyle 1 (id=1), NOT relying on body (id=0) alone.
+
+Default geosets for minimal naked character:
+```
+0     — body mesh (torso, waist, head, feet)
+1     — bald scalp cap
+101   — facial 1 (jaw/beard default)
+201   — facial 2 (sideburns default)
+301   — facial 3 (moustache default)
+401   — bare hands
+501   — bare feet / lower legs
+701   — ears
+903   — kneepads var 3 (bridges knee gap, Z 0.49–0.73)
+1002  — undershirt (fills upper back/chest gap, Z 0.93–1.11)
+1102  — underwear (fills hip band, Z 0.81–1.11)
+```
+
+**Reference:** `scripts/diagnose-geosets.ts`, `scripts/analyze-geosets.ts`

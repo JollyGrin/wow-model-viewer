@@ -10,30 +10,48 @@ interface ModelManifest {
   groups: Array<{ id: number; indexStart: number; indexCount: number }>;
 }
 
-// Default geosets for a naked character (from docs/research/03-character-rendering-pipeline.md)
+// Geoset visibility for a "naked with underwear" character.
 //
-// IDs 0-99: Always-visible body mesh sections (different body parts like torso,
-//           head, upper legs, etc.) — ALL are shown regardless of equipment.
+// The body mesh (geoset 0) has intentional holes filled by default geosets:
+//   - Mouth hole → filled by facial features (101, 201, 301)
+//   - Upper leg hole → filled by underwear/pants (1102)
+//   - Upper back hole → filled by undershirt (1002)
 //
-// IDs 100+: Equipment/customization geosets. Group = floor(id/100).
-//   1xx: Facial hair 1 — from customization
-//   2xx: Facial hair 2 — from customization
-//   3xx: Facial hair 3 — from customization
-//   4xx: 401 = bare hands
-//   5xx: 501 = bare feet
-//   7xx: 701 = ears visible
-//   8xx: 801 = bare arms
-//   9xx: 901 = bare legs
-//  10xx+: disabled (no tabard, robe, cape, etc.)
-const DEFAULT_EQUIPMENT_GEOSETS = new Set([401, 501, 701]);
+// Group 0 (IDs 0-99) are hairstyle variants. Only ONE should be active.
+// ID 0 = bald base, 1-13 = hairstyle options.
+//
+// Geoset group reference (group = floor(id/100)):
+//   0xx: Hairstyles (pick one)
+//   1xx: Facial 1 (jaw/beard) — 101 = default
+//   2xx: Facial 2 (sideburns) — 201 = default
+//   3xx: Facial 3 (moustache) — 301 = default
+//   4xx: Gloves — 401 = bare hands
+//   5xx: Boots — 501 = bare feet
+//   7xx: Ears — 701 = ears visible
+//   8xx: Sleeves — none = bare arms
+//   9xx: Kneepads — none = bare legs
+//  10xx: Undershirt — 1002 = base (fills upper back hole)
+//  11xx: Pants — 1102 = underwear (fills upper leg hole)
+//  12xx: Tabard — none
+//  13xx: Robe — none
+//  15xx: Cape — none
+const DEFAULT_GEOSETS = new Set([
+  0,     // body mesh (torso, waist, head, feet)
+  1,     // bald scalp cap (body mesh leaves top of head open)
+  101,   // facial 1 default (jaw geometry)
+  201,   // facial 2 default
+  301,   // facial 3 default
+  401,   // bare hands
+  501,   // bare feet / lower legs
+  701,   // ears visible
+  903,   // kneepads — bridges gap between boots (Z 0.61) and body (Z 0.70)
+  1002,  // undershirt base (fills upper back/chest gap)
+  1102,  // underwear/pants (fills hip band)
+]);
 
-function isGeosetVisible(id: number, equipment: Set<number>): boolean {
-  // Body mesh sections (id < 100) are always visible
-  if (id < 100) return true;
-
-  // For equipment groups (id >= 100), check if this specific variant is enabled
+function isGeosetVisible(id: number, enabled: Set<number>): boolean {
   const group = Math.floor(id / 100);
-  for (const eqId of equipment) {
+  for (const eqId of enabled) {
     if (Math.floor(eqId / 100) === group && eqId === id) return true;
   }
   return false;
@@ -41,7 +59,7 @@ function isGeosetVisible(id: number, equipment: Set<number>): boolean {
 
 export async function loadModel(
   basePath: string,
-  enabledGeosets: Set<number> = DEFAULT_EQUIPMENT_GEOSETS,
+  enabledGeosets: Set<number> = DEFAULT_GEOSETS,
 ): Promise<THREE.Group> {
   const [manifestRes, binRes] = await Promise.all([
     fetch(`${basePath}.json`),
@@ -54,8 +72,7 @@ export async function loadModel(
   const vertexData = new Float32Array(binBuffer, 0, manifest.vertexBufferSize / 4);
   const fullIndexData = new Uint16Array(binBuffer, manifest.vertexBufferSize, manifest.indexCount);
 
-  // Build filtered index buffer — body parts (< 100) always included,
-  // equipment geosets (>= 100) only if in enabledGeosets
+  // Build filtered index buffer — only geosets in the enabled set
   const filteredIndices: number[] = [];
   for (const g of manifest.groups) {
     if (isGeosetVisible(g.id, enabledGeosets)) {
