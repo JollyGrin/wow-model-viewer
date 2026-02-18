@@ -193,3 +193,41 @@ Best lighting setup: High ambient (0.8) + front directional (0.5 from character 
 
 **Impact:** Use MeshLambertMaterial + DoubleSide for all character rendering.
 **Reference:** `src/loadModel.ts`, `src/main.ts` lighting setup
+
+## [2026-02-18] Clothing Geoset "Skirt" Fix — Centroid Shrink with Radius Clamping
+
+**Context:** Geosets 1002 (undershirt) and 1102 (pants) create floating band geometry that looks like a skirt. Tried multiple vertex manipulation approaches to make them hug the body.
+
+**Finding:** Four approaches tested:
+1. **Nearest-body-vertex lerp (LERP=0.85)** — Original approach. Clothing vertices lerped toward nearest body vertex. V-shaped skirt flaps remained because lerp doesn't account for directionality.
+2. **Centroid shrink (SHRINK=0.92)** — Shrink XY toward body centroid at each height. Eliminated skirt but inner-thigh vertices collapsed past each other, creating dark gaps between legs.
+3. **Selective nearest-vertex lerp (only protruding vertices)** — Only moved vertices beyond 95% of body max radius. Partially reduced skirt but left rectangular band protruding at sides.
+4. **Centroid shrink with radius clamping (SHRINK=0.55, minR=bodyMinR*0.85)** — Best result. Moderate shrink toward centroid with a minimum radius floor prevents inner geometry collapse. Band is tight-fitting like shorts instead of floating skirt.
+
+None of these approaches fully eliminate the band — the remaining visibility is because:
+- The clothing geometry is designed to be painted with matching skin texture via runtime compositing
+- Without proper underwear texture compositing, the shading difference at geoset boundaries creates visible edges
+- The body mesh has intentional holes that REQUIRE these geosets, so they can't be removed
+
+**Impact:** Approach #4 (centroid shrink + radius clamp) is the best achievable result without texture compositing. The "skirt" is reduced to a tight band that reads as shorts/underwear.
+**Reference:** `src/loadModel.ts` lines 125-190, comparison screenshots
+
+## [2026-02-18] Skin Texture Comparison — All Available BLPs
+
+**Context:** Comparing all available HumanMale BLP skins to find best match for the reference screenshots (warm peach/tan with golden shorts).
+
+**Finding:** Tested 4 candidate skins:
+
+| BLP File | Tone | Underwear | Pixel Sample (RGBA) | Match Quality |
+|----------|------|-----------|---------------------|---------------|
+| `HumanMale_Magic.blp` (patch-3) | Warm golden/peach | Dark (matches skin) | R=137 G=116 B=93 | **Best** — closest warm tone |
+| `HumanMale_Pirate.blp` (patch-3) | Warm tan/brown + tattoos | Very dark/black | R=127 G=98 B=75 | Too brown, has forearm tattoos |
+| `HumanMaleSkin00_101.blp` (patch-8) | Pale/cool gray-pink | Purple | R=57 G=47 B=70 | Too pale, purple underwear |
+| `HumanMaleSkin00_102.blp` (patch-3) | Gray/marble/stone | Dark | R=128 G=130 B=131 | Way too gray |
+
+Skipped `103NecroBlue`, `104WizardFel`, `105WizardArcane` — names indicate fantasy colors (blue/green/arcane) incompatible with reference's natural skin tone.
+
+The reference's golden shorts are composited from base CharSections skin + underwear overlay in the WoW client. None of our available BLPs include painted underwear that matches the reference — they're either custom Turtle WoW skins (Magic/Pirate) or numbered skin variants with their own underwear colors.
+
+**Impact:** Keep HumanMale_Magic.blp as the skin texture. Matching the reference's golden shorts would require base MPQ extraction + runtime skin compositing, which is out of scope.
+**Reference:** `scripts/convert-textures.ts`, e2e comparison screenshots

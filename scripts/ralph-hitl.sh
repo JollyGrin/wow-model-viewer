@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCOPE="${1:-ralph-scope.md}"
 PROGRESS="ralph-progress.md"
+FILTER="$(dirname "$0")/ralph-log-filter.py"
 
 if [ ! -f "$SCOPE" ]; then
   echo "ERROR: Scope file not found: $SCOPE"
@@ -13,6 +14,7 @@ fi
 [ -f "$PROGRESS" ] || echo "# Ralph Progress Log" > "$PROGRESS"
 
 echo "=== Ralph HITL: scope=$SCOPE ==="
+echo "Sending prompt to Claude... (this may take 10-30s to start)"
 echo ""
 
 {
@@ -44,7 +46,11 @@ Work on exactly ONE task, then stop.
 PROMPT
 } | claude -p \
   --verbose \
-  --allowedTools "Bash,Edit,Read,Write,Glob,Grep,Skill"
+  --output-format stream-json \
+  --include-partial-messages \
+  --allowedTools "Bash,Edit,Read,Write,Glob,Grep,Skill" \
+  2>&1 \
+  | python3 -u "$FILTER"
 
 echo ""
 echo "--- HITL iteration complete ---"

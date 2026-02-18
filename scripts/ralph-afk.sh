@@ -4,6 +4,8 @@ set -euo pipefail
 ITERATIONS="${1:-5}"
 SCOPE="${2:-ralph-scope.md}"
 PROGRESS="ralph-progress.md"
+FILTER="$(dirname "$0")/ralph-log-filter.py"
+LOG="ralph-output.log"
 
 if [ ! -f "$SCOPE" ]; then
   echo "ERROR: Scope file not found: $SCOPE"
@@ -14,13 +16,14 @@ fi
 [ -f "$PROGRESS" ] || echo "# Ralph Progress Log" > "$PROGRESS"
 
 echo "Starting Ralph AFK: ${ITERATIONS} iterations, scope=${SCOPE}"
+echo "Full output logged to: ${LOG}"
 
 for ((i=1; i<=ITERATIONS; i++)); do
   echo ""
   echo "=== Ralph iteration ${i}/${ITERATIONS} ==="
   echo ""
 
-  result=$({
+  {
     echo "<scope>"
     cat "$SCOPE"
     echo "</scope>"
@@ -45,11 +48,15 @@ You are running in Ralph Wiggum mode (AFK — iteration ${i}/${ITERATIONS}).
 Work on exactly ONE task, then stop.
 PROMPT
   } | claude -p \
-    --allowedTools "Bash,Edit,Read,Write,Glob,Grep,Skill")
+    --verbose \
+    --output-format stream-json \
+    --include-partial-messages \
+    --allowedTools "Bash,Edit,Read,Write,Glob,Grep,Skill" \
+    | tee -a "$LOG" \
+    | python3 "$FILTER"
 
-  echo "$result"
-
-  if echo "$result" | grep -q 'RALPH_COMPLETE'; then
+  # Check raw log for completion signal
+  if tail -20 "$LOG" | grep -q 'RALPH_COMPLETE'; then
     echo ""
     echo "=== All tasks complete after ${i} iterations ==="
     exit 0

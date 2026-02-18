@@ -46,7 +46,7 @@ const DEFAULT_GEOSETS = new Set([
   701,   // ears visible
   903,   // kneepads — bridges gap between boots and body
   1002,  // undershirt base (fills upper back/chest gap)
-  1102,  // underwear/pants (fills hip band)
+  1102,  // underwear/pants (fills hip band — renders FrontSide to reduce skirt)
 ]);
 
 function isGeosetVisible(id: number, enabled: Set<number>): boolean {
@@ -82,6 +82,15 @@ async function loadTexture(url: string): Promise<THREE.DataTexture> {
   return texture;
 }
 
+// Geosets that represent the base body layer — these get polygonOffset
+// to push them slightly forward so they occlude inner clothing geometry.
+const BODY_LAYER_GEOSETS = new Set([0, 1, 101, 201, 301, 401, 501, 701]);
+
+// Clothing geosets that sit directly against the body surface.
+// These get shrunk inward toward the body centroid at their height
+// and rendered with FrontSide + depthWrite so the body occludes them.
+const CLOTHING_GEOSETS = new Set([903, 1002, 1102]);
+
 export async function loadModel(
   basePath: string,
   enabledGeosets: Set<number> = DEFAULT_GEOSETS,
@@ -100,36 +109,156 @@ export async function loadModel(
   const vertexData = new Float32Array(binBuffer, 0, manifest.vertexBufferSize / 4);
   const fullIndexData = new Uint16Array(binBuffer, manifest.vertexBufferSize, manifest.indexCount);
 
-  // Build filtered index buffer — only geosets in the enabled set
-  const filteredIndices: number[] = [];
+  const interleavedBuffer = new THREE.InterleavedBuffer(vertexData, 8);
+
+  // Build a spatial index of body vertices for snapping clothing verts inward.
+  // For each clothing vertex, find the nearest body vertex and lerp toward it.
+  const bodyVertexIndices = new Set<number>();
   for (const g of manifest.groups) {
-    if (isGeosetVisible(g.id, enabledGeosets)) {
-      for (let i = 0; i < g.indexCount; i++) {
-        filteredIndices.push(fullIndexData[g.indexStart + i]);
-      }
+    if (!isGeosetVisible(g.id, enabledGeosets)) continue;
+    if (!BODY_LAYER_GEOSETS.has(g.id)) continue;
+    for (let i = 0; i < g.indexCount; i++) {
+      bodyVertexIndices.add(fullIndexData[g.indexStart + i]);
     }
   }
 
-  const indexData = new Uint16Array(filteredIndices);
+  // Shrink clothing geosets radially toward body centroid at each height.
+  // Clamps to a minimum radius to prevent inner-thigh collapse.
+  const clothingVertexData = new Float32Array(vertexData);
+  const clothingVertexSet = new Set<number>();
+  for (const g of manifest.groups) {
+    if (!isGeosetVisible(g.id, enabledGeosets)) continue;
+    if (!CLOTHING_GEOSETS.has(g.id)) continue;
+    for (let i = 0; i < g.indexCount; i++) {
+      clothingVertexSet.add(fullIndexData[g.indexStart + i]);
+    }
+  }
 
-  const geometry = new THREE.BufferGeometry();
-  const interleavedBuffer = new THREE.InterleavedBuffer(vertexData, 8);
-  geometry.setAttribute('position', new THREE.InterleavedBufferAttribute(interleavedBuffer, 3, 0));
-  geometry.setAttribute('normal', new THREE.InterleavedBufferAttribute(interleavedBuffer, 3, 3));
-  geometry.setAttribute('uv', new THREE.InterleavedBufferAttribute(interleavedBuffer, 2, 6));
-  geometry.setIndex(new THREE.BufferAttribute(indexData, 1));
+  // Build height-binned body stats (centroid + min/max radius)
+  const BIN_SIZE = 0.05;
+  const bodyBins = new Map<number, { sumX: number; sumY: number; count: number; minR: number; maxR: number }>();
+  // First pass: compute centroids
+  for (const bi of bodyVertexIndices) {
+    const bb = bi * 8;
+    const z = vertexData[bb + 2];
+    const bin = Math.round(z / BIN_SIZE);
+    let entry = bodyBins.get(bin);
+    if (!entry) { entry = { sumX: 0, sumY: 0, count: 0, minR: Infinity, maxR: 0 }; bodyBins.set(bin, entry); }
+    entry.sumX += vertexData[bb + 0];
+    entry.sumY += vertexData[bb + 1];
+    entry.count++;
+  }
+  // Second pass: compute radii from centroids
+  for (const bi of bodyVertexIndices) {
+    const bb = bi * 8;
+    const z = vertexData[bb + 2];
+    const bin = Math.round(z / BIN_SIZE);
+    const entry = bodyBins.get(bin)!;
+    const centX = entry.sumX / entry.count;
+    const centY = entry.sumY / entry.count;
+    const r = Math.sqrt((vertexData[bb + 0] - centX) ** 2 + (vertexData[bb + 1] - centY) ** 2);
+    if (r < entry.minR) entry.minR = r;
+    if (r > entry.maxR) entry.maxR = r;
+  }
 
-  const material = new THREE.MeshLambertMaterial({
+  const SHRINK = 0.55; // moderate shrink toward centroid
+  for (const vi of clothingVertexSet) {
+    const base = vi * 8;
+    const cx = clothingVertexData[base + 0];
+    const cy = clothingVertexData[base + 1];
+    const cz = clothingVertexData[base + 2];
+    const bin = Math.round(cz / BIN_SIZE);
+
+    let entry = bodyBins.get(bin);
+    if (!entry) {
+      for (let d = 1; d < 10; d++) {
+        entry = bodyBins.get(bin + d) || bodyBins.get(bin - d);
+        if (entry) break;
+      }
+    }
+    if (!entry) continue;
+
+    const centX = entry.sumX / entry.count;
+    const centY = entry.sumY / entry.count;
+    const dx = cx - centX;
+    const dy = cy - centY;
+    const currentR = Math.sqrt(dx * dx + dy * dy);
+
+    if (currentR < 0.001) continue; // at center already
+
+    // Shrink toward centroid
+    let newX = cx + (centX - cx) * SHRINK;
+    let newY = cy + (centY - cy) * SHRINK;
+
+    // Clamp: don't let radius go below the body's minimum radius at this height
+    // This prevents inner-thigh vertices from collapsing through each other
+    const newDx = newX - centX;
+    const newDy = newY - centY;
+    const newR = Math.sqrt(newDx * newDx + newDy * newDy);
+    const minR = entry.minR * 0.85; // slightly inside body min
+    if (newR < minR && currentR > minR) {
+      const scale = minR / newR;
+      newX = centX + newDx * scale;
+      newY = centY + newDy * scale;
+    }
+
+    clothingVertexData[base + 0] = newX;
+    clothingVertexData[base + 1] = newY;
+  }
+  const clothingInterleavedBuffer = new THREE.InterleavedBuffer(clothingVertexData, 8);
+
+  const bodyMaterial = new THREE.MeshLambertMaterial({
     map: skinTexture,
     side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
   });
 
-  const mesh = new THREE.Mesh(geometry, material);
+  // Clothing: FrontSide culls inward-facing triangles that cause the "skirt" look
+  const clothingMaterial = new THREE.MeshLambertMaterial({
+    map: skinTexture,
+    side: THREE.FrontSide,
+  });
 
+  // Collect indices per layer (body vs clothing)
+  const bodyIndices: number[] = [];
+  const clothingIndices: number[] = [];
+
+  for (const g of manifest.groups) {
+    if (!isGeosetVisible(g.id, enabledGeosets)) continue;
+    const target = CLOTHING_GEOSETS.has(g.id) ? clothingIndices : bodyIndices;
+    for (let i = 0; i < g.indexCount; i++) {
+      target.push(fullIndexData[g.indexStart + i]);
+    }
+  }
+
+  const pivot = new THREE.Group();
   // WoW Z-up → Three.js Y-up
-  mesh.rotation.x = -Math.PI / 2;
+  pivot.rotation.x = -Math.PI / 2;
+
+  // Clothing mesh rendered FIRST (behind body in painter's order isn't needed,
+  // Z-buffer handles it, but body's polygonOffset pushes it forward)
+  if (clothingIndices.length > 0) {
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.InterleavedBufferAttribute(clothingInterleavedBuffer, 3, 0));
+    geom.setAttribute('normal', new THREE.InterleavedBufferAttribute(clothingInterleavedBuffer, 3, 3));
+    geom.setAttribute('uv', new THREE.InterleavedBufferAttribute(clothingInterleavedBuffer, 2, 6));
+    geom.setIndex(new THREE.BufferAttribute(new Uint16Array(clothingIndices), 1));
+    pivot.add(new THREE.Mesh(geom, clothingMaterial));
+  }
+
+  // Body mesh — polygonOffset pushes it forward in depth so it occludes clothing
+  if (bodyIndices.length > 0) {
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.InterleavedBufferAttribute(interleavedBuffer, 3, 0));
+    geom.setAttribute('normal', new THREE.InterleavedBufferAttribute(interleavedBuffer, 3, 3));
+    geom.setAttribute('uv', new THREE.InterleavedBufferAttribute(interleavedBuffer, 2, 6));
+    geom.setIndex(new THREE.BufferAttribute(new Uint16Array(bodyIndices), 1));
+    pivot.add(new THREE.Mesh(geom, bodyMaterial));
+  }
 
   const group = new THREE.Group();
-  group.add(mesh);
+  group.add(pivot);
   return group;
 }
