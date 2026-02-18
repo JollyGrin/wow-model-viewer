@@ -93,7 +93,11 @@ const BODY_LAYER_GEOSETS = new Set([0, 1, 101, 201, 301, 401, 501, 701]);
 // Clothing geosets that sit directly against the body surface.
 // These get shrunk inward toward the body centroid at their height
 // and rendered with FrontSide + depthWrite so the body occludes them.
-const CLOTHING_GEOSETS = new Set([903, 1002, 1102]);
+const CLOTHING_GEOSETS = new Set([903, 1102]);
+
+// Undershirt geoset — shrunk like clothing but rendered DoubleSide so
+// back-facing triangles in the upper back are visible (fills shoulder hole).
+const UNDERSHIRT_GEOSETS = new Set([1002]);
 
 export async function loadModel(
   basePath: string,
@@ -134,7 +138,7 @@ export async function loadModel(
   const clothingVertexSet = new Set<number>();
   for (const g of manifest.groups) {
     if (!isGeosetVisible(g.id, enabledGeosets)) continue;
-    if (!CLOTHING_GEOSETS.has(g.id)) continue;
+    if (!CLOTHING_GEOSETS.has(g.id) && !UNDERSHIRT_GEOSETS.has(g.id)) continue;
     for (let i = 0; i < g.indexCount; i++) {
       clothingVertexSet.add(fullIndexData[g.indexStart + i]);
     }
@@ -227,15 +231,22 @@ export async function loadModel(
     side: THREE.FrontSide,
   });
 
+  // Undershirt: DoubleSide so back-facing triangles in upper back are visible
+  const undershirtMaterial = new THREE.MeshLambertMaterial({
+    map: skinTexture,
+    side: THREE.DoubleSide,
+  });
+
   // Hair: DoubleSide since hair geometry is often single-sided planes
   const hairMaterial = new THREE.MeshLambertMaterial({
     map: hairTexture,
     side: THREE.DoubleSide,
   });
 
-  // Collect indices per layer (body vs clothing vs hair)
+  // Collect indices per layer (body vs clothing vs undershirt vs hair)
   const bodyIndices: number[] = [];
   const clothingIndices: number[] = [];
+  const undershirtIndices: number[] = [];
   const hairIndices: number[] = [];
 
   for (const g of manifest.groups) {
@@ -243,6 +254,8 @@ export async function loadModel(
     let target: number[];
     if (HAIR_GEOSETS.has(g.id)) {
       target = hairIndices;
+    } else if (UNDERSHIRT_GEOSETS.has(g.id)) {
+      target = undershirtIndices;
     } else if (CLOTHING_GEOSETS.has(g.id)) {
       target = clothingIndices;
     } else {
@@ -268,6 +281,16 @@ export async function loadModel(
     pivot.add(new THREE.Mesh(geom, clothingMaterial));
   }
 
+  // Undershirt mesh — shrunk like clothing but DoubleSide to fill upper back hole
+  if (undershirtIndices.length > 0) {
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.InterleavedBufferAttribute(clothingInterleavedBuffer, 3, 0));
+    geom.setAttribute('normal', new THREE.InterleavedBufferAttribute(clothingInterleavedBuffer, 3, 3));
+    geom.setAttribute('uv', new THREE.InterleavedBufferAttribute(clothingInterleavedBuffer, 2, 6));
+    geom.setIndex(new THREE.BufferAttribute(new Uint16Array(undershirtIndices), 1));
+    pivot.add(new THREE.Mesh(geom, undershirtMaterial));
+  }
+
   // Body mesh — polygonOffset pushes it forward in depth so it occludes clothing
   if (bodyIndices.length > 0) {
     const geom = new THREE.BufferGeometry();
@@ -276,6 +299,75 @@ export async function loadModel(
     geom.setAttribute('uv', new THREE.InterleavedBufferAttribute(interleavedBuffer, 2, 6));
     geom.setIndex(new THREE.BufferAttribute(new Uint16Array(bodyIndices), 1));
     pivot.add(new THREE.Mesh(geom, bodyMaterial));
+  }
+
+  // Neck patch — fills the intentional hole at the back of the neck (Z 1.58-1.81)
+  // that's normally hidden by hair/armor. Boundary found by edge analysis of geoset 0.
+  // Fan of 12 triangles from centroid to boundary loop.
+  {
+    // Boundary loop vertices: position + UV from nearest body vertex
+    const neckLoop = [
+      // [x, y, z, u, v] — boundary vertex positions with their UVs
+      [-0.133, -0.203, 1.668, 0.4688, 0.0293],
+      [-0.174, -0.198, 1.582, 0.0039, 0.1133],
+      [-0.142,  0.000, 1.613, 0.9961, 0.1250],
+      [-0.174,  0.198, 1.582, 0.0039, 0.1133],
+      [-0.133,  0.203, 1.668, 0.4688, 0.0293],
+      [-0.047,  0.207, 1.710, 0.0352, 0.0039],
+      [ 0.047,  0.090, 1.705, 0.5977, 0.0664],
+      [-0.037,  0.091, 1.793, 0.6094, 0.0234],
+      [-0.065,  0.000, 1.813, 0.9961, 0.0234],
+      [-0.037, -0.091, 1.793, 0.6094, 0.0234],
+      [ 0.047, -0.090, 1.705, 0.5977, 0.0664],
+      [-0.047, -0.207, 1.710, 0.0352, 0.0039],
+    ];
+    const n = neckLoop.length;
+
+    // Centroid vertex (average of all boundary vertices)
+    let cx = 0, cy = 0, cz = 0, cu = 0, cv = 0;
+    for (const [x, y, z, u, v] of neckLoop) {
+      cx += x; cy += y; cz += z; cu += u; cv += v;
+    }
+    cx /= n; cy /= n; cz /= n; cu /= n; cv /= n;
+
+    // Normal pointing backward (away from body center) — roughly -X
+    const nx = -0.95, ny = 0, nz = 0.3;
+
+    // Build vertex buffer: centroid (index 0) + boundary verts (indices 1..n)
+    const patchVerts = new Float32Array((n + 1) * 8);
+    // Centroid
+    patchVerts[0] = cx; patchVerts[1] = cy; patchVerts[2] = cz;
+    patchVerts[3] = nx; patchVerts[4] = ny; patchVerts[5] = nz;
+    patchVerts[6] = cu; patchVerts[7] = cv;
+    // Boundary vertices
+    for (let i = 0; i < n; i++) {
+      const off = (i + 1) * 8;
+      patchVerts[off + 0] = neckLoop[i][0];
+      patchVerts[off + 1] = neckLoop[i][1];
+      patchVerts[off + 2] = neckLoop[i][2];
+      patchVerts[off + 3] = nx;
+      patchVerts[off + 4] = ny;
+      patchVerts[off + 5] = nz;
+      patchVerts[off + 6] = neckLoop[i][3];
+      patchVerts[off + 7] = neckLoop[i][4];
+    }
+
+    // Fan triangles: centroid → boundary[i] → boundary[i+1]
+    const patchIndices = new Uint16Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const next = (i + 1) % n;
+      patchIndices[i * 3 + 0] = 0;         // centroid
+      patchIndices[i * 3 + 1] = i + 1;     // boundary[i]
+      patchIndices[i * 3 + 2] = next + 1;  // boundary[i+1]
+    }
+
+    const patchGeom = new THREE.BufferGeometry();
+    const patchBuffer = new THREE.InterleavedBuffer(patchVerts, 8);
+    patchGeom.setAttribute('position', new THREE.InterleavedBufferAttribute(patchBuffer, 3, 0));
+    patchGeom.setAttribute('normal', new THREE.InterleavedBufferAttribute(patchBuffer, 3, 3));
+    patchGeom.setAttribute('uv', new THREE.InterleavedBufferAttribute(patchBuffer, 2, 6));
+    patchGeom.setIndex(new THREE.BufferAttribute(patchIndices, 1));
+    pivot.add(new THREE.Mesh(patchGeom, bodyMaterial));
   }
 
   // Hair mesh — uses hair texture, rendered on top of body
