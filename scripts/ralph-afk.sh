@@ -42,7 +42,7 @@ You are running in Ralph Wiggum mode (AFK — iteration ${i}/${ITERATIONS}).
 5. Run: tsc --noEmit && bun run build
    If either fails, fix and retry (max 3 attempts). If still broken, revert and move to next task.
 6. Append what you did to ralph-progress.md.
-7. Stage changed files and commit.
+7. Do NOT run any git commands. The human will commit manually.
 8. If ALL tasks in scope are done, output: RALPH_COMPLETE
 
 Work on exactly ONE task, then stop.
@@ -51,7 +51,7 @@ PROMPT
     --verbose \
     --output-format stream-json \
     --include-partial-messages \
-    --allowedTools "Bash,Edit,Read,Write,Glob,Grep,Skill" \
+    --allowedTools "Bash(bun:*),Bash(bunx:*),Bash(npm:*),Bash(npx:*),Bash(tsc:*),Bash(node:*),Bash(ls:*),Bash(find:*),Bash(wc:*),Bash(xxd:*),Bash(sort:*),Bash(python3:*),Edit,Read,Write,Glob,Grep,Skill" \
     | tee -a "$LOG" \
     | python3 "$FILTER"
 

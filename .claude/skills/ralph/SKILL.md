@@ -50,13 +50,9 @@ Append to `ralph-progress.md`:
 - Notes: <blockers, findings, or issues>
 ```
 
-## Step 5 — Commit
+## Step 5 — No Git
 
-Stage your changes (including ralph-progress.md) and commit:
-```
-git add <specific files>
-git commit -m "<descriptive message>"
-```
+Do NOT run any git commands. The human will commit manually.
 
 ## Step 6 — Completion Check
 

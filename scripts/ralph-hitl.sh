@@ -48,7 +48,7 @@ PROMPT
   --verbose \
   --output-format stream-json \
   --include-partial-messages \
-  --allowedTools "Bash,Edit,Read,Write,Glob,Grep,Skill" \
+  --allowedTools "Bash(bun:*),Bash(bunx:*),Bash(npm:*),Bash(npx:*),Bash(tsc:*),Bash(node:*),Bash(ls:*),Bash(find:*),Bash(wc:*),Bash(xxd:*),Bash(sort:*),Bash(python3:*),Edit,Read,Write,Glob,Grep,Skill" \
   2>&1 \
   | python3 -u "$FILTER"
 
