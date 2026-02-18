@@ -30,6 +30,10 @@ const TEXTURES: TextureSource[] = [
     name: 'human-male-skin',
     blpPath: 'data/patch/patch-3/Character/Human/Male/HumanMale_Magic.blp',
   },
+  {
+    name: 'human-male-hair',
+    blpPath: 'data/patch/patch-6/Character/Human/Hair04_07.blp',
+  },
 ];
 
 function convertBlpToTex(blpPath: string, outPath: string) {

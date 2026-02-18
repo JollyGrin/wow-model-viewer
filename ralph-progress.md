@@ -14,3 +14,13 @@
 - Status: done
 - Files changed: docs/LEARNINGS.md
 - Notes: Tested 4 BLP skins by converting each and comparing screenshots against reference. HumanMale_Magic.blp (already in use) is the best match — warm golden/peach tone closest to the reference's natural skin color. Pirate was too brown with tattoos, Skin00_101 too pale with purple underwear, Skin00_102 gray/marble. Skipped NecroBlue/WizardFel/WizardArcane (fantasy colors). The reference's golden shorts require base MPQ compositing we don't have. No code changes needed — kept existing skin.
+
+## [2026-02-18] Task: Fix upper back/shoulder gaps
+- Status: skipped
+- Files changed: docs/LEARNINGS.md
+- Notes: Investigated geosets 802 (24 tris) and 803 (72 tris) as candidates for filling the sparse upper back area (Z 1.00-1.25). Both geosets are mostly back-facing geometry but extend beyond the body silhouette (max |Y| = 0.619 vs body 0.535), creating visible sleeve flaps at the elbows. Tested 802+803 together and 802 alone — both created a clear visual regression with hanging sleeve geometry. The body mesh has sparse but present coverage (2-3 back-facing tris per height bin) — no actual see-through holes, just low-poly shading that looks flat compared to the reference's composited texture. The gap is a texture quality issue, not a missing geometry issue. Reverted to baseline. No code changes.
+
+## [2026-02-18] Task: Add hair geoset
+- Status: done
+- Files changed: src/loadModel.ts, scripts/convert-textures.ts, docs/LEARNINGS.md, public/models/textures/human-male-hair.tex (new)
+- Notes: Parsed M2 batch data to discover texture-to-submesh mappings (texLookup=0 skin, texLookup=1 hair, texLookup=2 cape). All hairstyle geosets (2-13) use hair texture. Enabled geoset 5 (hairstyle index 4 = long braids) instead of geoset 1 (bald cap). Converted Hair04_07.blp (dark brown, color variant 7) as hair texture. Created separate hair material (MeshLambertMaterial, DoubleSide) and hair mesh layer in the model loader. Front and back views now show long dark braided hair matching the reference's hairstyle. Both geometry and texture are applied correctly.

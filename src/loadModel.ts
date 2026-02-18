@@ -37,7 +37,7 @@ interface ModelManifest {
 //  15xx: Cape — none
 const DEFAULT_GEOSETS = new Set([
   0,     // body mesh (torso, waist, head, feet)
-  1,     // bald scalp cap (body mesh leaves top of head open)
+  5,     // hairstyle 4 (long hair with braids — matches Hair04 texture)
   101,   // facial 1 default (jaw geometry)
   201,   // facial 2 default
   301,   // facial 3 default
@@ -82,6 +82,10 @@ async function loadTexture(url: string): Promise<THREE.DataTexture> {
   return texture;
 }
 
+// Hair geosets (IDs 2-13) use hair texture (M2 texture type 6, texLookup=1).
+// Geoset 1 (bald cap) uses skin texture, geoset 0 is body.
+const HAIR_GEOSETS = new Set([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+
 // Geosets that represent the base body layer — these get polygonOffset
 // to push them slightly forward so they occlude inner clothing geometry.
 const BODY_LAYER_GEOSETS = new Set([0, 1, 101, 201, 301, 401, 501, 701]);
@@ -95,11 +99,13 @@ export async function loadModel(
   basePath: string,
   enabledGeosets: Set<number> = DEFAULT_GEOSETS,
 ): Promise<THREE.Group> {
-  // Load manifest, binary, and texture in parallel
-  const [manifestRes, binRes, skinTexture] = await Promise.all([
+  // Load manifest, binary, and textures in parallel
+  const texturesDir = `${basePath.replace(/[^/]+$/, '')}textures/`;
+  const [manifestRes, binRes, skinTexture, hairTexture] = await Promise.all([
     fetch(`${basePath}.json`),
     fetch(`${basePath}.bin`),
-    loadTexture(`${basePath.replace(/[^/]+$/, '')}textures/human-male-skin.tex`),
+    loadTexture(`${texturesDir}human-male-skin.tex`),
+    loadTexture(`${texturesDir}human-male-hair.tex`),
   ]);
 
   const manifest: ModelManifest = await manifestRes.json();
@@ -221,13 +227,27 @@ export async function loadModel(
     side: THREE.FrontSide,
   });
 
-  // Collect indices per layer (body vs clothing)
+  // Hair: DoubleSide since hair geometry is often single-sided planes
+  const hairMaterial = new THREE.MeshLambertMaterial({
+    map: hairTexture,
+    side: THREE.DoubleSide,
+  });
+
+  // Collect indices per layer (body vs clothing vs hair)
   const bodyIndices: number[] = [];
   const clothingIndices: number[] = [];
+  const hairIndices: number[] = [];
 
   for (const g of manifest.groups) {
     if (!isGeosetVisible(g.id, enabledGeosets)) continue;
-    const target = CLOTHING_GEOSETS.has(g.id) ? clothingIndices : bodyIndices;
+    let target: number[];
+    if (HAIR_GEOSETS.has(g.id)) {
+      target = hairIndices;
+    } else if (CLOTHING_GEOSETS.has(g.id)) {
+      target = clothingIndices;
+    } else {
+      target = bodyIndices;
+    }
     for (let i = 0; i < g.indexCount; i++) {
       target.push(fullIndexData[g.indexStart + i]);
     }
@@ -256,6 +276,16 @@ export async function loadModel(
     geom.setAttribute('uv', new THREE.InterleavedBufferAttribute(interleavedBuffer, 2, 6));
     geom.setIndex(new THREE.BufferAttribute(new Uint16Array(bodyIndices), 1));
     pivot.add(new THREE.Mesh(geom, bodyMaterial));
+  }
+
+  // Hair mesh — uses hair texture, rendered on top of body
+  if (hairIndices.length > 0) {
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.InterleavedBufferAttribute(interleavedBuffer, 3, 0));
+    geom.setAttribute('normal', new THREE.InterleavedBufferAttribute(interleavedBuffer, 3, 3));
+    geom.setAttribute('uv', new THREE.InterleavedBufferAttribute(interleavedBuffer, 2, 6));
+    geom.setIndex(new THREE.BufferAttribute(new Uint16Array(hairIndices), 1));
+    pivot.add(new THREE.Mesh(geom, hairMaterial));
   }
 
   const group = new THREE.Group();

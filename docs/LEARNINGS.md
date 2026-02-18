@@ -231,3 +231,44 @@ The reference's golden shorts are composited from base CharSections skin + under
 
 **Impact:** Keep HumanMale_Magic.blp as the skin texture. Matching the reference's golden shorts would require base MPQ extraction + runtime skin compositing, which is out of scope.
 **Reference:** `scripts/convert-textures.ts`, e2e comparison screenshots
+
+## [2026-02-18] Sleeve Geosets 802/803 Are Not Suitable for Filling Back Gaps
+
+**Context:** Investigating whether geosets 802 (24 tris) and 803 (72 tris) from group 8 (sleeves) could fill the sparse upper back area at Z 1.00-1.25.
+
+**Finding:** Both geosets add visible sleeve flap geometry that extends beyond the body silhouette:
+
+| Geoset | Tris | Max |Y| (lateral) | Body Max |Y| at same Z | Visual Result |
+|--------|------|-------------------|------------------------|---------------|
+| 802 | 24 | 0.619 | 0.535 | Small flared sleeves at elbows |
+| 803 | 72 | 0.569 | 0.535 | Larger sleeve tubes on forearms |
+
+Both geosets are mostly back-facing (802: 24/28 verts on back, 803: 44/56), which explains why they were candidates — they DO cover the back shoulder region. However, they also extend outward past the arm boundary, creating visible sleeve flaps in both front and back views.
+
+The body mesh (geoset 0) has sparse but present coverage in the upper back:
+- Z [1.00, 1.30]: 2-3 back-facing triangles per 0.05 Z-bin
+- No actual see-through holes — just low-poly flat shading
+- The "gap" appearance is a shading artifact from sparse geometry, not missing faces
+
+The reference screenshot looks smooth because the WoW client has full composited skin texture that visually fills the sparse polygon area with painted muscle detail.
+
+**Impact:** Do not add geosets 802 or 803 to the naked character. The upper back sparseness is acceptable and cannot be fixed with geoset selection — it requires higher-quality texture compositing.
+**Reference:** `src/loadModel.ts`, geoset spatial analysis, comparison screenshots
+
+## [2026-02-18] Hair Geoset and Texture Mapping
+
+**Context:** Adding hair to the human male model. Needed to determine which geoset ID corresponds to which hairstyle, and which texture to use.
+
+**Finding:** M2 batch data reveals texture-to-submesh mappings via `texLookup`:
+- texLookup=0 → skin texture (M2 texture type 1, CharacterSkin)
+- texLookup=1 → hair texture (M2 texture type 6, CharacterHair)
+- texLookup=2 → cape texture (M2 texture type 2, Cape)
+
+All hairstyle geosets (IDs 2-13) use texLookup=1 (hair texture). Geoset 1 (bald cap) uses texLookup=0 (skin texture), which makes sense — the bald cap shows scalp skin.
+
+Hair texture naming: `Hair04_NN.blp` where `04` is the hairstyle index and `NN` (00-09) is the color variant. Hairstyle index 4 maps to geoset ID 5 (geoset = hairstyleIndex + 1, since geoset 1 = bald). The only hair textures available in our patch data are `Hair04_00` through `Hair04_09` (style 4 = long hair with braids). Color 07 gives a dark brown that matches the reference.
+
+Geoset 5 (hairstyle 4) has 148 triangles across 2 submeshes (348 + 96 indices). The geometry shows long braids flowing from the head — matching the reference's hairstyle.
+
+**Impact:** Hair rendering requires a separate material with the hair texture, applied only to hair geosets (2-13). The model loader now creates three mesh layers: clothing (shrunk, FrontSide), body (polygonOffset, DoubleSide), and hair (DoubleSide with hair texture).
+**Reference:** `src/loadModel.ts`, `scripts/convert-textures.ts`, M2 batch parsing
