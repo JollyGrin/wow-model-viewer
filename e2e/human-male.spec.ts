@@ -46,6 +46,44 @@ test('human male model renders with skin texture', async ({ page }) => {
   fs.writeFileSync(backPath, backScreenshot);
   console.log(`Back screenshot saved: ${backPath}`);
 
+  // Rotate camera to 3/4 rear view (behind-right, slightly elevated)
+  // Catches side-profile issues like undershirt flaring, waist skirt
+  await page.evaluate(() => {
+    const camera = (window as any).__camera;
+    const controls = (window as any).__controls;
+    if (camera && controls) {
+      camera.position.set(-2, 1.3, 2);
+      controls.target.set(0, 0.9, 0);
+      controls.update();
+    }
+  });
+
+  await page.waitForTimeout(500);
+
+  const rearQuarterScreenshot = await page.screenshot();
+  const rearQuarterPath = path.join(SCREENSHOTS_DIR, 'human-male-rear-quarter-test.png');
+  fs.writeFileSync(rearQuarterPath, rearQuarterScreenshot);
+  console.log(`Rear quarter screenshot saved: ${rearQuarterPath}`);
+
+  // Rotate camera to top-down back view (above and behind, looking down at shoulders)
+  // Catches upper back hole between shoulders
+  await page.evaluate(() => {
+    const camera = (window as any).__camera;
+    const controls = (window as any).__controls;
+    if (camera && controls) {
+      camera.position.set(-1.5, 2.8, 0);
+      controls.target.set(0, 1.2, 0);
+      controls.update();
+    }
+  });
+
+  await page.waitForTimeout(500);
+
+  const topBackScreenshot = await page.screenshot();
+  const topBackPath = path.join(SCREENSHOTS_DIR, 'human-male-top-back-test.png');
+  fs.writeFileSync(topBackPath, topBackScreenshot);
+  console.log(`Top-back screenshot saved: ${topBackPath}`);
+
   expect(errors).toHaveLength(0);
 
   // Check canvas has non-black pixels (model rendered)

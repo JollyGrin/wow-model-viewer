@@ -1,63 +1,57 @@
-# Ralph Scope: Human Male Model Quality
+# Ralph Scope: Fix Upper Legs & Upper Back
 
 ## Goal
-Get the textured human male model rendering to closely match the reference screenshots at `screenshots/REFERENCE/human-male-front.png` and `screenshots/REFERENCE/human-male-back.png`.
+
+Fix the two remaining visible geometry issues on the textured human male model.
 
 ## How to Validate
-After every change, run `/e2e-eval` which builds the project, runs Playwright tests, and takes screenshots. Then visually compare the test screenshots (`screenshots/human-male-front-test.png`, `screenshots/human-male-back-test.png`) against the reference PNGs using the Read tool. Describe what's better, what's worse, and what to try next.
+
+After every change, run `/e2e-eval` which builds the project, runs Playwright tests, and takes screenshots. The test captures four views:
+
+1. `screenshots/human-male-front-test.png` — front view (legs, torso, face)
+2. `screenshots/human-male-back-test.png` — back view (shoulders, spine)
+3. `screenshots/human-male-rear-quarter-test.png` — 3/4 rear view (catches side-profile issues like waist flaring)
+4. `screenshots/human-male-top-back-test.png` — top-down back view (catches upper back hole between shoulders)
+
+Evaluate ALL FOUR screenshots every time. Check for regressions in ALL views, not just the one relevant to the current task.
 
 ## Current State
-- Model renders with textured skin (HumanMale_Magic.blp — a custom Turtle WoW skin with golden tone)
-- UV mapping works correctly
-- MeshLambertMaterial + DoubleSide rendering
-- Front/back camera views working via e2e test (`e2e/human-male.spec.ts`)
-- Known issues: waist "skirt" from geosets 1002/1102, no hair, custom skin lacks face/underwear compositing
+
+- Model renders with textured skin, hair, warm lighting, correct background
+- Clothing geosets (1002, 1102, 903) are shrunk toward body centroid with radius clamping
+- Two visible issues remain: upper back hole between shoulders, dark patches on upper thighs
 
 ## Key Files
-- `src/loadModel.ts` — Model loading, geoset filtering, material setup
+
+- `src/loadModel.ts` — Model loading, geoset filtering, material setup, clothing shrink logic
 - `src/main.ts` — Scene, camera, lighting
-- `scripts/convert-textures.ts` — BLP→.tex converter (change `blpPath` to try different skins)
-- `scripts/convert-model.ts` — M2→browser binary converter
 - `e2e/human-male.spec.ts` — Playwright test that takes front+back screenshots
 - `docs/LEARNINGS.md` — All findings so far (READ THIS FIRST)
-- Available BLP skins: `data/patch/patch-3/Character/Human/Male/HumanMale_Magic.blp` (current), `HumanMale_Pirate.blp`, `HumanMaleSkin00_102.blp`, `data/patch/patch-8/Character/Human/Male/HumanMaleSkin00_101.blp` through `_105*.blp`
 
 ## Tasks
 
-### 1. Fix the waist "skirt" with depth-based rendering
-- **Description:** The geosets 1002 (undershirt) and 1102 (pants) create floating band geometry that looks like a skirt. Try rendering each geoset group as a separate `THREE.Mesh` within the group, so the body mesh naturally occludes the inside of the pants through Z-buffer ordering. Alternatively try `polygonOffset` on the body mesh to push it slightly forward, or try `depthWrite`/`depthTest` tricks on the inner geosets. The body (geoset 0) should visually sit in front of the underwear bands.
-- **Acceptance:** Front view waist area looks like tight shorts or smooth skin, NOT a floating skirt. Compare to `screenshots/REFERENCE/human-male-front.png`.
+### 1. Fix upper back hole
+
+- **Root Cause:** There is a triangular hole visible between the shoulders under the neck from behind. The body mesh (geoset 0) has sparse geometry in that region, and geoset 1002 (undershirt) is supposed to fill it but may not have sufficient coverage.
+- **Failed approach:** Moving 1002 from CLOTHING_GEOSETS to BODY_LAYER_GEOSETS — this stopped the shrink which caused the undershirt to flare out at the waist like a skirt, creating a worse regression. Reverted.
+- **Approach A:** Keep 1002 in CLOTHING_GEOSETS (shrunk) but switch it to DoubleSide rendering so back-facing triangles in the upper back are visible. This preserves the waist shrink while fixing the back hole.
+- **Approach B:** Give 1002 its own treatment — shrink only the lower portion (waist-height vertices) while leaving upper back vertices unshrunk, and render DoubleSide.
+- **Approach C:** Investigate if the hole is actually in the body mesh (geoset 0) itself and 1002 doesn't cover it — may need to check what geometry actually exists in the hole region.
+- **Acceptance:** No visible hole in top-down back view (`human-male-top-back-test.png`). No waist flaring in rear-quarter view. Compare to references.
 - **Priority:** high
 
-### 2. Try all available skin textures and pick the best one
-- **Description:** Convert each available BLP skin and compare results. Edit `scripts/convert-textures.ts` to change the `blpPath`, run `npx tsx scripts/convert-textures.ts`, rebuild, and take screenshots. Available skins: `HumanMale_Magic.blp` (current golden), `HumanMale_Pirate.blp` (tanned/brown), `HumanMaleSkin00_101.blp` (warm flesh with purple underwear), `HumanMaleSkin00_102.blp` (gray/marble). Pick whichever best matches the reference's warm flesh tone with visible muscle detail.
-- **Acceptance:** Skin color closely matches the reference's warm peach/brown flesh tone. Underwear region should not have wildly different color from skin.
+### 2. Fix upper leg dark patches
+
+- **Root Cause:** Clothing geosets (1102, 903) have different normals/UVs from the body mesh, creating visible dark rectangular bands on the upper thighs even after shrinking toward the body.
+- **Approach A — Depth-only clothing:** Make clothing a "depth-only" layer — render to depth buffer but not to color buffer (`colorWrite: false`). Body `polygonOffset` pushes it forward where body geometry exists; clothing just fills depth holes invisibly. This means clothing geometry plugs gaps without contributing its own (differently-shaded) pixels.
+- **Approach B — Normal copying (fallback):** If depth-only creates new artifacts, try copying normals from the nearest body vertex to each clothing vertex so their shading matches the body surface.
+- **Acceptance:** Front view upper thighs have smooth continuous skin tone, no dark rectangular bands. Compare to `screenshots/REFERENCE/human-male-front.png`.
 - **Priority:** high
-
-### 3. Fix upper back/shoulder gaps
-- **Description:** The body mesh (geoset 0) has sparse geometry at Z 1.10-1.30 (upper back between shoulders). With DoubleSide this is mostly hidden, but triangles facing the wrong way still cause subtle gaps. Investigate whether adding geoset 802 or 803 (sleeves group 8) fills the gap without looking wrong. They cover Z=[0.96, 1.25]. If they add visible sleeves, skip them. Also check if the back-of-neck hole visible in back-view screenshots needs a specific geoset.
-- **Acceptance:** Back view has no visible holes between shoulders or behind neck. Compare to `screenshots/REFERENCE/human-male-back.png`.
-- **Priority:** medium
-
-### 4. Add hair geoset
-- **Description:** The reference has long dark hair (hairstyle ~5 or similar). Currently showing geoset 1 (bald cap). Try enabling one of the hairstyle geosets (2-13) instead of 1. Check which hairstyle number corresponds to the long braided hair in the reference. The hair texture (type 6 in the M2) would need a BLP, but even without the right texture, the geometry alone would be an improvement. Check `data/patch/patch-6/Character/Human/Hair04_*.blp` for hair textures.
-- **Acceptance:** Character has visible hair geometry on the head. Bonus: hair has a texture applied.
-- **Priority:** medium
-
-### 5. Improve lighting to match reference
-- **Description:** The reference uses a specific lighting setup — the character is well-lit from the front with soft shadows. Compare the current lighting (ambient 0.8, front directional 0.5, fill 0.3) to the reference and adjust. The reference appears to have slightly warm-toned lighting. Try adding a subtle warm tint to lights or adjusting intensities.
-- **Acceptance:** Overall brightness and shadow depth matches the reference. Muscle definition is clearly visible.
-- **Priority:** low
-
-### 6. Remove grid and match background color
-- **Description:** The reference has a dark charcoal/slate background (roughly #333-#444). The grid is currently commented out but the background color may not match. Check `renderer.setClearColor()` in `src/main.ts`.
-- **Acceptance:** Background matches the reference's dark tone. No grid lines visible.
-- **Priority:** low
 
 ## Constraints
+
 - NEVER commit — only the human will commit manually
 - NEVER read binary files (.m2, .blp, .skin) directly with the Read tool
-- Use `npx tsx scripts/convert-textures.ts` to reconvert textures after changing the BLP source
 - Use `npm run build` to rebuild after code changes
 - Use `npx playwright test e2e/human-male.spec.ts` to take screenshots
 - Always compare screenshots against `screenshots/REFERENCE/human-male-front.png` and `screenshots/REFERENCE/human-male-back.png` using the Read tool
@@ -65,6 +59,7 @@ After every change, run `/e2e-eval` which builds the project, runs Playwright te
 - Keep changes minimal — one focused change per iteration
 
 ## Quality Bar
+
 - tsc --noEmit passes (ignore convert-textures.ts type error on Blp.load — runtime works fine)
 - npm run build succeeds
 - e2e test passes (`npx playwright test e2e/human-male.spec.ts`)
