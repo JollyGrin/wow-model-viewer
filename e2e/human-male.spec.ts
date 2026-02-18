@@ -84,6 +84,24 @@ test('human male model renders with skin texture', async ({ page }) => {
   fs.writeFileSync(topBackPath, topBackScreenshot);
   console.log(`Top-back screenshot saved: ${topBackPath}`);
 
+  // Close-up front legs view — catches gaps, bands, skirt at waist-to-knee area
+  await page.evaluate(() => {
+    const camera = (window as any).__camera;
+    const controls = (window as any).__controls;
+    if (camera && controls) {
+      camera.position.set(1.5, 0.55, 0);
+      controls.target.set(0, 0.55, 0);
+      controls.update();
+    }
+  });
+
+  await page.waitForTimeout(500);
+
+  const legsScreenshot = await page.screenshot();
+  const legsPath = path.join(SCREENSHOTS_DIR, 'human-male-legs-test.png');
+  fs.writeFileSync(legsPath, legsScreenshot);
+  console.log(`Legs screenshot saved: ${legsPath}`);
+
   expect(errors).toHaveLength(0);
 
   // Check canvas has non-black pixels (model rendered)

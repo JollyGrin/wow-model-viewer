@@ -91,12 +91,12 @@ const HAIR_GEOSETS = new Set([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 const BODY_LAYER_GEOSETS = new Set([0, 1, 101, 201, 301, 401, 501, 701]);
 
 // Clothing geosets that sit directly against the body surface.
-// These get shrunk inward toward the body centroid at their height
-// and rendered with FrontSide + depthWrite so the body occludes them.
+// Rendered DoubleSide at original positions — body's polygonOffset occludes
+// them where both exist, clothing shows through to fill body mesh holes.
 const CLOTHING_GEOSETS = new Set([903, 1102]);
 
-// Undershirt geoset — shrunk like clothing but rendered DoubleSide so
-// back-facing triangles in the upper back are visible (fills shoulder hole).
+// Undershirt geoset — rendered DoubleSide so back-facing triangles in
+// the upper back are visible (fills shoulder hole).
 const UNDERSHIRT_GEOSETS = new Set([1002]);
 
 export async function loadModel(
@@ -121,8 +121,8 @@ export async function loadModel(
 
   const interleavedBuffer = new THREE.InterleavedBuffer(vertexData, 8);
 
-  // Build a spatial index of body vertices for snapping clothing verts inward.
-  // For each clothing vertex, find the nearest body vertex and lerp toward it.
+  // Build index of body vertices for normal copying — clothing verts get body normals
+  // so shading matches at body/clothing boundaries.
   const bodyVertexIndices = new Set<number>();
   for (const g of manifest.groups) {
     if (!isGeosetVisible(g.id, enabledGeosets)) continue;
@@ -132,8 +132,7 @@ export async function loadModel(
     }
   }
 
-  // Shrink clothing geosets radially toward body centroid at each height.
-  // Clamps to a minimum radius to prevent inner-thigh collapse.
+  // Copy vertex data for clothing — positions stay at original, normals get replaced
   const clothingVertexData = new Float32Array(vertexData);
   const clothingVertexSet = new Set<number>();
   for (const g of manifest.groups) {
@@ -144,77 +143,52 @@ export async function loadModel(
     }
   }
 
-  // Build height-binned body stats (centroid + min/max radius)
-  const BIN_SIZE = 0.05;
-  const bodyBins = new Map<number, { sumX: number; sumY: number; count: number; minR: number; maxR: number }>();
-  // First pass: compute centroids
-  for (const bi of bodyVertexIndices) {
-    const bb = bi * 8;
-    const z = vertexData[bb + 2];
-    const bin = Math.round(z / BIN_SIZE);
-    let entry = bodyBins.get(bin);
-    if (!entry) { entry = { sumX: 0, sumY: 0, count: 0, minR: Infinity, maxR: 0 }; bodyBins.set(bin, entry); }
-    entry.sumX += vertexData[bb + 0];
-    entry.sumY += vertexData[bb + 1];
-    entry.count++;
-  }
-  // Second pass: compute radii from centroids
-  for (const bi of bodyVertexIndices) {
-    const bb = bi * 8;
-    const z = vertexData[bb + 2];
-    const bin = Math.round(z / BIN_SIZE);
-    const entry = bodyBins.get(bin)!;
-    const centX = entry.sumX / entry.count;
-    const centY = entry.sumY / entry.count;
-    const r = Math.sqrt((vertexData[bb + 0] - centX) ** 2 + (vertexData[bb + 1] - centY) ** 2);
-    if (r < entry.minR) entry.minR = r;
-    if (r > entry.maxR) entry.maxR = r;
-  }
-
-  const SHRINK = 0.55; // moderate shrink toward centroid
+  // For each clothing vertex, find nearest body vertex. Copy its normal for
+  // smooth shading. If the clothing vertex is on the OUTSIDE of the body surface
+  // (displacement dot body-normal > 0), snap it to the body vertex position
+  // to tuck protruding "skirt" edges under the body.
+  const bodyIdxArray = [...bodyVertexIndices];
   for (const vi of clothingVertexSet) {
     const base = vi * 8;
-    const cx = clothingVertexData[base + 0];
-    const cy = clothingVertexData[base + 1];
-    const cz = clothingVertexData[base + 2];
-    const bin = Math.round(cz / BIN_SIZE);
+    const cx = vertexData[base + 0];
+    const cy = vertexData[base + 1];
+    const cz = vertexData[base + 2];
 
-    let entry = bodyBins.get(bin);
-    if (!entry) {
-      for (let d = 1; d < 10; d++) {
-        entry = bodyBins.get(bin + d) || bodyBins.get(bin - d);
-        if (entry) break;
+    let bestDist = Infinity;
+    let bestIdx = -1;
+    for (const bi of bodyIdxArray) {
+      const bb = bi * 8;
+      const dx = vertexData[bb + 0] - cx;
+      const dy = vertexData[bb + 1] - cy;
+      const dz = vertexData[bb + 2] - cz;
+      const d = dx * dx + dy * dy + dz * dz;
+      if (d < bestDist) { bestDist = d; bestIdx = bi; }
+    }
+    if (bestIdx >= 0) {
+      const bb = bestIdx * 8;
+      // Copy normal
+      clothingVertexData[base + 3] = vertexData[bb + 3]; // nx
+      clothingVertexData[base + 4] = vertexData[bb + 4]; // ny
+      clothingVertexData[base + 5] = vertexData[bb + 5]; // nz
+
+      // Snap vertices outside the body surface to the nearest body vertex position.
+      // dot(displacement, body_normal) > 0 means clothing is on the outside.
+      const dispX = cx - vertexData[bb + 0];
+      const dispY = cy - vertexData[bb + 1];
+      const dispZ = cz - vertexData[bb + 2];
+      const bodyNx = vertexData[bb + 3];
+      const bodyNy = vertexData[bb + 4];
+      const bodyNz = vertexData[bb + 5];
+      const dot = dispX * bodyNx + dispY * bodyNy + dispZ * bodyNz;
+
+      if (dot > 0.001) {
+        clothingVertexData[base + 0] = vertexData[bb + 0];
+        clothingVertexData[base + 1] = vertexData[bb + 1];
+        clothingVertexData[base + 2] = vertexData[bb + 2];
       }
     }
-    if (!entry) continue;
-
-    const centX = entry.sumX / entry.count;
-    const centY = entry.sumY / entry.count;
-    const dx = cx - centX;
-    const dy = cy - centY;
-    const currentR = Math.sqrt(dx * dx + dy * dy);
-
-    if (currentR < 0.001) continue; // at center already
-
-    // Shrink toward centroid
-    let newX = cx + (centX - cx) * SHRINK;
-    let newY = cy + (centY - cy) * SHRINK;
-
-    // Clamp: don't let radius go below the body's minimum radius at this height
-    // This prevents inner-thigh vertices from collapsing through each other
-    const newDx = newX - centX;
-    const newDy = newY - centY;
-    const newR = Math.sqrt(newDx * newDx + newDy * newDy);
-    const minR = entry.minR * 0.85; // slightly inside body min
-    if (newR < minR && currentR > minR) {
-      const scale = minR / newR;
-      newX = centX + newDx * scale;
-      newY = centY + newDy * scale;
-    }
-
-    clothingVertexData[base + 0] = newX;
-    clothingVertexData[base + 1] = newY;
   }
+
   const clothingInterleavedBuffer = new THREE.InterleavedBuffer(clothingVertexData, 8);
 
   const bodyMaterial = new THREE.MeshLambertMaterial({
@@ -225,10 +199,11 @@ export async function loadModel(
     polygonOffsetUnits: -1,
   });
 
-  // Clothing: FrontSide culls inward-facing triangles that cause the "skirt" look
+  // Clothing: DoubleSide shows back-facing triangles that fill body holes.
+  // Normal-copying makes shading match body, so back faces blend in.
   const clothingMaterial = new THREE.MeshLambertMaterial({
     map: skinTexture,
-    side: THREE.FrontSide,
+    side: THREE.DoubleSide,
   });
 
   // Undershirt: DoubleSide so back-facing triangles in upper back are visible
@@ -281,7 +256,7 @@ export async function loadModel(
     pivot.add(new THREE.Mesh(geom, clothingMaterial));
   }
 
-  // Undershirt mesh — shrunk like clothing but DoubleSide to fill upper back hole
+  // Undershirt mesh — DoubleSide to fill upper back hole
   if (undershirtIndices.length > 0) {
     const geom = new THREE.BufferGeometry();
     geom.setAttribute('position', new THREE.InterleavedBufferAttribute(clothingInterleavedBuffer, 3, 0));

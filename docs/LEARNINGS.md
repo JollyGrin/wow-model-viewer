@@ -289,3 +289,18 @@ The key insight: for low-poly models where muscle definition comes from vertex n
 
 **Impact:** Muscle grooves (abs, pecs, biceps, shoulder blades) are now clearly visible. Warm tint brings skin closer to reference tone.
 **Reference:** `src/main.ts` lines 22-32, comparison screenshots
+
+## [2026-02-19] Upper leg fix: Normal-based vertex snapping eliminates waist skirt
+
+**Context:** Fixing the upper leg area — 55% radial shrink created massive black gaps, removing shrink created a visible waist "skirt" where clothing geosets (1102, 1002) extended beyond the body silhouette.
+**Finding:** Multiple approaches failed:
+1. Uniform shrink (0.10) — skirt still visible, barely affected
+2. Boundary clamp (snap vertices beyond body maxR) — skirt unaffected because at waist height, body maxR (torso width) is larger than clothing radius
+3. Face-level culling with scalar maxR — damaged kneepads (903) without fixing waist
+4. Face-level culling with directional maxR (12 angular sectors) — more kneepad damage, skirt still unaffected
+5. **Normal-based vertex snapping (SUCCESS):** For each clothing vertex, find nearest body vertex. Compute dot product of displacement (body→clothing) with body vertex normal. If positive (clothing is outside body surface), snap clothing vertex to the body position. If zero/negative (clothing is inside body volume, i.e., filling a hole), leave it alone.
+
+The key insight: the skirt isn't about radial distance from centroid or even directional radius. It's about clothing vertices being on the OUTSIDE of the body surface at boundary edges. Body normals point outward, so the dot product test correctly distinguishes "outside body surface" (skirt flap → snap) from "inside body hole" (gap filler → keep).
+
+**Impact:** Waist skirt eliminated. Black gaps from 0.55 shrink already eliminated by removing shrink. Some minor triangle artifacts remain at hip sides and knees where snapping distorts individual triangles, but overall appearance is dramatically improved.
+**Reference:** `src/loadModel.ts` vertex snapping loop, `screenshots/human-male-legs-test.png`
