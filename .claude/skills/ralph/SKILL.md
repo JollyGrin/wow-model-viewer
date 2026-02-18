@@ -12,8 +12,9 @@ You are inside a Ralph Wiggum autonomous iteration. Follow these steps exactly.
 ## Step 1 — Understand Context
 
 Read these files:
-- The scope file (passed via @mention) — defines what to build
-- `ralph-progress.md` — what's been done in previous iterations
+- The scope is provided in `<scope>` tags in the prompt — defines what to build
+- `ralph-progress.md` — what's been done in previous iterations (also in `<progress>` tags)
+- Any key files referenced in the scope (use the Read tool)
 
 Identify the highest-priority incomplete task.
 
