@@ -127,25 +127,28 @@ function main() {
 
   // Build output vertex buffer using the remap
   // Each vertex in the M2 is 48 bytes: pos(3f) boneWeights(4u8) boneIndices(4u8) normal(3f) uv1(2f) uv2(2f)
-  // For the browser, we only need position (3f, 12 bytes) + normal (3f, 12 bytes) = 24 bytes per vertex
+  // For the browser: position (3f, 12B) + normal (3f, 12B) + uv (2f, 8B) = 32 bytes per vertex
   const vertexCount = skin.remap.length;
-  const BROWSER_VERTEX_SIZE = 24; // 3 floats position + 3 floats normal
-  const vertexBuffer = new Float32Array(vertexCount * 6); // 6 floats per vertex
+  const BROWSER_VERTEX_SIZE = 32; // 3 floats position + 3 floats normal + 2 floats uv
+  const vertexBuffer = new Float32Array(vertexCount * 8); // 8 floats per vertex
 
   for (let i = 0; i < vertexCount; i++) {
     const modelIdx = skin.remap[i];
     const srcOfs = m2.vertices.ofs + modelIdx * 48;
 
-    // Position: offset 0, 3 floats
-    vertexBuffer[i * 6 + 0] = m2.view.getFloat32(srcOfs + 0, true);
-    vertexBuffer[i * 6 + 1] = m2.view.getFloat32(srcOfs + 4, true);
-    vertexBuffer[i * 6 + 2] = m2.view.getFloat32(srcOfs + 8, true);
+    // Position: offset 0, 3 floats (12 bytes)
+    vertexBuffer[i * 8 + 0] = m2.view.getFloat32(srcOfs + 0, true);
+    vertexBuffer[i * 8 + 1] = m2.view.getFloat32(srcOfs + 4, true);
+    vertexBuffer[i * 8 + 2] = m2.view.getFloat32(srcOfs + 8, true);
 
-    // Normal: offset 28 (after pos(12) + boneWeights(4) + boneIndices(4) + padding to 28? No: 12+4+4=20)
-    // Wait: pos(12) + boneWeights(4) + boneIndices(4) = 20 bytes, so normal starts at offset 20
-    vertexBuffer[i * 6 + 3] = m2.view.getFloat32(srcOfs + 20, true);
-    vertexBuffer[i * 6 + 4] = m2.view.getFloat32(srcOfs + 24, true);
-    vertexBuffer[i * 6 + 5] = m2.view.getFloat32(srcOfs + 28, true);
+    // Normal: offset 20 (after pos(12) + boneWeights(4) + boneIndices(4))
+    vertexBuffer[i * 8 + 3] = m2.view.getFloat32(srcOfs + 20, true);
+    vertexBuffer[i * 8 + 4] = m2.view.getFloat32(srcOfs + 24, true);
+    vertexBuffer[i * 8 + 5] = m2.view.getFloat32(srcOfs + 28, true);
+
+    // UV1: offset 32 (after normal(12)), 2 floats (8 bytes)
+    vertexBuffer[i * 8 + 6] = m2.view.getFloat32(srcOfs + 32, true);
+    vertexBuffer[i * 8 + 7] = m2.view.getFloat32(srcOfs + 36, true);
   }
 
   // Build index buffer — triangle indices already reference the remap array
@@ -209,9 +212,10 @@ function main() {
   // Check first vertex values are reasonable
   console.log(`\nFirst 3 vertices (remapped):`);
   for (let i = 0; i < 3; i++) {
-    const px = vertexBuffer[i*6], py = vertexBuffer[i*6+1], pz = vertexBuffer[i*6+2];
-    const nx = vertexBuffer[i*6+3], ny = vertexBuffer[i*6+4], nz = vertexBuffer[i*6+5];
-    console.log(`  v${i}: pos=(${px.toFixed(3)}, ${py.toFixed(3)}, ${pz.toFixed(3)}) normal=(${nx.toFixed(3)}, ${ny.toFixed(3)}, ${nz.toFixed(3)})`);
+    const px = vertexBuffer[i*8], py = vertexBuffer[i*8+1], pz = vertexBuffer[i*8+2];
+    const nx = vertexBuffer[i*8+3], ny = vertexBuffer[i*8+4], nz = vertexBuffer[i*8+5];
+    const u = vertexBuffer[i*8+6], v = vertexBuffer[i*8+7];
+    console.log(`  v${i}: pos=(${px.toFixed(3)}, ${py.toFixed(3)}, ${pz.toFixed(3)}) normal=(${nx.toFixed(3)}, ${ny.toFixed(3)}, ${nz.toFixed(3)}) uv=(${u.toFixed(4)}, ${v.toFixed(4)})`);
   }
 }
 

@@ -1,0 +1,88 @@
+/**
+ * Convert BLP textures to raw RGBA binary files for browser consumption.
+ *
+ * Uses @wowserhq/format's Blp parser to decode BLP → ABGR8888 pixel data,
+ * then swizzles to RGBA and writes as a .tex file (raw pixels + small header).
+ *
+ * Output format (.tex):
+ *   uint16 width, uint16 height, then width*height*4 bytes of RGBA pixels
+ *
+ * The browser loads these with fetch() and creates a THREE.DataTexture.
+ */
+
+import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { resolve } from 'path';
+
+// @wowserhq/format exports
+const { Blp, BLP_IMAGE_FORMAT } = await import('@wowserhq/format');
+
+const ROOT = resolve(import.meta.dirname, '..');
+const OUT_DIR = resolve(ROOT, 'public/models/textures');
+
+interface TextureSource {
+  name: string;
+  blpPath: string;
+}
+
+// Skin textures available in our patch data
+const TEXTURES: TextureSource[] = [
+  {
+    name: 'human-male-skin',
+    blpPath: 'data/patch/patch-8/Character/Human/Male/HumanMaleSkin00_101.blp',
+  },
+];
+
+function convertBlpToTex(blpPath: string, outPath: string) {
+  const blpData = readFileSync(resolve(ROOT, blpPath));
+  const blp = new Blp();
+  blp.load(blpData);
+
+  // Get ABGR8888 pixel data (mip level 0)
+  const image = blp.getImage(0, BLP_IMAGE_FORMAT.IMAGE_ABGR8888);
+  const { width, height, data } = image;
+  const abgr = new Uint8Array(data);
+
+  // Swizzle ABGR → RGBA
+  const rgba = new Uint8Array(width * height * 4);
+  for (let i = 0; i < width * height; i++) {
+    const a = abgr[i * 4 + 0];
+    const b = abgr[i * 4 + 1];
+    const g = abgr[i * 4 + 2];
+    const r = abgr[i * 4 + 3];
+    rgba[i * 4 + 0] = r;
+    rgba[i * 4 + 1] = g;
+    rgba[i * 4 + 2] = b;
+    rgba[i * 4 + 3] = a;
+  }
+
+  // Write .tex file: 4-byte header (uint16 width + uint16 height) + RGBA pixels
+  const header = new Uint8Array(4);
+  const headerView = new DataView(header.buffer);
+  headerView.setUint16(0, width, true);
+  headerView.setUint16(2, height, true);
+
+  const output = new Uint8Array(4 + rgba.byteLength);
+  output.set(header, 0);
+  output.set(rgba, 4);
+
+  writeFileSync(outPath, output);
+  return { width, height, size: output.byteLength };
+}
+
+function main() {
+  mkdirSync(OUT_DIR, { recursive: true });
+
+  console.log('Converting BLP textures to .tex format...\n');
+
+  for (const tex of TEXTURES) {
+    const outPath = resolve(OUT_DIR, `${tex.name}.tex`);
+    const result = convertBlpToTex(tex.blpPath, outPath);
+    console.log(`${tex.name}: ${result.width}x${result.height} → ${result.size} bytes`);
+    console.log(`  Source: ${tex.blpPath}`);
+    console.log(`  Output: ${outPath}`);
+  }
+
+  console.log('\nDone.');
+}
+
+main();

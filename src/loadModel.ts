@@ -57,18 +57,46 @@ function isGeosetVisible(id: number, enabled: Set<number>): boolean {
   return false;
 }
 
+/**
+ * Load a .tex file (raw RGBA with 4-byte header: uint16 width + uint16 height)
+ * and return a THREE.DataTexture.
+ */
+async function loadTexture(url: string): Promise<THREE.DataTexture> {
+  const res = await fetch(url);
+  const buf = await res.arrayBuffer();
+  const headerView = new DataView(buf, 0, 4);
+  const width = headerView.getUint16(0, true);
+  const height = headerView.getUint16(2, true);
+  const pixels = new Uint8Array(buf, 4);
+
+  const texture = new THREE.DataTexture(pixels, width, height, THREE.RGBAFormat);
+  texture.needsUpdate = true;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  // WoW textures wrap by default
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  // Flip V to match WoW UV convention (WoW V=0 is top, Three.js V=0 is bottom)
+  texture.flipY = false;
+  return texture;
+}
+
 export async function loadModel(
   basePath: string,
   enabledGeosets: Set<number> = DEFAULT_GEOSETS,
 ): Promise<THREE.Group> {
-  const [manifestRes, binRes] = await Promise.all([
+  // Load manifest, binary, and texture in parallel
+  const [manifestRes, binRes, skinTexture] = await Promise.all([
     fetch(`${basePath}.json`),
     fetch(`${basePath}.bin`),
+    loadTexture(`${basePath.replace(/[^/]+$/, '')}textures/human-male-skin.tex`),
   ]);
 
   const manifest: ModelManifest = await manifestRes.json();
   const binBuffer = await binRes.arrayBuffer();
 
+  // Vertex buffer: 8 floats per vertex (pos3 + normal3 + uv2)
   const vertexData = new Float32Array(binBuffer, 0, manifest.vertexBufferSize / 4);
   const fullIndexData = new Uint16Array(binBuffer, manifest.vertexBufferSize, manifest.indexCount);
 
@@ -85,12 +113,19 @@ export async function loadModel(
   const indexData = new Uint16Array(filteredIndices);
 
   const geometry = new THREE.BufferGeometry();
-  const interleavedBuffer = new THREE.InterleavedBuffer(vertexData, 6);
+  const interleavedBuffer = new THREE.InterleavedBuffer(vertexData, 8);
   geometry.setAttribute('position', new THREE.InterleavedBufferAttribute(interleavedBuffer, 3, 0));
   geometry.setAttribute('normal', new THREE.InterleavedBufferAttribute(interleavedBuffer, 3, 3));
+  geometry.setAttribute('uv', new THREE.InterleavedBufferAttribute(interleavedBuffer, 2, 6));
   geometry.setIndex(new THREE.BufferAttribute(indexData, 1));
 
-  const material = new THREE.MeshNormalMaterial({ side: THREE.DoubleSide });
+  const material = new THREE.MeshStandardMaterial({
+    map: skinTexture,
+    side: THREE.DoubleSide,
+    roughness: 0.9,
+    metalness: 0.0,
+  });
+
   const mesh = new THREE.Mesh(geometry, material);
 
   // WoW Z-up → Three.js Y-up
