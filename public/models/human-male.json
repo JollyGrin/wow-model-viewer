@@ -1,0 +1,290 @@
+{
+  "vertexCount": 3159,
+  "indexCount": 11319,
+  "triangleCount": 3773,
+  "vertexBufferSize": 75816,
+  "indexBufferSize": 22638,
+  "vertexStride": 24,
+  "groups": [
+    {
+      "id": 0,
+      "indexStart": 0,
+      "indexCount": 1872
+    },
+    {
+      "id": 7,
+      "indexStart": 1872,
+      "indexCount": 288
+    },
+    {
+      "id": 8,
+      "indexStart": 2160,
+      "indexCount": 270
+    },
+    {
+      "id": 12,
+      "indexStart": 2430,
+      "indexCount": 336
+    },
+    {
+      "id": 6,
+      "indexStart": 2766,
+      "indexCount": 294
+    },
+    {
+      "id": 9,
+      "indexStart": 3060,
+      "indexCount": 222
+    },
+    {
+      "id": 5,
+      "indexStart": 3282,
+      "indexCount": 348
+    },
+    {
+      "id": 5,
+      "indexStart": 3630,
+      "indexCount": 96
+    },
+    {
+      "id": 702,
+      "indexStart": 3726,
+      "indexCount": 42
+    },
+    {
+      "id": 701,
+      "indexStart": 3768,
+      "indexCount": 18
+    },
+    {
+      "id": 302,
+      "indexStart": 3786,
+      "indexCount": 66
+    },
+    {
+      "id": 301,
+      "indexStart": 3852,
+      "indexCount": 36
+    },
+    {
+      "id": 1,
+      "indexStart": 3888,
+      "indexCount": 132
+    },
+    {
+      "id": 2,
+      "indexStart": 4020,
+      "indexCount": 186
+    },
+    {
+      "id": 3,
+      "indexStart": 4206,
+      "indexCount": 366
+    },
+    {
+      "id": 4,
+      "indexStart": 4572,
+      "indexCount": 162
+    },
+    {
+      "id": 9,
+      "indexStart": 4734,
+      "indexCount": 96
+    },
+    {
+      "id": 10,
+      "indexStart": 4830,
+      "indexCount": 24
+    },
+    {
+      "id": 4,
+      "indexStart": 4854,
+      "indexCount": 96
+    },
+    {
+      "id": 202,
+      "indexStart": 4950,
+      "indexCount": 60
+    },
+    {
+      "id": 201,
+      "indexStart": 5010,
+      "indexCount": 12
+    },
+    {
+      "id": 10,
+      "indexStart": 5022,
+      "indexCount": 312
+    },
+    {
+      "id": 13,
+      "indexStart": 5334,
+      "indexCount": 354
+    },
+    {
+      "id": 102,
+      "indexStart": 5688,
+      "indexCount": 60
+    },
+    {
+      "id": 101,
+      "indexStart": 5748,
+      "indexCount": 42
+    },
+    {
+      "id": 11,
+      "indexStart": 5790,
+      "indexCount": 291
+    },
+    {
+      "id": 1501,
+      "indexStart": 6081,
+      "indexCount": 60
+    },
+    {
+      "id": 401,
+      "indexStart": 6141,
+      "indexCount": 288
+    },
+    {
+      "id": 402,
+      "indexStart": 6429,
+      "indexCount": 276
+    },
+    {
+      "id": 403,
+      "indexStart": 6705,
+      "indexCount": 144
+    },
+    {
+      "id": 403,
+      "indexStart": 6849,
+      "indexCount": 288
+    },
+    {
+      "id": 404,
+      "indexStart": 7137,
+      "indexCount": 432
+    },
+    {
+      "id": 802,
+      "indexStart": 7569,
+      "indexCount": 72
+    },
+    {
+      "id": 803,
+      "indexStart": 7641,
+      "indexCount": 216
+    },
+    {
+      "id": 1502,
+      "indexStart": 7857,
+      "indexCount": 204
+    },
+    {
+      "id": 1503,
+      "indexStart": 8061,
+      "indexCount": 156
+    },
+    {
+      "id": 1504,
+      "indexStart": 8217,
+      "indexCount": 180
+    },
+    {
+      "id": 1506,
+      "indexStart": 8397,
+      "indexCount": 96
+    },
+    {
+      "id": 1505,
+      "indexStart": 8493,
+      "indexCount": 108
+    },
+    {
+      "id": 1502,
+      "indexStart": 8601,
+      "indexCount": 24
+    },
+    {
+      "id": 1503,
+      "indexStart": 8625,
+      "indexCount": 24
+    },
+    {
+      "id": 1504,
+      "indexStart": 8649,
+      "indexCount": 24
+    },
+    {
+      "id": 1506,
+      "indexStart": 8673,
+      "indexCount": 24
+    },
+    {
+      "id": 1505,
+      "indexStart": 8697,
+      "indexCount": 24
+    },
+    {
+      "id": 1301,
+      "indexStart": 8721,
+      "indexCount": 354
+    },
+    {
+      "id": 1002,
+      "indexStart": 9075,
+      "indexCount": 48
+    },
+    {
+      "id": 1102,
+      "indexStart": 9123,
+      "indexCount": 72
+    },
+    {
+      "id": 1202,
+      "indexStart": 9195,
+      "indexCount": 72
+    },
+    {
+      "id": 1302,
+      "indexStart": 9267,
+      "indexCount": 198
+    },
+    {
+      "id": 903,
+      "indexStart": 9465,
+      "indexCount": 96
+    },
+    {
+      "id": 501,
+      "indexStart": 9561,
+      "indexCount": 258
+    },
+    {
+      "id": 502,
+      "indexStart": 9819,
+      "indexCount": 426
+    },
+    {
+      "id": 503,
+      "indexStart": 10245,
+      "indexCount": 168
+    },
+    {
+      "id": 503,
+      "indexStart": 10413,
+      "indexCount": 282
+    },
+    {
+      "id": 504,
+      "indexStart": 10695,
+      "indexCount": 462
+    },
+    {
+      "id": 902,
+      "indexStart": 11157,
+      "indexCount": 162
+    }
+  ]
+}
