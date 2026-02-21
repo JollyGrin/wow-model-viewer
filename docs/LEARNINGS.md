@@ -304,3 +304,29 @@ The key insight: the skirt isn't about radial distance from centroid or even dir
 
 **Impact:** Waist skirt eliminated. Black gaps from 0.55 shrink already eliminated by removing shrink. Some minor triangle artifacts remain at hip sides and knees where snapping distorts individual triangles, but overall appearance is dramatically improved.
 **Reference:** `src/loadModel.ts` vertex snapping loop, `screenshots/human-male-legs-test.png`
+
+## [2026-02-19] WoW Does NO Vertex Manipulation — Correct Geoset Defaults Fix Legs
+
+**Context:** After multiple iterations of vertex snapping, clamping, angular projection, and stretch culling — all creating hip wings, crotch gaps, or shelf artifacts — researched how the actual WoW client and open-source viewers (WoWModelViewer, wowserhq/scene, zamimg/Wowhead) handle character geosets.
+
+**Finding:** WoW's rendering engine does ZERO vertex manipulation at runtime. No snapping, no shrinking, no clamping. The system works purely through:
+1. Geoset visibility toggling (show/hide submeshes)
+2. Standard depth testing (resolves overlaps naturally)
+3. Shared boundary vertices (stitched mesh — geosets share exact vertex positions at boundaries)
+4. Texture compositing (skin-colored paint across boundaries hides seams)
+
+Our vertex snapping was **causing** the problems, not fixing them. The snapping distorted triangles at boundaries, creating wings and gaps.
+
+The critical formula for default geosets: `enabled_meshId = groupBase + geosetGroupValue + 1`, with `geosetGroupValue=1` for all groups by default (from GeosRenderPrep).
+
+| Group | Wrong Default | Correct Default | Difference |
+|-------|---------------|-----------------|------------|
+| 5 (boots) | 501 (86 tris) | 502 (142 tris) | Nearly double the leg geometry |
+| 9 (kneepads) | 903 (Z 0.49-0.73) | 902 (Z 0.34-0.61) | Much more thigh coverage |
+
+Using 902+903 together bridges the full gap from Z 0.34 to Z 0.73.
+
+Geoset 1102 (default pants) was analyzed in detail: ALL 24 triangles are outward-facing flare geometry. It has 8 boundary vertices shared with body at Z~1.09, and 16 extra vertices flaring outward at Z~0.83. No amount of vertex manipulation can make it hug the body because it has no fill geometry — only flare. Removing it entirely and relying on 502+902+903 for leg coverage produces the cleanest result.
+
+**Impact:** Stripped ALL vertex manipulation code (~100 lines). Final geoset selection: 0, 5, 101, 201, 301, 401, 502, 701, 902, 903, 1002. No 1102. Code reduced to ~210 lines. Clean rendering with no wings, no skirt, no crotch gap. Upper thigh gap remains but is a model design limitation (filled by texture compositing in WoW).
+**Reference:** `src/loadModel.ts`, WoW GeosRenderPrep formula, `screenshots/human-male-legs-test.png`

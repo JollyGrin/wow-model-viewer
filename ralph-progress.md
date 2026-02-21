@@ -57,3 +57,37 @@
   3. **Normal projection (subtract dot*normal)** — severe distortion because body normals at hole boundaries point in inconsistent directions. Much worse than hard snap.
 
   Root cause analysis: the hip wings are caused by triangle distortion at the clothing/body boundary where some vertices snap and neighbors don't. All vertex-level approaches (threshold tuning, lerp, projection) trade off between skirt elimination and wing artifacts. A fundamentally different approach is needed — either triangle-connectivity-aware snapping, or a post-snap mesh smoothing pass. Reverted to hard snap baseline which remains the best overall result.
+
+## [2026-02-19] Task: Fix hip wing protrusions — Triangle-level culling (IMPROVEMENT)
+- Status: done
+- Files changed: src/loadModel.ts
+- Decisions: Used edge stretch ratio culling — compare post-snap vs pre-snap edge lengths for each clothing triangle. If any edge grew >3x, skip that triangle from the index buffer.
+- Notes: Tried 3 approaches:
+  1. **Absolute edge length threshold (0.12)** — way too aggressive. Removed ALL upper thigh triangles, leaving legs disconnected from torso. Clothing triangles naturally have edges > 0.12.
+  2. **Stretch ratio 3x (SUCCESS)** — compare post-snap/pre-snap edge length squared. If ratio > 9, cull triangle. Hip wings significantly reduced from massive flaps to small remnants. Good balance — catches stretched triangles without removing natural geometry.
+  3. **Stretch ratio 2x** — slightly more wing removal but also removed useful thigh coverage triangles. Net worse than 3x.
+
+  Result: 3x stretch ratio is the best balance. Hip wings dramatically reduced. Small remnants remain at hip sides but no longer dominate the silhouette. Dark crotch gap is now the biggest visual issue (separate task). No regressions in upper body views.
+
+## [2026-02-19] Task: Fix legs — Strip vertex manipulation, use correct WoW defaults (SUCCESS)
+- Status: done
+- Files changed: src/loadModel.ts
+- Decisions: Removed ALL vertex manipulation (snapping, clamping, stretch culling). Used correct WoW geoset defaults per formula. Removed geoset 1102 entirely.
+- Notes: Research into WoW rendering revealed the engine does NO vertex manipulation — it just toggles geoset visibility and lets depth testing handle overlaps. Our vertex snapping was CAUSING the hip wings and crotch gap, not fixing them.
+
+  Key discoveries:
+  1. **WoW geoset default formula**: `enabled_meshId = groupBase + geosetGroupValue + 1`, with default `geosetGroupValue=1`
+  2. **502 (not 501) is the correct default boot**: 500+1+1=502, provides 142 tris vs 501's 86 — nearly double the leg geometry
+  3. **902 (not 903) is the correct default kneepad**: 900+1+1=902, extends down to Z 0.344 vs 903's Z 0.492
+  4. **Using 902+903 together** bridges the gap between 902's top (Z 0.61) and body mesh (Z 0.70)
+  5. **Geoset 1102 is ALL outward flare** — 24 tris, all forming a skirt shape. No amount of vertex manipulation fixes it because it has no fill geometry, only flare.
+
+  Approaches tried during this session:
+  - Angular-aware vertex projection (atan2-based) — WORSE, created wide horizontal shelf
+  - X-direction clamping — slightly better but still visible skirt + gap
+  - Remove 1102 + use 502+902+903 — **BEST result**: no skirt, no wings, clean waist edge
+
+  Final DEFAULT_GEOSETS: 0, 5, 101, 201, 301, 401, 502, 701, 902, 903, 1002
+  Code reduced from ~300+ lines (with snapping infrastructure) to ~210 lines (clean rendering).
+
+  Remaining: upper thigh gap between waist and kneepads, visible from front. This is a model design limitation — WoW fills this with underwear texture compositing. Acceptable until texture compositing is implemented.
