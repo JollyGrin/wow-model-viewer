@@ -99,9 +99,13 @@ export async function loadModel(
 
   const interleavedBuffer = new THREE.InterleavedBuffer(vertexData, 8);
 
+  // Body mesh renders in front of bridge at overlap zones (negative offset)
   const skinMaterial = new THREE.MeshLambertMaterial({
     map: skinTexture,
     side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
   });
 
   const hairMaterial = new THREE.MeshLambertMaterial({
@@ -109,7 +113,7 @@ export async function loadModel(
     side: THREE.DoubleSide,
   });
 
-  // Collect indices: all skin-textured geosets merged, hair separate
+  // Collect indices: all skin geosets merged, hair separate
   const skinIndices: number[] = [];
   const hairIndices: number[] = [];
 
@@ -124,7 +128,7 @@ export async function loadModel(
   const pivot = new THREE.Group();
   pivot.rotation.x = -Math.PI / 2;
 
-  // Merged body + clothing mesh — single draw call
+  // All skin geosets (body, hands, feet, facial, undershirt) — shared buffer
   if (skinIndices.length > 0) {
     const geom = new THREE.BufferGeometry();
     geom.setAttribute('position', new THREE.InterleavedBufferAttribute(interleavedBuffer, 3, 0));
@@ -193,89 +197,70 @@ export async function loadModel(
     pivot.add(new THREE.Mesh(patchGeom, skinMaterial));
   }
 
-  // Thigh bridge — fills the gap between bare feet top (Z ~0.58) and body waist (Z ~0.72).
-  // The body mesh has no thigh geometry; WoW fills this with texture compositing.
-  // We generate tube geometry for each leg with smooth curvature using 5 rings.
+  // Thigh bridge — two constant-width tubes from bare feet top (Z ~0.58) up
+  // into the body mesh (Z=0.85). No widening. Body mesh covers the bridge from
+  // Z=0.72 upward (polygonOffset -1 vs +1). The visible portion (Z=0.58-0.72)
+  // stays at leg-width. Crotch bridge connects inner vertices at the top ring.
   {
-    const N = 6;          // vertices per ring
-    const RINGS = 5;      // smooth curvature
+    const N = 6;
+    const RINGS = 5;
+    const TOP_RING = RINGS - 1;
 
-    // 501 top boundary: 6 unique positions per leg, sorted by angle around leg axis.
+    // Bottom ring: matches 501 top boundary (Z ~0.55-0.61)
     const leftBottom: [number, number, number][] = [
-      [-0.1085, -0.2338, 0.6135],  // 0: back-outer (-144°)
-      [-0.0372, -0.2663, 0.6030],  // 1: outer (-98°)
-      [ 0.0564, -0.2281, 0.5630],  // 2: front-outer (-35°)
-      [ 0.0515, -0.1447, 0.5487],  // 3: front-inner (20°)
-      [-0.0112, -0.0979, 0.5707],  // 4: inner/crotch (80°)
-      [-0.1067, -0.1381, 0.5990],  // 5: back-inner (158°)
+      [-0.1085, -0.2338, 0.6135],  // 0: back-outer
+      [-0.0372, -0.2663, 0.6030],  // 1: outer
+      [ 0.0564, -0.2281, 0.5630],  // 2: front-outer
+      [ 0.0515, -0.1447, 0.5487],  // 3: front-inner
+      [-0.0112, -0.0979, 0.5707],  // 4: inner/crotch
+      [-0.1067, -0.1381, 0.5990],  // 5: back-inner
     ];
 
-    // Top ring — all vertices extend up into the body mesh overlap zone.
-    // Outer vertices at Z=0.80 (body mesh at Z=0.80 has |Y|~0.54, so |Y|=0.48
-    // sits inside). Inner vertices at Z=0.84 (fills pelvis shadow zone).
+    // Top ring: same cross-section as bottom, just shifted up to Z=0.85
+    // (inside the body mesh torso where body covers it)
     const leftTop: [number, number, number][] = [
-      [-0.10, -0.46, 0.80],   // 0: back-outer (hidden inside body hip)
-      [-0.03, -0.48, 0.80],   // 1: outer (hidden inside body hip)
-      [ 0.05, -0.42, 0.80],   // 2: front-outer (hidden inside body hip)
-      [ 0.04, -0.05, 0.84],   // 3: front-inner (fills pelvis)
-      [-0.01, -0.02, 0.84],   // 4: inner/crotch (fills pelvis)
-      [-0.09, -0.05, 0.84],   // 5: back-inner (fills pelvis)
+      [-0.1085, -0.2338, 0.85],   // 0: back-outer
+      [-0.0372, -0.2663, 0.85],   // 1: outer
+      [ 0.0564, -0.2281, 0.85],   // 2: front-outer
+      [ 0.0515, -0.1447, 0.85],   // 3: front-inner
+      [-0.0112, -0.0979, 0.85],   // 4: inner/crotch
+      [-0.1067, -0.1381, 0.85],   // 5: back-inner
     ];
 
-    // UVs: bottom (from 501) and top (approaching body waist)
     const bottomUVs: [number, number][] = [
       [0.8008, 0.6875], [0.7500, 0.6875], [0.6836, 0.6875],
       [0.5625, 0.6875], [0.5039, 0.6875], [0.9375, 0.6875],
     ];
-    const topUVs: [number, number][] = bottomUVs.map(([u]) => [u, 0.62]);
+    const topUVs: [number, number][] = bottomUVs.map(([u]) => [u, 0.48]);
 
-    // Build vertices for both legs: 5 rings × 6 verts × 2 legs = 60 verts
     const totalVerts = N * RINGS * 2;
     const positions = new Float32Array(totalVerts * 3);
     const uvs = new Float32Array(totalVerts * 2);
 
-    function writeLeg(rings: [number, number, number][][], baseVert: number) {
+    function writeLeg(
+      bottom: [number, number, number][],
+      top: [number, number, number][],
+      baseVert: number,
+    ) {
       for (let r = 0; r < RINGS; r++) {
+        const t = r / (RINGS - 1);
         for (let v = 0; v < N; v++) {
           const vi = baseVert + r * N + v;
-          const pos = rings[r][v];
-          positions[vi * 3] = pos[0];
-          positions[vi * 3 + 1] = pos[1];
-          positions[vi * 3 + 2] = pos[2];
-          // UV: interpolate v coordinate from 0.6875 to 0.62
-          const t = r / (RINGS - 1);
+          positions[vi * 3] = bottom[v][0] + (top[v][0] - bottom[v][0]) * t;
+          positions[vi * 3 + 1] = bottom[v][1] + (top[v][1] - bottom[v][1]) * t;
+          positions[vi * 3 + 2] = bottom[v][2] + (top[v][2] - bottom[v][2]) * t;
           uvs[vi * 2] = bottomUVs[v][0] + (topUVs[v][0] - bottomUVs[v][0]) * t;
           uvs[vi * 2 + 1] = bottomUVs[v][1] + (topUVs[v][1] - bottomUVs[v][1]) * t;
         }
       }
     }
 
-    // Generate intermediate rings with ease-out interpolation (sqrt)
-    // This makes the thigh expand rapidly at the bottom and flatten at the top
-    function makeRings(bottom: [number, number, number][], top: [number, number, number][]) {
-      const rings: [number, number, number][][] = [];
-      for (let r = 0; r < RINGS; r++) {
-        const tLinear = r / (RINGS - 1);
-        const t = Math.sqrt(tLinear); // ease-out: expand quickly near bottom
-        rings.push(bottom.map((b, i) => [
-          b[0] + (top[i][0] - b[0]) * t,
-          b[1] + (top[i][1] - b[1]) * t,
-          b[2] + (top[i][2] - b[2]) * t,
-        ]));
-      }
-      return rings;
-    }
+    const mirror = (pts: [number, number, number][]) =>
+      pts.map(([x, y, z]) => [x, -y, z] as [number, number, number]);
 
-    const leftRings = makeRings(leftBottom, leftTop);
-    const rightRings = makeRings(
-      leftBottom.map(([x, y, z]) => [x, -y, z] as [number, number, number]),
-      leftTop.map(([x, y, z]) => [x, -y, z] as [number, number, number]),
-    );
+    writeLeg(leftBottom, leftTop, 0);
+    writeLeg(mirror(leftBottom), mirror(leftTop), N * RINGS);
 
-    writeLeg(leftRings, 0);
-    writeLeg(rightRings, N * RINGS);
-
-    // Build index buffer: connect adjacent rings + crotch bridge
     const thighIdx: number[] = [];
 
     function connectRings(baseA: number, baseB: number) {
@@ -286,19 +271,19 @@ export async function loadModel(
       }
     }
 
-    // Left leg
+    // Left leg tube
     for (let r = 0; r < RINGS - 1; r++) {
       connectRings(r * N, (r + 1) * N);
     }
-    // Right leg
-    const RB = N * RINGS; // right leg base
+    // Right leg tube
+    const RB = N * RINGS;
     for (let r = 0; r < RINGS - 1; r++) {
       connectRings(RB + r * N, RB + (r + 1) * N);
     }
 
-    // Crotch bridge: connect left and right inner thigh top ring vertices
-    const LT = (RINGS - 1) * N;     // left top ring start
-    const RT = RB + (RINGS - 1) * N; // right top ring start
+    // Crotch bridge at top ring (inner vertices only)
+    const LT = TOP_RING * N;
+    const RT = RB + TOP_RING * N;
     thighIdx.push(LT + 3, LT + 4, RT + 4);
     thighIdx.push(LT + 3, RT + 4, RT + 3);
     thighIdx.push(LT + 4, LT + 5, RT + 5);
@@ -309,7 +294,16 @@ export async function loadModel(
     thighGeom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     thighGeom.setIndex(new THREE.BufferAttribute(new Uint16Array(thighIdx), 1));
     thighGeom.computeVertexNormals();
-    pivot.add(new THREE.Mesh(thighGeom, skinMaterial));
+
+    // Positive offset: bridge renders behind body mesh at overlap zones
+    const bridgeMaterial = new THREE.MeshLambertMaterial({
+      map: skinTexture,
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: 1,
+      polygonOffsetUnits: 1,
+    });
+    pivot.add(new THREE.Mesh(thighGeom, bridgeMaterial));
   }
 
   // Hair mesh — uses hair texture

@@ -375,6 +375,38 @@ Geoset 1102 (default pants) was analyzed in detail: ALL 24 triangles are outward
 **Impact:** The hip shelf is caused by two problems: (1) bridge too narrow vs body hip width, (2) body mesh has downward-facing "lip" triangles. Fix: widen bridge top to match body hip width (~|Y| 0.55) and cull body mesh's downward-facing hip triangles.
 **Reference:** WoWModelViewer `WoWModel.cpp` setGeosetGroupDisplay(), `WoWItem.cpp` CS_PANTS, `CharTexture.cpp`; wowdev.wiki Character_Customization; `scripts/waist-boundary.ts`
 
+## [2026-02-21] Thigh Bridge: Widening Approaches All Create Visible Artifacts
+
+**Context:** After generating the initial thigh bridge (5-ring tubes + crotch bridge), the body mesh lip at Z 0.72-0.84 (extending to |Y|=0.54) creates a visible trapezoidal "skirt" shape. Six approaches were tried to hide it by widening the bridge's top to fill under the lip.
+
+**Finding:** Every widening approach creates visible artifacts because of a fundamental geometric trade-off:
+
+| # | Approach | Result | Why It Failed |
+|---|----------|--------|---------------|
+| 1 | Y-clamping body mesh + wide bridge (|Y|=0.48) + bridge in front (polygonOffset -1) | Massive hexagonal band | Y-clamping narrowed body to |Y|=0.39, bridge extended 0.09 beyond |
+| 2 | Swap polygonOffset: body in front (-1), bridge behind (+1) | Same hexagonal band | Bridge sticks out above lip zone (Z > 0.84) where body is narrower than bridge |
+| 3 | Narrow bridge (|Y|=0.38), no clamping | Wide black gap under lip | Bridge too narrow — gap from |Y|=0.38 to lip at |Y|=0.54 |
+| 4 | 3-keyframe: narrow mid (|Y|=0.30), wide top (|Y|=0.50) | Horizontal bar at mid ring | Mid ring 0.03 wider than legs = 11px visible edge |
+| 5 | Step easing (zero widening until t=0.8), top at |Y|=0.44 | Thin line from panel disc | Front/back panel fan triangles form disc at Z=0.76, visible edge-on |
+| 6 | **Constant-width tubes to Z=0.85, no widening, no panels** | **Best result** | No artifacts from bridge. Lip still visible (inherent to mesh) |
+
+**Key insights:**
+
+1. **polygonOffset only works at OVERLAPS** — it controls which surface wins where two meshes occupy the same screen pixel. Where the bridge extends BEYOND the body mesh silhouette, no body mesh triangle exists to occlude it, so the bridge edge is always visible.
+
+2. **The body mesh lip narrows at higher Z** — at Z=0.76 the lip's outer edge is at |Y|≈0.45, at Z=0.80 it's |Y|≈0.50, at Z=0.84 it reaches max |Y|≈0.54. A bridge that's wide enough at one Z level pokes out at the Z levels above/below.
+
+3. **Front/back panel fans create visible disc shapes** — flat triangles connecting the two leg tubes (crotch bridge, front panel, back panel) form a disc at the top ring's Z level. From the front view camera, this disc's edge is visible as a horizontal line, even when covered by the body mesh at the overlap zones.
+
+4. **Easing can't solve it** — whether t⁴, step, or cubic, the bridge must transition from leg-width (|Y|=0.27) to lip-width (|Y|=0.50). At some Z between 0.60 and 0.76, the bridge is wider than the legs but not yet covered by the body mesh lip (which starts at Z=0.72). This creates a visible widening.
+
+5. **Constant-width is optimal** — a simple tube at constant leg-width (|Y|=0.27) extending into the body mesh (Z=0.85) creates NO visible artifacts from the bridge itself. The body mesh lip remains visible, but that's an inherent mesh limitation, not a bridge problem.
+
+**The geometric limit:** The body mesh bottom boundary has a "lip" — triangles extending from inner ring (Z=0.72, |Y|=0.41) outward/upward to outer ring (Z=0.84, |Y|=0.54). This lip is designed to be hidden by texture compositing (underwear painted on the skin atlas). No geometric approach can hide it without creating worse artifacts. The constant-width bridge fills the gap between legs and body while adding zero new visual problems.
+
+**Impact:** Final bridge design is two constant-width tubes (matching 501 top cross-section) from Z=0.58 to Z=0.85 with a 4-quad crotch bridge connecting inner vertices at the top ring. No front/back panels. No widening. Body mesh renders in front (polygonOffset -1), bridge behind (+1). Next step for improvement: texture compositing.
+**Reference:** `src/loadModel.ts` thigh bridge section, comparison screenshots in `screenshots/`
+
 ---
 
 ## Approaches Summary
@@ -397,9 +429,14 @@ Scannable tables per problem area. Add a new table once a problem accumulates 2+
 
 | 10 | Correct geosets (502+902+903) but no vertex manipulation | PARTIAL | No wings/gaps, but 502=boots, 902/903=kneepads look like armor |
 | 11 | Switch to 501 (bare feet) + thigh bridge geometry | SUCCESS | Generate fill geometry like neck patch; 5-ring tube per leg with crotch bridge |
-| 12 | Widen bridge top to body hip width + cull hip flap triangles | PENDING | Bridge top at |Y|~0.46 too narrow vs body at |Y|~0.54; body has downward-facing lip |
+| 12 | Y-clamp body lip + wide bridge in front (polygonOffset -1) | FAILED | Clamped body narrower than bridge → massive hexagonal band |
+| 13 | Swap polygonOffset: body in front, bridge behind | FAILED | Bridge extends beyond body above lip zone (Z > 0.84) |
+| 14 | Narrow bridge (|Y|=0.38) under lip, body untouched | FAILED | Wide black gap between lip outer (|Y|=0.54) and bridge (|Y|=0.38) |
+| 15 | 3-keyframe: narrow mid + wide top under lip | FAILED | Mid ring 0.03 wider than legs = visible horizontal bar |
+| 16 | Step easing + top at |Y|=0.44 + front/back panels | FAILED | Panel fan triangles form disc seen edge-on as horizontal line |
+| 17 | **Constant-width tubes to Z=0.85, no widening, no panels** | **BEST** | No bridge artifacts. Body lip remains (inherent mesh limitation) |
 
-**Conclusion:** Never manipulate existing model vertices. For missing geometry (thigh gap between body waist and bare feet), generate fill geometry — similar to the neck patch approach. Use geoset 501 (bare feet) not 502 (boots) for naked character. Bridge top ring must match body mesh hip width (~|Y| 0.55) to avoid visible narrowing step.
+**Conclusion:** Never manipulate existing model vertices. Never try to widen the bridge to cover the body mesh lip — every widening approach creates visible artifacts (shelves, bars, discs). The optimal geometric bridge is constant-width (matching leg cross-section) extending into the body mesh, with body rendering in front via polygonOffset. The body mesh lip at Z 0.72-0.84 requires texture compositing (CharSections underwear textures baked onto the skin atlas) to fully eliminate.
 
 ### Upper Back Hole
 

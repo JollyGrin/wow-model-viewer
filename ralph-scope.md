@@ -23,13 +23,14 @@ Evaluate ALL FIVE screenshots every time. The legs close-up is the PRIMARY view 
 - Dark crotch gap: FIXED — was caused by vertex snapping, eliminated by removing snapping
 - Kneepad seams: N/A — kneepads removed (902/903 are armor, not bare skin)
 - Boot-like knees: FIXED — switched from 502 (boots) to 501 (bare feet)
-- Missing upper thighs: FIXED — generated thigh bridge geometry (5-ring tubes + crotch bridge)
-- Waist skirt: REDUCED — removed equipment geosets, remaining line is body mesh's own bottom edge
-- Hip shadow line: KNOWN LIMITATION — body mesh bottom edge at Z 0.72 creates a visible seam. Requires texture compositing to fully eliminate.
+- Missing upper thighs: FIXED — constant-width thigh bridge tubes from Z=0.58 to Z=0.85
+- Waist skirt: REDUCED — removed equipment geosets, remaining shape is body mesh's own bottom lip
+- Bridge widening: ABANDONED — 6 approaches tried (Y-clamping, step easing, panels), all create visible artifacts. Constant-width is optimal.
+- Hip shadow line / body lip: KNOWN LIMITATION — body mesh bottom edge at Z 0.72-0.84 creates a visible trapezoidal shape. Requires texture compositing (CharSections underwear) to fully eliminate. This is the geometric limit.
 
 ## Key Files
 
-- `src/loadModel.ts` — Model loading, geoset filtering, material setup, vertex snapping logic
+- `src/loadModel.ts` — Model loading, geoset filtering, material setup, thigh bridge geometry
 - `src/main.ts` — Scene, camera, lighting
 - `e2e/human-male.spec.ts` — Playwright test with camera views
 - `docs/LEARNINGS.md` — All findings so far
@@ -37,13 +38,13 @@ Evaluate ALL FIVE screenshots every time. The legs close-up is the PRIMARY view 
 ## Current Technique (in loadModel.ts)
 
 Clean rendering with NO vertex manipulation:
-- All visible geosets merged into a single draw call (shared InterleavedBuffer)
-- Single MeshLambertMaterial with DoubleSide, no polygonOffset
+- All skin geosets merged into a single draw call (shared InterleavedBuffer)
+- MeshLambertMaterial with DoubleSide, polygonOffset -1 (renders in front of bridge)
 - Naked character geosets: 0, 5, 101, 201, 301, 401, 501, 701, 1002
 - Equipment geosets removed: 502 (boots), 902/903 (kneepads), 1102 (pants)
 - Separate hair mesh with hair texture
 - Neck patch fills intentional back-of-neck hole
-- Thigh bridge geometry (5-ring tubes + crotch bridge) fills gap between bare feet and body waist
+- Thigh bridge: two constant-width tubes (matching 501 top cross-section) from Z=0.58 to Z=0.85, with 4-quad crotch bridge connecting inner vertices at top ring. No front/back panels, no widening. Bridge renders behind body (polygonOffset +1). Body mesh lip remains visible — requires texture compositing.
 
 ## What Was Tried
 
@@ -61,6 +62,17 @@ Clean rendering with NO vertex manipulation:
 - Switched 501→502 (double the leg geometry), confirmed 902 as correct default
 - Removed 1102 entirely (all flare, no fill)
 - Used 902+903 together to bridge knee gap
+
+### Bridge widening approaches (ALL FAILED — see LEARNINGS.md for full details)
+6 approaches tried to widen the bridge top to cover the body mesh lip:
+- Y-clamping body + wide bridge → hexagonal band (body narrower than bridge)
+- Swapping polygonOffset → bridge extends beyond body above lip zone
+- Narrow bridge under lip → black gap between lip and bridge
+- 3-keyframe with mid ring → visible horizontal bar at mid ring widening
+- Step easing + panels → disc shape visible edge-on as horizontal line
+- **Constant-width tubes (no widening) → BEST RESULT** — no bridge artifacts
+
+**Key insight: polygonOffset only helps at OVERLAPS. Where bridge geometry extends beyond the body mesh edge, there's no body triangle to occlude it. Every widening approach creates edges visible beyond the body silhouette. Constant-width is the geometric optimum.**
 
 ## Tasks
 
