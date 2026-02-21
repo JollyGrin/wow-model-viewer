@@ -330,3 +330,35 @@ Geoset 1102 (default pants) was analyzed in detail: ALL 24 triangles are outward
 
 **Impact:** Stripped ALL vertex manipulation code (~100 lines). Final geoset selection: 0, 5, 101, 201, 301, 401, 502, 701, 902, 903, 1002. No 1102. Code reduced to ~210 lines. Clean rendering with no wings, no skirt, no crotch gap. Upper thigh gap remains but is a model design limitation (filled by texture compositing in WoW).
 **Reference:** `src/loadModel.ts`, WoW GeosRenderPrep formula, `screenshots/human-male-legs-test.png`
+
+---
+
+## Approaches Summary
+
+Scannable tables per problem area. Add a new table once a problem accumulates 2+ attempts.
+
+### Leg Geometry
+
+| # | Approach | Outcome | Key Insight |
+|---|----------|---------|-------------|
+| 1 | 55% centroid shrink | FAILED | Inner vertices collapsed past each other, black gaps between legs |
+| 2 | Nearest-body-vertex lerp (0.85) | FAILED | V-shaped skirt flaps remained, lerp doesn't account for directionality |
+| 3 | Selective nearest-vertex lerp (protruding only) | PARTIAL | Reduced skirt but left rectangular band at sides |
+| 4 | Centroid shrink + radius clamp (0.55, minR=0.85*bodyMinR) | PARTIAL | Best vertex manipulation result, but still visible band |
+| 5 | Normal-based vertex snapping (dot > 0) | PARTIAL | Eliminated skirt but created hip wings from triangle distortion |
+| 6 | Stretch ratio triangle culling (3x) on top of snapping | PARTIAL | Reduced wings but crotch gap remained |
+| 7 | Angular-aware vertex projection (atan2) | FAILED | Created wide horizontal shelf — body wider than geoset at waist |
+| 8 | X-direction clamping | FAILED | Still visible skirt + gap |
+| 9 | Remove ALL vertex manipulation + correct geoset defaults | SUCCESS | WoW does NO vertex manipulation at runtime |
+
+**Conclusion:** Never manipulate vertices for geoset boundaries. WoW uses geoset toggling + depth testing + shared boundary vertices + texture compositing. The correct fix was discovering the right default geosets (502 not 501, 902 not 903) and removing geoset 1102 (all flare, no fill).
+
+### Upper Back Hole
+
+| # | Approach | Outcome | Key Insight |
+|---|----------|---------|-------------|
+| 1 | Move 1002 from clothing to body layer | REVERTED | Undershirt flared out at waist without shrink, hole not fixed |
+| 2 | DoubleSide on 1002 + selective unshrink | FAILED | Hole is NOT caused by culling or shrinking |
+| 3 | Patch mesh (12-triangle fan from boundary loop centroid) | SUCCESS | Hole is intentional in the M2, designed for hair/armor coverage |
+
+**Conclusion:** Intentional holes in the body mesh should be filled with generated patch geometry, not by repurposing equipment geosets.

@@ -77,6 +77,21 @@ Minor shading difference. Not worth addressing without texture compositing.
 - Record all findings in `docs/LEARNINGS.md`
 - Keep changes minimal — one focused change per iteration
 
+## Research Tasks
+
+Research tasks produce LEARNINGS entries, not code changes.
+
+### R1. (template)
+- Question: <specific question to answer>
+- Sources to check: <repos, wikis, docs>
+- Done when: <what constitutes a sufficient answer>
+
+Example:
+### R2. Research: WoW texture compositing pipeline
+- Question: How does the WoW client composite CharSections skin layers into a single atlas?
+- Sources to check: wowdev.wiki CharSections, WoWModelViewer source (CharTexture.cpp), wowserhq/scene texture code
+- Done when: We know the compositing order, layer regions, and blending modes
+
 ## Quality Bar
 
 - tsc --noEmit passes

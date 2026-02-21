@@ -108,6 +108,25 @@ re-run. Infrastructure errors are not visual problems.
 
 ### Step 4 — Evaluate the screenshot
 
+#### Step 4a — Reference comparison
+
+Check if a matching reference image exists in `screenshots/REFERENCE/`:
+
+| Test screenshot | Reference |
+|---|---|
+| `human-male-front-test.png` | `screenshots/REFERENCE/human-male-front.png` |
+| `human-male-back-test.png` | `screenshots/REFERENCE/human-male-back.png` |
+
+If a reference exists, use the **Read** tool on BOTH the test screenshot and the reference image. Compare them and note **specific** differences:
+
+- Use precise descriptions: "left hip has triangular protrusion extending 5px beyond silhouette", NOT vague "looks off"
+- Compare: silhouette shape, limb proportions, visible holes/gaps, texture coverage, lighting/shadow placement
+- Note which differences are improvements vs regressions vs neutral
+
+If no reference exists, skip to Step 4b.
+
+#### Step 4b — Visual checklist
+
 Use the **Read** tool on the screenshot PNG file:
 
 ```
@@ -115,8 +134,6 @@ Read screenshots/<feature-name>.png
 ```
 
 You are multimodal — you will see the image directly. Evaluate against this checklist:
-
-#### Visual evaluation checklist
 
 | What to look for | Meaning |
 |---|---|
