@@ -353,6 +353,28 @@ Geoset 1102 (default pants) was analyzed in detail: ALL 24 triangles are outward
 **Impact:** Final geoset selection: 0, 5, 101, 201, 301, 401, 501, 701, 1002. No boots (502), no kneepads (902/903). Character looks like a naked human with natural bare legs. Thin dark line remains at outer hips where body mesh bottom edge creates a shadow — requires texture compositing to fully eliminate.
 **Reference:** `src/loadModel.ts` thigh bridge section, `scripts/analyze-thigh-gap.ts` (boundary analysis)
 
+## [2026-02-21] WoW Thigh Gap: How Other Solutions Handle It
+
+**Context:** Investigating why our thigh bridge still looks "wonky" — visible hip shelf line and flat/angular thigh geometry.
+**Finding:** Research across WoWModelViewer source, wowserhq/scene, and wowdev.wiki reveals:
+
+1. **WoWModelViewer** defaults ALL geoset groups to value 1. For group 5 (boots), value 1 = geoset 501 (bare feet). For group 11 (pants), value 1 = geoset 1101 — which **does not exist** in vanilla models. So: no pants geometry is shown for naked characters.
+
+2. **Underwear is PURELY textural**, not geometric. WoWModelViewer composites CharSections.dbc type=4 textures (PelvisTexture, TorsoTexture) onto the body texture atlas. No underwear geoset exists.
+
+3. **wowserhq/scene** renders ALL submeshes unconditionally — no geoset selection logic at all. It doesn't even preserve geoset IDs.
+
+4. **Geoset 1101 does NOT exist** in vanilla Human Male model, matching the same pattern as 801, 901, 1001. Only the x02+ variants exist (armor pieces). The wowdev.wiki description of group 11 value 1 as "regular" is for post-WoD HD models.
+
+5. **Body mesh waist boundary analysis**: The bottom edge forms TWO concentric rings:
+   - **Inner ring**: |Y| ~0.48-0.51, Z ~0.72-0.78 (the actual bottom edge)
+   - **Outer ring**: |Y| ~0.54-0.55, Z ~0.80-0.84 (hip flare/lip)
+   - Triangles between these rings form a visible downward-facing "skirt lip"
+   - Our bridge top ring at |Y| ~0.46-0.48 is NARROWER than the body hip, creating a visible narrowing step
+
+**Impact:** The hip shelf is caused by two problems: (1) bridge too narrow vs body hip width, (2) body mesh has downward-facing "lip" triangles. Fix: widen bridge top to match body hip width (~|Y| 0.55) and cull body mesh's downward-facing hip triangles.
+**Reference:** WoWModelViewer `WoWModel.cpp` setGeosetGroupDisplay(), `WoWItem.cpp` CS_PANTS, `CharTexture.cpp`; wowdev.wiki Character_Customization; `scripts/waist-boundary.ts`
+
 ---
 
 ## Approaches Summary
@@ -375,8 +397,9 @@ Scannable tables per problem area. Add a new table once a problem accumulates 2+
 
 | 10 | Correct geosets (502+902+903) but no vertex manipulation | PARTIAL | No wings/gaps, but 502=boots, 902/903=kneepads look like armor |
 | 11 | Switch to 501 (bare feet) + thigh bridge geometry | SUCCESS | Generate fill geometry like neck patch; 5-ring tube per leg with crotch bridge |
+| 12 | Widen bridge top to body hip width + cull hip flap triangles | PENDING | Bridge top at |Y|~0.46 too narrow vs body at |Y|~0.54; body has downward-facing lip |
 
-**Conclusion:** Never manipulate existing model vertices. For missing geometry (thigh gap between body waist and bare feet), generate fill geometry — similar to the neck patch approach. Use geoset 501 (bare feet) not 502 (boots) for naked character. Equipment geosets (902/903 kneepads, 1002 undershirt at waist) should only be shown when equipment is worn.
+**Conclusion:** Never manipulate existing model vertices. For missing geometry (thigh gap between body waist and bare feet), generate fill geometry — similar to the neck patch approach. Use geoset 501 (bare feet) not 502 (boots) for naked character. Bridge top ring must match body mesh hip width (~|Y| 0.55) to avoid visible narrowing step.
 
 ### Upper Back Hole
 
