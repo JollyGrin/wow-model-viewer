@@ -21,8 +21,11 @@ Evaluate ALL FIVE screenshots every time. The legs close-up is the PRIMARY view 
 - Upper back hole: FIXED (neck patch)
 - Hip wing protrusions: FIXED — removed all vertex manipulation, stripped geoset 1102
 - Dark crotch gap: FIXED — was caused by vertex snapping, eliminated by removing snapping
-- Kneepad seams: ACCEPTABLE — minor shading difference, not a priority
-- Upper thigh gap: KNOWN LIMITATION — body mesh has no geometry from Z 0.10-0.70, WoW fills this with texture compositing. Acceptable until compositing is implemented.
+- Kneepad seams: N/A — kneepads removed (902/903 are armor, not bare skin)
+- Boot-like knees: FIXED — switched from 502 (boots) to 501 (bare feet)
+- Missing upper thighs: FIXED — generated thigh bridge geometry (5-ring tubes + crotch bridge)
+- Waist skirt: REDUCED — removed equipment geosets, remaining line is body mesh's own bottom edge
+- Hip shadow line: KNOWN LIMITATION — body mesh bottom edge at Z 0.72 creates a visible seam. Requires texture compositing to fully eliminate.
 
 ## Key Files
 
@@ -36,10 +39,11 @@ Evaluate ALL FIVE screenshots every time. The legs close-up is the PRIMARY view 
 Clean rendering with NO vertex manipulation:
 - All visible geosets merged into a single draw call (shared InterleavedBuffer)
 - Single MeshLambertMaterial with DoubleSide, no polygonOffset
-- Correct WoW default geosets: 0, 5, 101, 201, 301, 401, 502, 701, 902, 903, 1002
-- Geoset 1102 removed (all flare geometry, no fill)
+- Naked character geosets: 0, 5, 101, 201, 301, 401, 501, 701, 1002
+- Equipment geosets removed: 502 (boots), 902/903 (kneepads), 1102 (pants)
 - Separate hair mesh with hair texture
 - Neck patch fills intentional back-of-neck hole
+- Thigh bridge geometry (5-ring tubes + crotch bridge) fills gap between bare feet and body waist
 
 ## What Was Tried
 

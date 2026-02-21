@@ -12,26 +12,23 @@ interface ModelManifest {
 
 // Geoset visibility for a naked character.
 //
-// WoW's GeosRenderPrep sets geosetGroupValue=1 for all groups by default.
-// Formula: enabled_meshId = groupBase + geosetGroupValue + 1.
-// Equipment overrides specific groups; empty slots reset some to 0.
-//
-// Group 0 (IDs 0-99) are hairstyle variants. Only ONE should be active.
+// For empty equipment slots, the geoset is determined by the slot's default.
+// Bare skin character: body + facial features + bare hands + bare feet.
+// Equipment geosets (kneepads 9xx, undershirt 10xx, pants 11xx) are only shown
+// when equipment is worn. The thigh gap between body waist (Z 0.72) and bare
+// feet top (Z 0.61) is filled by generated thigh bridge geometry below.
 //
 // Geoset group reference (group = floor(id/100)):
 //   0xx: Hairstyles (pick one)
 //   1xx: Facial 1 (jaw/beard) — 101 = default
 //   2xx: Facial 2 (sideburns) — 201 = default
 //   3xx: Facial 3 (moustache) — 301 = default
-//   4xx: Gloves — 401 = bare hands (empty slot resets to value 0)
-//   5xx: Boots — 502 = default leg coverage (value 1); 501 = bare feet (value 0)
+//   4xx: Gloves — 401 = bare hands
+//   5xx: Boots — 501 = bare feet/lower legs (86 tris, Z 0.13–0.61)
 //   7xx: Ears — 701 = ears visible
-//   8xx: Sleeves — 802 = default (value 1); 801 DNE = bare arms
-//   9xx: Kneepads — 902 = default (value 1, Z 0.34–0.61); 903 = variant (Z 0.49–0.73)
-//  10xx: Undershirt — 1002 = default (value 1), fills upper back hole
-//  11xx: Pants — 1102 = default (value 1), ALL outward flare geometry;
-//         omitted: without underwear texture compositing it creates a skin-colored
-//         skirt. Thigh gap is acceptable until texture compositing is implemented.
+//   9xx: Kneepads — none for naked (902/903 are armor pieces)
+//  10xx: Undershirt — none for naked (1002 flares outward, creates skirt)
+//  11xx: Pants — none for naked (1102 is all outward flare geometry)
 //  12xx: Tabard — none
 //  13xx: Robe — none
 //  15xx: Cape — none
@@ -42,11 +39,9 @@ const DEFAULT_GEOSETS = new Set([
   201,   // facial 2 default
   301,   // facial 3 default
   401,   // bare hands
-  502,   // default boots (geosetGroupValue=1: 500+1+1=502, 142 tris vs 501's 86)
+  501,   // bare feet + lower legs (Z 0.13–0.61)
   701,   // ears visible
-  902,   // default kneepads (geosetGroupValue=1: 900+1+1=902, Z 0.34–0.61)
-  903,   // extra kneepads — bridges gap between 902 top (Z 0.61) and body (Z 0.70)
-  1002,  // undershirt — fills upper back/chest hole
+  1002,  // undershirt — fills upper back/chest (Z 0.93–1.11), above waist
 ]);
 
 function isGeosetVisible(id: number, enabled: Set<number>): boolean {
@@ -196,6 +191,125 @@ export async function loadModel(
     patchGeom.setAttribute('uv', new THREE.InterleavedBufferAttribute(patchBuffer, 2, 6));
     patchGeom.setIndex(new THREE.BufferAttribute(patchIndices, 1));
     pivot.add(new THREE.Mesh(patchGeom, skinMaterial));
+  }
+
+  // Thigh bridge — fills the gap between bare feet top (Z ~0.58) and body waist (Z ~0.72).
+  // The body mesh has no thigh geometry; WoW fills this with texture compositing.
+  // We generate tube geometry for each leg with smooth curvature using 5 rings.
+  {
+    const N = 6;          // vertices per ring
+    const RINGS = 5;      // smooth curvature
+
+    // 501 top boundary: 6 unique positions per leg, sorted by angle around leg axis.
+    const leftBottom: [number, number, number][] = [
+      [-0.1085, -0.2338, 0.6135],  // 0: back-outer (-144°)
+      [-0.0372, -0.2663, 0.6030],  // 1: outer (-98°)
+      [ 0.0564, -0.2281, 0.5630],  // 2: front-outer (-35°)
+      [ 0.0515, -0.1447, 0.5487],  // 3: front-inner (20°)
+      [-0.0112, -0.0979, 0.5707],  // 4: inner/crotch (80°)
+      [-0.1067, -0.1381, 0.5990],  // 5: back-inner (158°)
+    ];
+
+    // Top ring — all vertices extend up into the body mesh overlap zone.
+    // Outer vertices at Z=0.80 (body mesh at Z=0.80 has |Y|~0.54, so |Y|=0.48
+    // sits inside). Inner vertices at Z=0.84 (fills pelvis shadow zone).
+    const leftTop: [number, number, number][] = [
+      [-0.10, -0.46, 0.80],   // 0: back-outer (hidden inside body hip)
+      [-0.03, -0.48, 0.80],   // 1: outer (hidden inside body hip)
+      [ 0.05, -0.42, 0.80],   // 2: front-outer (hidden inside body hip)
+      [ 0.04, -0.05, 0.84],   // 3: front-inner (fills pelvis)
+      [-0.01, -0.02, 0.84],   // 4: inner/crotch (fills pelvis)
+      [-0.09, -0.05, 0.84],   // 5: back-inner (fills pelvis)
+    ];
+
+    // UVs: bottom (from 501) and top (approaching body waist)
+    const bottomUVs: [number, number][] = [
+      [0.8008, 0.6875], [0.7500, 0.6875], [0.6836, 0.6875],
+      [0.5625, 0.6875], [0.5039, 0.6875], [0.9375, 0.6875],
+    ];
+    const topUVs: [number, number][] = bottomUVs.map(([u]) => [u, 0.62]);
+
+    // Build vertices for both legs: 5 rings × 6 verts × 2 legs = 60 verts
+    const totalVerts = N * RINGS * 2;
+    const positions = new Float32Array(totalVerts * 3);
+    const uvs = new Float32Array(totalVerts * 2);
+
+    function writeLeg(rings: [number, number, number][][], baseVert: number) {
+      for (let r = 0; r < RINGS; r++) {
+        for (let v = 0; v < N; v++) {
+          const vi = baseVert + r * N + v;
+          const pos = rings[r][v];
+          positions[vi * 3] = pos[0];
+          positions[vi * 3 + 1] = pos[1];
+          positions[vi * 3 + 2] = pos[2];
+          // UV: interpolate v coordinate from 0.6875 to 0.62
+          const t = r / (RINGS - 1);
+          uvs[vi * 2] = bottomUVs[v][0] + (topUVs[v][0] - bottomUVs[v][0]) * t;
+          uvs[vi * 2 + 1] = bottomUVs[v][1] + (topUVs[v][1] - bottomUVs[v][1]) * t;
+        }
+      }
+    }
+
+    // Generate intermediate rings with ease-out interpolation (sqrt)
+    // This makes the thigh expand rapidly at the bottom and flatten at the top
+    function makeRings(bottom: [number, number, number][], top: [number, number, number][]) {
+      const rings: [number, number, number][][] = [];
+      for (let r = 0; r < RINGS; r++) {
+        const tLinear = r / (RINGS - 1);
+        const t = Math.sqrt(tLinear); // ease-out: expand quickly near bottom
+        rings.push(bottom.map((b, i) => [
+          b[0] + (top[i][0] - b[0]) * t,
+          b[1] + (top[i][1] - b[1]) * t,
+          b[2] + (top[i][2] - b[2]) * t,
+        ]));
+      }
+      return rings;
+    }
+
+    const leftRings = makeRings(leftBottom, leftTop);
+    const rightRings = makeRings(
+      leftBottom.map(([x, y, z]) => [x, -y, z] as [number, number, number]),
+      leftTop.map(([x, y, z]) => [x, -y, z] as [number, number, number]),
+    );
+
+    writeLeg(leftRings, 0);
+    writeLeg(rightRings, N * RINGS);
+
+    // Build index buffer: connect adjacent rings + crotch bridge
+    const thighIdx: number[] = [];
+
+    function connectRings(baseA: number, baseB: number) {
+      for (let i = 0; i < N; i++) {
+        const j = (i + 1) % N;
+        thighIdx.push(baseA + i, baseB + i, baseA + j);
+        thighIdx.push(baseA + j, baseB + i, baseB + j);
+      }
+    }
+
+    // Left leg
+    for (let r = 0; r < RINGS - 1; r++) {
+      connectRings(r * N, (r + 1) * N);
+    }
+    // Right leg
+    const RB = N * RINGS; // right leg base
+    for (let r = 0; r < RINGS - 1; r++) {
+      connectRings(RB + r * N, RB + (r + 1) * N);
+    }
+
+    // Crotch bridge: connect left and right inner thigh top ring vertices
+    const LT = (RINGS - 1) * N;     // left top ring start
+    const RT = RB + (RINGS - 1) * N; // right top ring start
+    thighIdx.push(LT + 3, LT + 4, RT + 4);
+    thighIdx.push(LT + 3, RT + 4, RT + 3);
+    thighIdx.push(LT + 4, LT + 5, RT + 5);
+    thighIdx.push(LT + 4, RT + 5, RT + 4);
+
+    const thighGeom = new THREE.BufferGeometry();
+    thighGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    thighGeom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+    thighGeom.setIndex(new THREE.BufferAttribute(new Uint16Array(thighIdx), 1));
+    thighGeom.computeVertexNormals();
+    pivot.add(new THREE.Mesh(thighGeom, skinMaterial));
   }
 
   // Hair mesh — uses hair texture

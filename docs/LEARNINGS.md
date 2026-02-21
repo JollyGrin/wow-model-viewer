@@ -331,6 +331,28 @@ Geoset 1102 (default pants) was analyzed in detail: ALL 24 triangles are outward
 **Impact:** Stripped ALL vertex manipulation code (~100 lines). Final geoset selection: 0, 5, 101, 201, 301, 401, 502, 701, 902, 903, 1002. No 1102. Code reduced to ~210 lines. Clean rendering with no wings, no skirt, no crotch gap. Upper thigh gap remains but is a model design limitation (filled by texture compositing in WoW).
 **Reference:** `src/loadModel.ts`, WoW GeosRenderPrep formula, `screenshots/human-male-legs-test.png`
 
+## [2026-02-21] Thigh Bridge Geometry — Filling the Body Mesh's Thigh Gap
+
+**Context:** Geosets 502 (boots), 902/903 (kneepads) made the naked character look like it was wearing armor. Switching to 501 (bare feet) and removing equipment geosets left a massive thigh gap between body waist (Z 0.72) and bare feet top (Z 0.61).
+
+**Finding:** The body mesh has ZERO vertices from Z 0.20 to Z 0.70 — the entire thigh region is empty by design. WoW fills this with equipment geosets + texture compositing. For a naked character, only geoset 501 (bare feet, Z 0.13–0.61) provides lower leg geometry. The gap is 0.11 units vertically but also requires massive lateral expansion: legs are at |Y| ~0.17 while the body waist is at |Y| ~0.49.
+
+**Solution:** Generated thigh bridge geometry (same approach as neck patch):
+- 6 vertices per ring, 5 rings per leg (ease-out interpolation for natural taper)
+- Bottom ring: exact 501 top boundary positions (6 unique vertices per leg)
+- Top ring: outer vertices at Z=0.80, |Y|~0.48 (inside body mesh hip ring); inner vertices at Z=0.84 (fills pelvis shadow zone)
+- Crotch bridge: 4 triangles connecting left and right inner thigh top vertices
+- Total: 60 vertices, 52 triangles per leg pair
+- Uses computeVertexNormals() for smooth shading
+
+**Key dimensions from boundary analysis:**
+- 501 top boundary: 14 vertices (7 per leg), Z 0.549–0.614, centered at Y ≈ ±0.172
+- Body waist boundary: 94 vertices at Z 0.70–0.85, all at |Y| ≈ 0.48–0.55
+- No shared vertices between body(0) and 501 — separate meshes
+
+**Impact:** Final geoset selection: 0, 5, 101, 201, 301, 401, 501, 701, 1002. No boots (502), no kneepads (902/903). Character looks like a naked human with natural bare legs. Thin dark line remains at outer hips where body mesh bottom edge creates a shadow — requires texture compositing to fully eliminate.
+**Reference:** `src/loadModel.ts` thigh bridge section, `scripts/analyze-thigh-gap.ts` (boundary analysis)
+
 ---
 
 ## Approaches Summary
@@ -351,7 +373,10 @@ Scannable tables per problem area. Add a new table once a problem accumulates 2+
 | 8 | X-direction clamping | FAILED | Still visible skirt + gap |
 | 9 | Remove ALL vertex manipulation + correct geoset defaults | SUCCESS | WoW does NO vertex manipulation at runtime |
 
-**Conclusion:** Never manipulate vertices for geoset boundaries. WoW uses geoset toggling + depth testing + shared boundary vertices + texture compositing. The correct fix was discovering the right default geosets (502 not 501, 902 not 903) and removing geoset 1102 (all flare, no fill).
+| 10 | Correct geosets (502+902+903) but no vertex manipulation | PARTIAL | No wings/gaps, but 502=boots, 902/903=kneepads look like armor |
+| 11 | Switch to 501 (bare feet) + thigh bridge geometry | SUCCESS | Generate fill geometry like neck patch; 5-ring tube per leg with crotch bridge |
+
+**Conclusion:** Never manipulate existing model vertices. For missing geometry (thigh gap between body waist and bare feet), generate fill geometry — similar to the neck patch approach. Use geoset 501 (bare feet) not 502 (boots) for naked character. Equipment geosets (902/903 kneepads, 1002 undershirt at waist) should only be shown when equipment is worn.
 
 ### Upper Back Hole
 
