@@ -407,6 +407,23 @@ Geoset 1102 (default pants) was analyzed in detail: ALL 24 triangles are outward
 **Impact:** Final bridge design is two constant-width tubes (matching 501 top cross-section) from Z=0.58 to Z=0.85 with a 4-quad crotch bridge connecting inner vertices at the top ring. No front/back panels. No widening. Body mesh renders in front (polygonOffset -1), bridge behind (+1). Next step for improvement: texture compositing.
 **Reference:** `src/loadModel.ts` thigh bridge section, comparison screenshots in `screenshots/`
 
+## [2026-02-21] Texture Compositing — The Correct Solution for Thigh Gap
+
+**Context:** After 17 geometric approaches to hide the body mesh thigh gap (vertex snapping, centroid shrink, thigh bridge tubes, widening, panel fans), researched how WoWModelViewer and other implementations actually solve this.
+
+**Finding:** The body mesh thigh gap and hip "lip" are designed to be hidden by **texture compositing**, not geometry. The WoW client composites multiple CharSections textures into a single 256×256 body atlas:
+
+1. Base skin (CharSections type=0) → full canvas
+2. Face lower/upper (type=1) → CR_FACE_LOWER/UPPER regions
+3. Underwear pelvis/torso (type=4) → CR_LEG_UPPER / CR_TORSO_LOWER regions
+
+The underwear pelvis texture paints skin-colored underwear across the CR_LEG_UPPER region (128, 96, 128, 64) — exactly where the body-to-leg boundary sits. This creates visual continuity across the geometric seam.
+
+No correct WoW model viewer implementation uses bridge geometry. The thigh bridge is a workaround that should be replaced by proper texture compositing.
+
+**Impact:** Implemented: (1) extracted base vanilla textures from texture.MPQ, (2) built CharTexture compositor, (3) wired composited texture into renderer. Bridge geometry remains — the thigh gap is a geometric void (zero vertices Z 0.20-0.70) that texture compositing alone cannot fill. However, the composited underwear texture provides correct color continuity across the body-bridge-leg boundary, significantly improving appearance over the old wizard skin.
+**Reference:** `docs/research/09-character-compositing-research.md`, `src/charTexture.ts`, WoWModelViewer `CharTexture.cpp`
+
 ---
 
 ## Approaches Summary

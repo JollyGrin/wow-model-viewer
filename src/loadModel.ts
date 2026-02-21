@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CharRegion, composeCharTexture, loadTexImageData } from './charTexture';
 
 interface ModelManifest {
   vertexCount: number;
@@ -16,7 +17,8 @@ interface ModelManifest {
 // Bare skin character: body + facial features + bare hands + bare feet.
 // Equipment geosets (kneepads 9xx, undershirt 10xx, pants 11xx) are only shown
 // when equipment is worn. The thigh gap between body waist (Z 0.72) and bare
-// feet top (Z 0.61) is filled by generated thigh bridge geometry below.
+// feet top (Z 0.61) is filled by generated thigh bridge geometry. Composited
+// skin texture (underwear region) provides color continuity across the seam.
 //
 // Geoset group reference (group = floor(id/100)):
 //   0xx: Hairstyles (pick one)
@@ -83,12 +85,32 @@ export async function loadModel(
   enabledGeosets: Set<number> = DEFAULT_GEOSETS,
 ): Promise<THREE.Group> {
   const texturesDir = `${basePath.replace(/[^/]+$/, '')}textures/`;
-  const [manifestRes, binRes, skinTexture, hairTexture] = await Promise.all([
+
+  // Load model data + all texture layers in parallel
+  const [manifestRes, binRes, hairTexture, baseSkin, faceLower, faceUpper, underwearPelvis] = await Promise.all([
     fetch(`${basePath}.json`),
     fetch(`${basePath}.bin`),
-    loadTexture(`${texturesDir}human-male-skin.tex`),
     loadTexture(`${texturesDir}human-male-hair.tex`),
+    loadTexImageData(`${texturesDir}base-skin-00.tex`),
+    loadTexImageData(`${texturesDir}face-lower-00-00.tex`),
+    loadTexImageData(`${texturesDir}face-upper-00-00.tex`),
+    loadTexImageData(`${texturesDir}underwear-pelvis-00.tex`),
   ]);
+
+  // Composite the character skin texture from layers
+  const compositedCanvas = composeCharTexture(baseSkin, [
+    { imageData: faceLower, region: CharRegion.FACE_LOWER, layer: 1 },
+    { imageData: faceUpper, region: CharRegion.FACE_UPPER, layer: 1 },
+    { imageData: underwearPelvis, region: CharRegion.LEG_UPPER, layer: 1 },
+  ]);
+
+  const skinTexture = new THREE.CanvasTexture(compositedCanvas);
+  skinTexture.magFilter = THREE.LinearFilter;
+  skinTexture.minFilter = THREE.LinearMipmapLinearFilter;
+  skinTexture.generateMipmaps = true;
+  skinTexture.wrapS = THREE.RepeatWrapping;
+  skinTexture.wrapT = THREE.RepeatWrapping;
+  skinTexture.flipY = false;
 
   const manifest: ModelManifest = await manifestRes.json();
   const binBuffer = await binRes.arrayBuffer();
@@ -198,33 +220,31 @@ export async function loadModel(
   }
 
   // Thigh bridge — two constant-width tubes from bare feet top (Z ~0.58) up
-  // into the body mesh (Z=0.85). No widening. Body mesh covers the bridge from
-  // Z=0.72 upward (polygonOffset -1 vs +1). The visible portion (Z=0.58-0.72)
-  // stays at leg-width. Crotch bridge connects inner vertices at the top ring.
+  // into the body mesh (Z=0.85). The body mesh has zero vertices from Z 0.20
+  // to Z 0.70 (thighs are empty by design, filled by equipment geosets in WoW).
+  // For a naked character, this bridge fills the gap. The composited skin texture
+  // provides color continuity across the body-bridge-leg boundary.
   {
     const N = 6;
     const RINGS = 5;
     const TOP_RING = RINGS - 1;
 
-    // Bottom ring: matches 501 top boundary (Z ~0.55-0.61)
     const leftBottom: [number, number, number][] = [
-      [-0.1085, -0.2338, 0.6135],  // 0: back-outer
-      [-0.0372, -0.2663, 0.6030],  // 1: outer
-      [ 0.0564, -0.2281, 0.5630],  // 2: front-outer
-      [ 0.0515, -0.1447, 0.5487],  // 3: front-inner
-      [-0.0112, -0.0979, 0.5707],  // 4: inner/crotch
-      [-0.1067, -0.1381, 0.5990],  // 5: back-inner
+      [-0.1085, -0.2338, 0.6135],
+      [-0.0372, -0.2663, 0.6030],
+      [ 0.0564, -0.2281, 0.5630],
+      [ 0.0515, -0.1447, 0.5487],
+      [-0.0112, -0.0979, 0.5707],
+      [-0.1067, -0.1381, 0.5990],
     ];
 
-    // Top ring: same cross-section as bottom, just shifted up to Z=0.85
-    // (inside the body mesh torso where body covers it)
     const leftTop: [number, number, number][] = [
-      [-0.1085, -0.2338, 0.85],   // 0: back-outer
-      [-0.0372, -0.2663, 0.85],   // 1: outer
-      [ 0.0564, -0.2281, 0.85],   // 2: front-outer
-      [ 0.0515, -0.1447, 0.85],   // 3: front-inner
-      [-0.0112, -0.0979, 0.85],   // 4: inner/crotch
-      [-0.1067, -0.1381, 0.85],   // 5: back-inner
+      [-0.1085, -0.2338, 0.85],
+      [-0.0372, -0.2663, 0.85],
+      [ 0.0564, -0.2281, 0.85],
+      [ 0.0515, -0.1447, 0.85],
+      [-0.0112, -0.0979, 0.85],
+      [-0.1067, -0.1381, 0.85],
     ];
 
     const bottomUVs: [number, number][] = [
@@ -271,17 +291,14 @@ export async function loadModel(
       }
     }
 
-    // Left leg tube
     for (let r = 0; r < RINGS - 1; r++) {
       connectRings(r * N, (r + 1) * N);
     }
-    // Right leg tube
     const RB = N * RINGS;
     for (let r = 0; r < RINGS - 1; r++) {
       connectRings(RB + r * N, RB + (r + 1) * N);
     }
 
-    // Crotch bridge at top ring (inner vertices only)
     const LT = TOP_RING * N;
     const RT = RB + TOP_RING * N;
     thighIdx.push(LT + 3, LT + 4, RT + 4);
@@ -295,7 +312,6 @@ export async function loadModel(
     thighGeom.setIndex(new THREE.BufferAttribute(new Uint16Array(thighIdx), 1));
     thighGeom.computeVertexNormals();
 
-    // Positive offset: bridge renders behind body mesh at overlap zones
     const bridgeMaterial = new THREE.MeshLambertMaterial({
       map: skinTexture,
       side: THREE.DoubleSide,

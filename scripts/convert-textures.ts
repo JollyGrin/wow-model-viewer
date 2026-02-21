@@ -24,8 +24,9 @@ interface TextureSource {
   blpPath: string;
 }
 
-// Skin textures available in our patch data
+// Textures to convert: existing patch data + extracted base vanilla textures
 const TEXTURES: TextureSource[] = [
+  // Existing patch textures
   {
     name: 'human-male-skin',
     blpPath: 'data/patch/patch-3/Character/Human/Male/HumanMale_Magic.blp',
@@ -33,6 +34,26 @@ const TEXTURES: TextureSource[] = [
   {
     name: 'human-male-hair',
     blpPath: 'data/patch/patch-6/Character/Human/Hair04_07.blp',
+  },
+  // Extracted base vanilla textures (for compositing)
+  // Base skin (skin color 0)
+  {
+    name: 'base-skin-00',
+    blpPath: 'data/extracted/Character/Human/Male/HumanMaleSkin00_00.blp',
+  },
+  // Face textures (face variation 0, skin color 0)
+  {
+    name: 'face-lower-00-00',
+    blpPath: 'data/extracted/Character/Human/Male/HumanMaleFaceLower00_00.blp',
+  },
+  {
+    name: 'face-upper-00-00',
+    blpPath: 'data/extracted/Character/Human/Male/HumanMaleFaceUpper00_00.blp',
+  },
+  // Underwear pelvis (skin color 0)
+  {
+    name: 'underwear-pelvis-00',
+    blpPath: 'data/extracted/Character/Human/Male/HumanMaleNakedPelvisSkin00_00.blp',
   },
 ];
 
