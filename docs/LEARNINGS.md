@@ -455,6 +455,41 @@ Scannable tables per problem area. Add a new table once a problem accumulates 2+
 
 **Conclusion:** Never manipulate existing model vertices. Never try to widen the bridge to cover the body mesh lip — every widening approach creates visible artifacts (shelves, bars, discs). The optimal geometric bridge is constant-width (matching leg cross-section) extending into the body mesh, with body rendering in front via polygonOffset. The body mesh lip at Z 0.72-0.84 requires texture compositing (CharSections underwear textures baked onto the skin atlas) to fully eliminate.
 
+## [2026-02-22] Thigh Gap Is By Design — Geoset 903 Fills It, No Bridge Needed
+
+**Context:** After 17 iterations building and tweaking a synthetic thigh bridge (hand-crafted tube geometry connecting legs to body), investigated whether any M2 patch version has body mesh thigh geometry.
+
+**Finding:** No vanilla WoW M2 has body mesh thigh geometry. Verified across ALL 4 patches:
+
+| Patch | Body mesh (geoset 0) verts in thigh zone Z 0.20–0.72 | Total verts |
+|-------|-------------------------------------------------------|-------------|
+| patch-3 | **0** | 3,159 |
+| patch-6 | **0** | 4,675 |
+| patch-7 | **0** | 4,675 |
+| patch/  | **0** | 3,159 |
+
+The extra 1,516 vertices in patch-6/7 are Turtle WoW custom hairstyles (geosets 14–18, all Z > 1.35 = head area) and doubled equipment geosets — NOT thigh geometry.
+
+Geoset 903 already reaches Z 0.7275, overlapping the body mesh (Z 0.72) by 0.0075 units. Combined with 502 (Z 0.125–0.614), this gives continuous M2 geometry coverage from feet to waist:
+
+| Geometry | Z range | Overlap |
+|----------|---------|---------|
+| 502 (legs) | 0.125 → 0.614 | — |
+| 903 (upper legs) | 0.492 → 0.728 | overlaps 502 at 0.49–0.61 |
+| Body mesh | 0.720 → 1.964 | overlaps 903 at 0.72–0.73 |
+
+Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hairstyle options (geosets 14–18). Removed ~90 lines of synthetic thigh bridge code.
+
+**Process failures identified:**
+1. Never established ground truth (what a naked character SHOULD look like)
+2. Assumed patch-3 was incomplete without comparing — all patches have the same gap
+3. Built bridge before understanding WHY the gap exists
+4. Dismissed 903 as "kneepads armor" without testing with composited skin texture
+5. 17 bridge iterations were unnecessary — the M2 already had the solution
+
+**Impact:** Removed synthetic bridge geometry entirely. Enabled geoset 903 in DEFAULT_GEOSETS. Continuous skin coverage from Z 0.125 to 1.964 using only native M2 geometry. Code reduced by ~90 lines. Always check existing geoset coverage before engineering geometric solutions.
+**Reference:** `src/loadModel.ts` DEFAULT_GEOSETS, `scripts/convert-model.ts` (switched to patch-6)
+
 ### Upper Back Hole
 
 | # | Approach | Outcome | Key Insight |

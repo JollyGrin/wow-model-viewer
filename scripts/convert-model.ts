@@ -9,19 +9,43 @@
  * - 32-byte submesh structs (not 48) — no sortCenterPosition/sortRadius
  * - 24-byte batch structs (not 26)
  *
- * Output:
- * - public/models/human-male.bin  (vertex buffer + index buffer)
- * - public/models/human-male.json (manifest with layout info)
+ * Output per model:
+ * - public/models/<slug>/model.bin  (vertex buffer + index buffer)
+ * - public/models/<slug>/model.json (manifest with layout info)
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { resolve } from 'path';
 
 const ROOT = resolve(import.meta.dirname, '..');
-const M2_PATH = resolve(ROOT, 'data/patch/patch-3/Character/Human/Male/HumanMale.m2');
-const OUT_DIR = resolve(ROOT, 'public/models');
-const OUT_BIN = resolve(OUT_DIR, 'human-male.bin');
-const OUT_JSON = resolve(OUT_DIR, 'human-male.json');
+
+interface CharacterModel {
+  slug: string;
+  m2Path: string;
+}
+
+const CHARACTER_MODELS: CharacterModel[] = [
+  { slug: 'blood-elf-male',    m2Path: 'data/patch/patch-6/Character/BloodElf/Male/BloodElfMale.M2' },
+  { slug: 'blood-elf-female',  m2Path: 'data/patch/patch-6/Character/BloodElf/Female/BloodElfFemale.M2' },
+  { slug: 'dwarf-male',        m2Path: 'data/patch/patch-6/Character/Dwarf/Male/DwarfMale.M2' },
+  { slug: 'dwarf-female',      m2Path: 'data/patch/patch-6/Character/Dwarf/Female/DwarfFemale.M2' },
+  { slug: 'gnome-male',        m2Path: 'data/patch/patch-6/Character/Gnome/Male/GnomeMale.M2' },
+  { slug: 'gnome-female',      m2Path: 'data/patch/patch-6/Character/Gnome/Female/GnomeFemale.M2' },
+  { slug: 'goblin-male',       m2Path: 'data/patch/patch-7/Character/Goblin/Male/GoblinMale.m2' },
+  { slug: 'goblin-female',     m2Path: 'data/patch/patch-7/Character/Goblin/Female/GoblinFemale.m2' },
+  { slug: 'human-male',        m2Path: 'data/patch/patch-6/Character/Human/Male/HumanMale.m2' },
+  { slug: 'human-female',      m2Path: 'data/patch/patch-6/Character/Human/Female/HumanFemale.M2' },
+  { slug: 'night-elf-male',    m2Path: 'data/patch/patch-6/Character/NightElf/Male/NightElfMale.M2' },
+  { slug: 'night-elf-female',  m2Path: 'data/patch/patch-6/Character/NightElf/Female/NightElfFemale.M2' },
+  { slug: 'orc-male',          m2Path: 'data/patch/patch-6/Character/Orc/Male/OrcMale.M2' },
+  { slug: 'orc-female',        m2Path: 'data/patch/patch-6/Character/Orc/Female/OrcFemale.M2' },
+  { slug: 'scourge-male',      m2Path: 'data/patch/patch-6/Character/Scourge/Male/ScourgeMale.M2' },
+  { slug: 'scourge-female',    m2Path: 'data/patch/patch-6/Character/Scourge/Female/ScourgeFemale.M2' },
+  { slug: 'tauren-male',       m2Path: 'data/patch/patch-6/Character/Tauren/Male/TaurenMale.M2' },
+  { slug: 'tauren-female',     m2Path: 'data/patch/patch-6/Character/Tauren/Female/TaurenFemale.M2' },
+  { slug: 'troll-male',        m2Path: 'data/patch/patch-6/Character/Troll/Male/TrollMale.M2' },
+  { slug: 'troll-female',      m2Path: 'data/patch/patch-6/Character/Troll/Female/TrollFemale.M2' },
+];
 
 // --- M2 v256 Header Parser ---
 
@@ -67,7 +91,7 @@ interface Submesh {
   indexCount: number;
 }
 
-function parseView0(buf: Buffer, view: DataView, viewsArr: M2Arr) {
+function parseView0(_buf: Buffer, view: DataView, viewsArr: M2Arr) {
   function arr(off: number): M2Arr {
     return { count: view.getUint32(off, true), ofs: view.getUint32(off + 4, true) };
   }
@@ -107,54 +131,43 @@ function parseView0(buf: Buffer, view: DataView, viewsArr: M2Arr) {
   return { remap, rawTriangles, submeshes };
 }
 
-// --- Main ---
+// --- Convert a single model ---
 
-function main() {
-  const buf = readFileSync(M2_PATH);
-  console.log(`M2 file: ${M2_PATH}`);
-  console.log(`M2 size: ${buf.byteLength} bytes`);
+function convertModel(model: CharacterModel) {
+  const m2FullPath = resolve(ROOT, model.m2Path);
+  const outDir = resolve(ROOT, 'public/models', model.slug);
+  const outBin = resolve(outDir, 'model.bin');
+  const outJson = resolve(outDir, 'model.json');
 
+  const buf = readFileSync(m2FullPath);
   const m2 = parseM2v256(buf);
-  console.log(`Model name: "${m2.nameStr}"`);
-  console.log(`Vertices: ${m2.vertices.count}`);
-  console.log(`Views: ${m2.views.count}`);
-
   const skin = parseView0(buf, m2.view, m2.views);
-  console.log(`\nView 0:`);
-  console.log(`  Vertex remap entries: ${skin.remap.length}`);
-  console.log(`  Triangle indices: ${skin.rawTriangles.length} (${skin.rawTriangles.length / 3} triangles)`);
-  console.log(`  Submeshes: ${skin.submeshes.length}`);
 
   // Build output vertex buffer using the remap
   // Each vertex in the M2 is 48 bytes: pos(3f) boneWeights(4u8) boneIndices(4u8) normal(3f) uv1(2f) uv2(2f)
   // For the browser: position (3f, 12B) + normal (3f, 12B) + uv (2f, 8B) = 32 bytes per vertex
   const vertexCount = skin.remap.length;
-  const BROWSER_VERTEX_SIZE = 32; // 3 floats position + 3 floats normal + 2 floats uv
-  const vertexBuffer = new Float32Array(vertexCount * 8); // 8 floats per vertex
+  const BROWSER_VERTEX_SIZE = 32;
+  const vertexBuffer = new Float32Array(vertexCount * 8);
 
   for (let i = 0; i < vertexCount; i++) {
     const modelIdx = skin.remap[i];
     const srcOfs = m2.vertices.ofs + modelIdx * 48;
 
-    // Position: offset 0, 3 floats (12 bytes)
     vertexBuffer[i * 8 + 0] = m2.view.getFloat32(srcOfs + 0, true);
     vertexBuffer[i * 8 + 1] = m2.view.getFloat32(srcOfs + 4, true);
     vertexBuffer[i * 8 + 2] = m2.view.getFloat32(srcOfs + 8, true);
 
-    // Normal: offset 20 (after pos(12) + boneWeights(4) + boneIndices(4))
     vertexBuffer[i * 8 + 3] = m2.view.getFloat32(srcOfs + 20, true);
     vertexBuffer[i * 8 + 4] = m2.view.getFloat32(srcOfs + 24, true);
     vertexBuffer[i * 8 + 5] = m2.view.getFloat32(srcOfs + 28, true);
 
-    // UV1: offset 32 (after normal(12)), 2 floats (8 bytes)
     vertexBuffer[i * 8 + 6] = m2.view.getFloat32(srcOfs + 32, true);
     vertexBuffer[i * 8 + 7] = m2.view.getFloat32(srcOfs + 36, true);
   }
 
-  // Build index buffer — triangle indices already reference the remap array
   const indexBuffer = skin.rawTriangles;
 
-  // Build submesh groups (filter out empty placeholder submeshes)
   const groups = skin.submeshes
     .filter(s => s.indexCount > 0 && s.id !== 65535)
     .map(s => ({
@@ -170,10 +183,9 @@ function main() {
   binData.set(vertexBytes, 0);
   binData.set(indexBytes, vertexBytes.byteLength);
 
-  mkdirSync(OUT_DIR, { recursive: true });
-  writeFileSync(OUT_BIN, binData);
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(outBin, binData);
 
-  // Write manifest
   const manifest = {
     vertexCount,
     indexCount: indexBuffer.length,
@@ -183,40 +195,36 @@ function main() {
     vertexStride: BROWSER_VERTEX_SIZE,
     groups,
   };
-  writeFileSync(OUT_JSON, JSON.stringify(manifest, null, 2));
+  writeFileSync(outJson, JSON.stringify(manifest, null, 2));
 
-  // Summary
-  console.log(`\n=== Output ===`);
-  console.log(`Vertex count: ${vertexCount}`);
-  console.log(`Triangle count: ${manifest.triangleCount}`);
-  console.log(`Groups: ${groups.length}`);
-  console.log(`Vertex buffer: ${vertexBytes.byteLength} bytes`);
-  console.log(`Index buffer: ${indexBytes.byteLength} bytes`);
-  console.log(`Total binary: ${binData.byteLength} bytes`);
-  console.log(`\nGroups:`);
-  for (const g of groups) {
-    console.log(`  id=${g.id} indexStart=${g.indexStart} indexCount=${g.indexCount} (${g.indexCount / 3} tris)`);
-  }
-  console.log(`\nFiles written:`);
-  console.log(`  ${OUT_BIN}`);
-  console.log(`  ${OUT_JSON}`);
-
-  // Sanity checks
+  // Sanity check
   const maxIdx = Math.max(...Array.from(indexBuffer));
-  console.log(`\nMax index value: ${maxIdx} (vertex count: ${vertexCount})`);
   if (maxIdx >= vertexCount) {
-    console.error(`ERROR: index ${maxIdx} out of range!`);
+    console.error(`  ERROR: ${model.slug} index ${maxIdx} out of range (${vertexCount} verts)!`);
     process.exit(1);
   }
 
-  // Check first vertex values are reasonable
-  console.log(`\nFirst 3 vertices (remapped):`);
-  for (let i = 0; i < 3; i++) {
-    const px = vertexBuffer[i*8], py = vertexBuffer[i*8+1], pz = vertexBuffer[i*8+2];
-    const nx = vertexBuffer[i*8+3], ny = vertexBuffer[i*8+4], nz = vertexBuffer[i*8+5];
-    const u = vertexBuffer[i*8+6], v = vertexBuffer[i*8+7];
-    console.log(`  v${i}: pos=(${px.toFixed(3)}, ${py.toFixed(3)}, ${pz.toFixed(3)}) normal=(${nx.toFixed(3)}, ${ny.toFixed(3)}, ${nz.toFixed(3)}) uv=(${u.toFixed(4)}, ${v.toFixed(4)})`);
+  return { vertexCount, triangleCount: manifest.triangleCount, groupCount: groups.length, binSize: binData.byteLength };
+}
+
+// --- Main ---
+
+function main() {
+  console.log(`Converting ${CHARACTER_MODELS.length} character models...\n`);
+
+  let totalModels = 0;
+  let totalTris = 0;
+
+  for (const model of CHARACTER_MODELS) {
+    const result = convertModel(model);
+    console.log(`${model.slug}: ${result.vertexCount} verts, ${result.triangleCount} tris, ${result.groupCount} groups, ${result.binSize} bytes`);
+    totalModels++;
+    totalTris += result.triangleCount;
   }
+
+  console.log(`\n=== Summary ===`);
+  console.log(`Models converted: ${totalModels}`);
+  console.log(`Total triangles: ${totalTris}`);
 }
 
 main();
