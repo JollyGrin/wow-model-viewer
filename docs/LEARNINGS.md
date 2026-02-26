@@ -499,3 +499,46 @@ Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hair
 | 3 | Patch mesh (12-triangle fan from boundary loop centroid) | SUCCESS | Hole is intentional in the M2, designed for hair/armor coverage |
 
 **Conclusion:** Intentional holes in the body mesh should be filled with generated patch geometry, not by repurposing equipment geosets.
+
+## [2026-02-26] Tapered Thigh Bridge — Filling the Lateral Gap
+
+**Context:** Geoset 903 was supposed to bridge legs to body, but analysis revealed the gap is LATERAL, not vertical. At Z ~0.72: 903 top is at |Y| 0.11-0.28 (leg-width) while body bottom is at |Y| 0.48-0.50 (hip-width). Zero geometry connects them.
+
+**Finding:** Built a tapered thigh bridge with 6 approaches tested:
+
+| # | Approach | Result | Key Insight |
+|---|----------|--------|-------------|
+| 18 | Tapered bridge, ease-out, topCenterY=-0.45, crotch at top ring | Golden color, visible bar | UVs mapped to underwear region; crotch bridge at wide top ring visible |
+| 19 | Fix UVs (v=0.63-0.69), reduce shift to -0.38, crotch at ring 1 | Skin-colored, bar still visible | Crotch bridge at ring 1 creates horizontal bar; top ring too conservative |
+| 20 | Remove crotch bridge entirely | Clean thighs, inner gap acceptable | No horizontal bars; inner thigh gap (|Y| ±0.10) less objectionable than bars |
+| 21 | Add crotch panel (rings 0-2 inner vertices connected) | Multiple horizontal bars | Vertical connection triangles appear edge-on as 3 horizontal lines — WORSE |
+| 22 | Ease-in (t^2) interpolation | Horn/tusk shapes | Concentrated widening at top creates dramatic outer-hip curves |
+| **23** | **Ease-out (1-(1-t)^2), topCenterY=-0.40, no crotch bridge** | **BEST** | Natural taper; most widening hidden inside body mesh; skin UVs match |
+
+**Final bridge design:**
+- Bottom ring: matches 502 top boundary (Z ~0.55-0.61, centered |Y| ~0.18)
+- Top ring: center shifted to |Y| ~0.40, Z=0.85 (inside body mesh)
+- 5 rings, 6 verts each, ease-out lateral shift, linear Z
+- No crotch bridge (horizontal bars from any crotch connection are worse than the gap)
+- Body mesh: polygonOffset -1 (renders in front); Bridge: polygonOffset +1 (behind)
+- UVs map to v=0.63-0.69 (skin-colored thigh region, NOT underwear at v=0.38-0.50)
+
+**Remaining artifacts:**
+1. Body mesh lip/shelf at Z 0.72-0.84 — downward-facing triangles wider than bridge top
+2. Inner thigh gap — no crotch geometry (every approach creates visible horizontal bars)
+3. These are geometric limits requiring texture compositing to fully eliminate
+
+**Impact:** Removed geoset 903. Added tapered thigh bridge (~80 lines). Character now has continuous legs from feet to waist. The thigh gap that was previously a massive black hole is now filled with skin-colored tapered geometry.
+**Reference:** `src/loadModel.ts` thigh bridge section, comparison screenshots
+
+### Thigh Bridge Approaches (Updated)
+
+| # | Approach | Outcome | Key Insight |
+|---|----------|---------|-------------|
+| 17 | Constant-width tubes to Z=0.85 | BEST (old) | No bridge artifacts, body lip remains |
+| 18 | Tapered, ease-out, crotch at top | FAILED | UVs wrong + crotch bar visible + extends past body |
+| 19 | Tapered, ease-out, crotch at ring 1, fixed UVs | PARTIAL | Still visible crotch bar |
+| 20 | Tapered, ease-out, no crotch | GOOD | Clean but inner thigh gap |
+| 21 | Tapered + crotch panel (rings 0-2) | FAILED | Multiple horizontal bars from edge-on triangles |
+| 22 | Tapered, ease-in (t^2) | FAILED | Horn shapes from concentrated lateral shift |
+| **23** | **Tapered, ease-out, no crotch, shift=0.40** | **BEST** | Natural taper, skin UVs, no bars |

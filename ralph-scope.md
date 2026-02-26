@@ -1,8 +1,8 @@
-# Ralph Scope: Fix Leg Geometry
+# Ralph Scope: Fix Upper Thigh Gap
 
 ## Goal
 
-Eliminate the massive hip wing protrusions and dark crotch gap visible in the current render. These are the two dominant visual problems — the model looks broken at the legs.
+Fill the visible black gap between the body mesh waist (Z ~0.72) and the knee/leg geometry (geosets 903+502). The reference shows continuous skin from waist to feet — our render has a hole in the upper thigh region.
 
 ## How to Validate
 
@@ -16,74 +16,64 @@ After every change, run `/e2e-eval` which builds the project, runs Playwright te
 
 Evaluate ALL FIVE screenshots every time. The legs close-up is the PRIMARY view for this task.
 
-## Current State
+Compare to reference: `screenshots/REFERENCE/human-male-front.png`
 
-- Upper back hole: FIXED (neck patch)
-- Hip wing protrusions: FIXED — removed all vertex manipulation, stripped geoset 1102
-- Dark crotch gap: FIXED — was caused by vertex snapping, eliminated by removing snapping
-- Kneepad seams: N/A — kneepads removed (902/903 are armor, not bare skin)
-- Boot-like knees: FIXED — switched from 502 (boots) to 501 (bare feet)
-- Missing upper thighs: FIXED — constant-width thigh bridge tubes from Z=0.58 to Z=0.85
-- Waist skirt: REDUCED — removed equipment geosets, remaining shape is body mesh's own bottom lip
-- Bridge widening: ABANDONED — 6 approaches tried (Y-clamping, step easing, panels), all create visible artifacts. Constant-width is optimal.
-- Hip shadow line / body lip: KNOWN LIMITATION — body mesh bottom edge at Z 0.72-0.84 creates a visible trapezoidal shape. Requires texture compositing (CharSections underwear) to fully eliminate. This is the geometric limit.
+## Current State (2026-02-26)
+
+### Working
+- Upper back hole: FIXED (neck patch geometry)
+- Hair: Working (hairstyle 5, dark brown braids)
+- Skin texture: Composited from CharSections (base + face + underwear)
+- Lighting: Warm-toned MeshLambertMaterial, matches reference
+- All other races load (20 race/gender combos)
+
+### The Problem
+Body mesh has ZERO vertices from Z 0.20 to Z 0.70 (entire thigh region). Current geoset coverage:
+
+| Geometry | Z range | Tris | Visual |
+|----------|---------|------|--------|
+| Body (0) | 0.72 → 1.96 | 620 | Torso, waist, head |
+| 903 (upper legs) | 0.49 → 0.73 | 64 | Kneepads — NOT full thigh wrap |
+| 502 (legs) | 0.13 → 0.61 | 142 | Lower legs + feet |
+| **GAP** | **~0.61 → 0.72** | **0** | **Black hole (upper thighs)** |
+
+903 only reaches body mesh at a few vertices near Z 0.73 — doesn't form a complete ring. The gap is clearly visible in the screenshot the user provided.
+
+In the WoW client, this gap is hidden by:
+1. Underwear texture composited onto the skin atlas (paint continuity across the seam)
+2. The geosets sharing boundary vertices (stitched mesh at edges)
+3. Equipment geosets (pants, robes) covering the area
 
 ## Key Files
 
-- `src/loadModel.ts` — Model loading, geoset filtering, material setup, thigh bridge geometry
+- `src/loadModel.ts` — Model loading, geoset filtering, material setup, neck patch
 - `src/main.ts` — Scene, camera, lighting
 - `e2e/human-male.spec.ts` — Playwright test with camera views
-- `docs/LEARNINGS.md` — All findings so far
+- `docs/LEARNINGS.md` — All findings (500+ lines, check before attempting anything)
 
-## Current Technique (in loadModel.ts)
+## Current Geosets (in loadModel.ts DEFAULT_GEOSETS)
 
-Clean rendering with NO vertex manipulation:
-- All skin geosets merged into a single draw call (shared InterleavedBuffer)
-- MeshLambertMaterial with DoubleSide, polygonOffset -1 (renders in front of bridge)
-- Naked character geosets: 0, 5, 101, 201, 301, 401, 501, 701, 1002
-- Equipment geosets removed: 502 (boots), 902/903 (kneepads), 1102 (pants)
-- Separate hair mesh with hair texture
-- Neck patch fills intentional back-of-neck hole
-- Thigh bridge: two constant-width tubes (matching 501 top cross-section) from Z=0.58 to Z=0.85, with 4-quad crotch bridge connecting inner vertices at top ring. No front/back panels, no widening. Bridge renders behind body (polygonOffset +1). Body mesh lip remains visible — requires texture compositing.
+```
+0     — body mesh (torso, waist, head)
+5     — hairstyle 4 (long braids)
+101   — facial 1 default
+201   — facial 2 default
+301   — facial 3 default
+401   — bare hands
+502   — legs (Z 0.13–0.61)
+701   — ears
+903   — upper legs (Z 0.49–0.73, kneepads)
+1002  — undershirt (Z 0.93–1.11)
+```
 
-## What Was Tried
+## What Was Already Tried (DO NOT REPEAT)
 
-### Vertex manipulation approaches (ALL FAILED)
-1. 55% centroid shrink — black gaps between legs
-2. Normal-based vertex snapping — eliminated skirt but created hip wings
-3. Stretch ratio triangle culling (3x) — reduced wings but remnants + crotch gap
-4. Angular-aware vertex projection — wide horizontal shelf (body wider than geoset)
-5. X-direction clamping — still visible skirt + gap
+See docs/LEARNINGS.md "Approaches Summary > Leg Geometry" for the full table of 17 failed approaches. Key takeaways:
 
-**Key insight: WoW does NO vertex manipulation. The vertex snapping was CAUSING the problems.**
-
-### Geoset selection approach (SUCCESS)
-- Discovered correct WoW default formula: `enabled_meshId = groupBase + geosetGroupValue + 1`
-- Switched 501→502 (double the leg geometry), confirmed 902 as correct default
-- Removed 1102 entirely (all flare, no fill)
-- Used 902+903 together to bridge knee gap
-
-### Bridge widening approaches (ALL FAILED — see LEARNINGS.md for full details)
-6 approaches tried to widen the bridge top to cover the body mesh lip:
-- Y-clamping body + wide bridge → hexagonal band (body narrower than bridge)
-- Swapping polygonOffset → bridge extends beyond body above lip zone
-- Narrow bridge under lip → black gap between lip and bridge
-- 3-keyframe with mid ring → visible horizontal bar at mid ring widening
-- Step easing + panels → disc shape visible edge-on as horizontal line
-- **Constant-width tubes (no widening) → BEST RESULT** — no bridge artifacts
-
-**Key insight: polygonOffset only helps at OVERLAPS. Where bridge geometry extends beyond the body mesh edge, there's no body triangle to occlude it. Every widening approach creates edges visible beyond the body silhouette. Constant-width is the geometric optimum.**
-
-## Tasks
-
-### 1. Fix hip wing protrusions — DONE
-Solved by removing all vertex manipulation.
-
-### 2. Fix dark crotch gap — DONE
-Solved by removing vertex snapping (which was causing it).
-
-### 3. Fix kneepad seams — ACCEPTED AS-IS
-Minor shading difference. Not worth addressing without texture compositing.
+1. **NO vertex manipulation** — WoW doesn't do it, and every approach (snapping, shrinking, clamping) creates artifacts
+2. **NO bridge widening** — 6 approaches all created visible shelves/bars/discs
+3. **Constant-width bridge tubes** were the best geometric approach (removed when we switched to 903)
+4. **Geoset 1102 is ALL flare** — cannot fill the gap, only makes it worse
 
 ## Constraints
 
@@ -92,21 +82,7 @@ Minor shading difference. Not worth addressing without texture compositing.
 - Use `npm run build` to rebuild after code changes
 - Record all findings in `docs/LEARNINGS.md`
 - Keep changes minimal — one focused change per iteration
-
-## Research Tasks
-
-Research tasks produce LEARNINGS entries, not code changes.
-
-### R1. (template)
-- Question: <specific question to answer>
-- Sources to check: <repos, wikis, docs>
-- Done when: <what constitutes a sufficient answer>
-
-Example:
-### R2. Research: WoW texture compositing pipeline
-- Question: How does the WoW client composite CharSections skin layers into a single atlas?
-- Sources to check: wowdev.wiki CharSections, WoWModelViewer source (CharTexture.cpp), wowserhq/scene texture code
-- Done when: We know the compositing order, layer regions, and blending modes
+- Take a screenshot BEFORE and AFTER every code change
 
 ## Quality Bar
 

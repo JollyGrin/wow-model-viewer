@@ -41,7 +41,8 @@ const DEFAULT_GEOSETS = new Set([
   401,   // bare hands
   502,   // legs (Z 0.13–0.61, Y ±0.36)
   701,   // ears visible
-  903,   // upper legs (Z 0.49–0.73, fills gap to body mesh)
+  // 903 removed — thigh bridge geometry replaces it (903 is kneepads, doesn't
+  // taper from leg-width to hip-width)
   1002,  // undershirt — fills upper back/chest (Z 0.93–1.11), above waist
 ]);
 
@@ -128,6 +129,9 @@ export async function loadModel(
   const skinMaterial = new THREE.MeshLambertMaterial({
     map: skinTexture,
     side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
   });
 
   const hairMaterial = hairTexture === skinTexture
@@ -219,6 +223,114 @@ export async function loadModel(
     patchGeom.setAttribute('uv', new THREE.InterleavedBufferAttribute(patchBuffer, 2, 6));
     patchGeom.setIndex(new THREE.BufferAttribute(patchIndices, 1));
     pivot.add(new THREE.Mesh(patchGeom, skinMaterial));
+  }
+
+  // Thigh bridge — tapered tubes from 502 top (Z ~0.58, leg-width) up into
+  // the body mesh (Z ~0.80, hip-width). The taper creates natural thigh shape.
+  // Body mesh renders in front at overlap zones so the bridge is only visible
+  // where no body geometry exists (the thigh void Z 0.17-0.72).
+  if (modelDir.includes('human-male')) {
+    const N = 6;      // vertices per ring
+    const RINGS = 5;   // rings per leg
+
+    // Bottom ring: matches 502 top boundary (Z ~0.55-0.61), centered at ~|Y|=0.18
+    const leftBottom: [number, number, number][] = [
+      [-0.108, -0.234, 0.614],   // 0: back-outer
+      [-0.037, -0.266, 0.603],   // 1: outer
+      [ 0.056, -0.228, 0.563],   // 2: front-outer
+      [ 0.051, -0.145, 0.549],   // 3: front-inner
+      [-0.011, -0.098, 0.571],   // 4: inner/crotch
+      [-0.107, -0.138, 0.599],   // 5: back-inner
+    ];
+
+    // Top ring: cross-section shifted toward hip center (|Y| 0.18 → 0.40)
+    // and pushed up to Z=0.85 (well inside body mesh). Body at Z=0.84 has
+    // |Y| ~0.55, our max |Y| ≈ 0.48 — safely inside with margin.
+    const bottomCenterY = -0.184;
+    const topCenterY = -0.40;
+    const topZ = 0.85;
+    const leftTop: [number, number, number][] = leftBottom.map(([x, y, _z]) => [
+      x,
+      topCenterY + (y - bottomCenterY),
+      topZ,
+    ] as [number, number, number]);
+
+    // UVs: map to skin-colored thigh region of composited texture.
+    // 502 top uses u=[0.50-0.99], v≈0.69; 903 uses v≈0.63-0.69.
+    // Use this range to get skin color (not underwear at v≈0.38-0.50).
+    const bottomUVs: [number, number][] = [
+      [0.80, 0.69], [0.75, 0.69], [0.68, 0.69],
+      [0.56, 0.69], [0.50, 0.69], [0.94, 0.69],
+    ];
+    const topUVs: [number, number][] = bottomUVs.map(([u]) => [u, 0.63]);
+
+    const totalVerts = N * RINGS * 2;
+    const positions = new Float32Array(totalVerts * 3);
+    const uvs = new Float32Array(totalVerts * 2);
+
+    function writeLeg(
+      bottom: [number, number, number][],
+      top: [number, number, number][],
+      baseVert: number,
+    ) {
+      for (let r = 0; r < RINGS; r++) {
+        const t = r / (RINGS - 1);
+        // Ease-out: gradual thigh taper, most natural look.
+        const tEase = 1 - (1 - t) * (1 - t);
+        for (let v = 0; v < N; v++) {
+          const vi = baseVert + r * N + v;
+          positions[vi * 3] = bottom[v][0] + (top[v][0] - bottom[v][0]) * tEase;
+          positions[vi * 3 + 1] = bottom[v][1] + (top[v][1] - bottom[v][1]) * tEase;
+          positions[vi * 3 + 2] = bottom[v][2] + (top[v][2] - bottom[v][2]) * t;
+          uvs[vi * 2] = bottomUVs[v][0] + (topUVs[v][0] - bottomUVs[v][0]) * t;
+          uvs[vi * 2 + 1] = bottomUVs[v][1] + (topUVs[v][1] - bottomUVs[v][1]) * t;
+        }
+      }
+    }
+
+    const mirror = (pts: [number, number, number][]) =>
+      pts.map(([x, y, z]) => [x, -y, z] as [number, number, number]);
+
+    writeLeg(leftBottom, leftTop, 0);
+    writeLeg(mirror(leftBottom), mirror(leftTop), N * RINGS);
+
+    const thighIdx: number[] = [];
+
+    function connectRings(baseA: number, baseB: number) {
+      for (let i = 0; i < N; i++) {
+        const j = (i + 1) % N;
+        thighIdx.push(baseA + i, baseB + i, baseA + j);
+        thighIdx.push(baseA + j, baseB + i, baseB + j);
+      }
+    }
+
+    // Left leg tube
+    for (let r = 0; r < RINGS - 1; r++) {
+      connectRings(r * N, (r + 1) * N);
+    }
+    // Right leg tube
+    const RB = N * RINGS;
+    for (let r = 0; r < RINGS - 1; r++) {
+      connectRings(RB + r * N, RB + (r + 1) * N);
+    }
+
+    // No crotch bridge — flat panel triangles between legs appear edge-on from
+    // the front as visible horizontal bars. The inner thigh gap is acceptable.
+
+    const thighGeom = new THREE.BufferGeometry();
+    thighGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    thighGeom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+    thighGeom.setIndex(new THREE.BufferAttribute(new Uint16Array(thighIdx), 1));
+    thighGeom.computeVertexNormals();
+
+    const bridgeMaterial = new THREE.MeshLambertMaterial({
+      map: skinTexture,
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: 1,
+      polygonOffsetUnits: 1,
+    });
+    pivot.add(new THREE.Mesh(thighGeom, bridgeMaterial));
   }
 
   // Hair mesh — uses hair texture
