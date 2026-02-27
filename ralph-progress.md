@@ -91,3 +91,14 @@
   Code reduced from ~300+ lines (with snapping infrastructure) to ~210 lines (clean rendering).
 
   Remaining: upper thigh gap between waist and kneepads, visible from front. This is a model design limitation — WoW fills this with underwear texture compositing. Acceptable until texture compositing is implemented.
+
+## [2026-02-27] Task: Re-add 903 Y-stretch + crotch patch (approach #33)
+- Status: done
+- Hypothesis: Re-adding 903 Y-stretch (1.75× smoothstep) + body pull-down + crotch patch from approach #33 would fill the thigh gap on baked vertices, because the bone-baking LEARNINGS entry confirmed baking didn't affect thigh geometry.
+- Result: confirmed — massive black void (~80px) reduced to thin seam (~15-20px)
+- Prior art checked: LEARNINGS entries for approaches 30-33, bone baking experiment (2026-02-26), all 17 bridge approaches
+- Files changed: src/loadModel.ts
+- Screenshots: screenshots/runs/2026-02-27T14-23-16_fix-thigh-gap-before → screenshots/runs/2026-02-27T14-27-30_fix-thigh-gap-after
+- Decisions: Used same parameters as original #33 (1.75× smoothstep Z 0.458-0.733, body pull Z-=0.05 Y*=0.94, 6-vertex crotch trapezoid). Adjusted body pull threshold to |Y|>0.30 and Z 0.60-0.80 to match post-baked positions.
+- Notes: Vertex positions post-baking are nearly identical to pre-baked for geosets 903 and body mesh thigh zone. 903 Z range 0.458-0.733 (same as documented). Remaining seam at body/903 boundary is the documented limitation — requires vertex stitching or texture compositing to eliminate.
+- Next: N/A — thigh gap is at the geometric limit. Further improvement requires texture compositing (painting underwear texture over the seam zone).
