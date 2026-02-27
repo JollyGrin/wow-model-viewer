@@ -53,8 +53,19 @@ Run these checks in order. Fix and retry if they fail (max 3 attempts each).
 
 1. **Type check:** `tsc --noEmit`
 2. **Build:** `bun run build`
-3. **Visual eval (if visual change):** Run `/e2e-eval`
-   - If e2e-eval fails 3 times, record what you tried and mark the task as blocked.
+3. **Visual eval (if visual change):** Launch `/visual-eval` as a **Task agent**.
+   - Use the Task tool with `subagent_type: "general-purpose"` and `run_in_background: true`
+   - Prompt: "Run the /visual-eval skill. Build the project, run Playwright screenshots, compare against references, and return the structured VERDICT report."
+   - While it runs, continue to **Step 5** (record progress with "eval: pending")
+   - When the agent returns, read its structured result
+   - If VERDICT is **REGRESSED**: next iteration must address the regression
+   - If VERDICT is **BLOCKED**: investigate build/test infrastructure before proceeding
+   - If VERDICT is **PASS** or **IMPROVED**: proceed normally
+   - If eval agent fails 3 times on the same issue, mark the task as blocked
+
+   **Why a separate agent?** The eval agent reads 5+ screenshots and 2 reference images
+   in its own disposable context window. This keeps ralph's context clean for code work.
+   The eval agent is stateless — it has no memory of previous evaluations or code changes.
 
 If after 3 attempts a gate still fails, REVERT your changes and move on.
 

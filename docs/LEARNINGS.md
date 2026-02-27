@@ -541,4 +541,81 @@ Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hair
 | 20 | Tapered, ease-out, no crotch | GOOD | Clean but inner thigh gap |
 | 21 | Tapered + crotch panel (rings 0-2) | FAILED | Multiple horizontal bars from edge-on triangles |
 | 22 | Tapered, ease-in (t^2) | FAILED | Horn shapes from concentrated lateral shift |
-| **23** | **Tapered, ease-out, no crotch, shift=0.40** | **BEST** | Natural taper, skin UVs, no bars |
+| **23** | **Tapered, ease-out, no crotch, shift=0.40** | **BEST (old)** | Natural taper, skin UVs, no bars |
+| 24 | Lip tri culling + exact body boundary top ring | FAILED | All 6 top ring verts at |Y| ~0.49-0.50 (flat band, not tube) |
+| **25** | **Full-tube bridge with inner thigh vertices, extended above lip** | **BEST** | See below |
+
+## [2026-02-26] Full-Tube Thigh Bridge (Approach 25) — Best Result
+
+**Context:** All previous bridge approaches (#18-24) failed because the top ring only had OUTER body mesh vertices (all at |Y| ~0.49-0.50). This created a flat band, not a tube. The body mesh has ZERO inner thigh vertices — it's just an outer hip barrel.
+
+**Finding:** Three key insights solved the problem:
+
+1. **Inner thigh vertices must be INVENTED**: Body mesh bottom is ALL outer (|Y| 0.48-0.54). For a proper tube, the top ring needs 3 outer vertices matching the body mesh AND 3 inner vertices at |Y| 0.10-0.20 (inside the body mesh volume, hidden from view).
+
+2. **Bridge must extend ABOVE the body mesh lip**: Previous bridges topped at Z 0.74 (body lip level). The bridge outer edge tapered inward below the lip, creating a triangular gap. By extending to Z ~0.84, with ease-out interpolation, the bridge outer edge is WIDER than the body at the lip height (~|Y| 0.53 vs body at 0.50). The body mesh renders naturally in front; the bridge fills behind.
+
+3. **Lip culling is unnecessary**: The body mesh lip isn't a separate "shelf" to remove — it's the edge of the body barrel. Removing triangles creates ragged holes worse than the seam. The bridge fills behind the body mesh, making the lip invisible from most angles.
+
+**Final bridge design (Approach 25):**
+- 6 verts/ring, 8 rings, Z 0.55 to 0.84
+- Top ring: 3 outer at body mesh Z~0.83 (|Y| 0.54), 3 inner invented (|Y| 0.10-0.20)
+- Bottom ring: 502 top boundary vertices (Z 0.55-0.61, |Y| 0.10-0.27)
+- Ease-out interpolation: tEase = 1 - (1-t)^2
+- No polygonOffset on body mesh; bridge has polygonOffset +1 (renders behind)
+- UVs: v=0.63-0.69 (skin color)
+- No lip culling, no 903 geoset
+
+**Remaining seam:** A horizontal band is visible at the body-to-bridge transition. This is the body mesh edge (silhouette of the hip barrel) and cannot be eliminated without vertex stitching. Would require modifying the M2 vertex buffer to share boundary vertices between geosets.
+
+**What DOESN'T work for the seam:**
+- Lip triangle culling (downward-facing only): Misses outward-facing edge triangles
+- Aggressive culling (centroid-based): Spanning triangles form the edge; removing them creates holes
+- PolygonOffset removal: No visual change (surfaces aren't close enough to Z-fight)
+
+**Impact:** Character thighs are now filled with proper tube geometry. The "empty hole" from the original problem is resolved. Inner thigh/crotch gap remains (acceptable — every crotch bridge attempt created horizontal bars).
+**Reference:** `src/loadModel.ts` thigh bridge section
+
+## [2026-02-26] Geoset 903 Y-Stretch + Crotch Patch (Approaches 30-33)
+
+**Context:** Replaced full-tube bridge geometry with a simpler approach: stretching existing 903 geoset vertices outward in Y + custom crotch patch geometry.
+
+**Approach evolution (this session):**
+
+| # | Approach | Outcome | Key Insight |
+|---|----------|---------|-------------|
+| 30a | Thigh frustum (large elliptical tubes) | FAILED | Massive balloon shapes attached to legs |
+| 30b | Thigh frustum (thin at top) | FAILED | Flat panels/wings extending from hips |
+| **31** | **903 Y-stretch (1.75x smoothstep) + 902 + body pull-down** | **GOOD** | Real geometry fills thighs; thin seam remains |
+| 32a | 903 Z-push (0.06-0.12) + aggressive body pull (0.15) | MARGINAL | More overlap but still visible seam; body shelf artifact |
+| 32b | Stitch triangles (body ring → 903 ring, zipper merge) | FAILED | Close rings → invisible slivers; far rings → massive panels |
+| 32c | No body mods, just 903 Y-stretch | SAME AS 31 | Body pull-down doesn't affect gap (it's a shape mismatch) |
+| **33** | **903 Y-stretch + body pull + crotch patch** | **BEST** | Crotch patch fills the inner thigh hole |
+
+**Key findings:**
+
+1. **The gap is a SHAPE MISMATCH, not a Z-gap**: Body barrel is one wide tube (|Y| ±0.49). 903 legs are two narrow tubes (|Y| ±0.17 centered). Even after stretching 903 to match body width, the inner thigh/crotch has no body vertices (body has ZERO verts at |Y| < 0.40 near Z 0.72).
+
+2. **Body pull-down has minimal effect**: Pulling body barrel bottom ring down (Z -= 0.08) and narrowing Y (×0.92) doesn't visibly change the gap. The gap is between the two separate mesh surfaces at the silhouette edge, not a Z-distance issue.
+
+3. **Stitch triangles don't work**: Connecting body bottom ring to 903 top ring with triangles using existing vertex indices either creates (a) invisible slivers (when rings are close in Z) because the gap is at the curvature edge, not in the planar gap, or (b) massive flat panels (when rings are far apart after Z modifications).
+
+4. **903 Z-push has diminishing returns**: Pushing 903 top vertices upward creates more Z overlap behind the body barrel, but the visible seam at the silhouette edge persists. The seam is where the body barrel's surface curves away from the camera, not a planar gap.
+
+5. **Crotch patch works like neck patch**: A simple flat patch (6 vertices, 4 triangles) positioned at X=-0.02 behind the gap between legs fills the dark crotch hole. The patch is occluded by leg geometry from most angles and only visible through the actual gap. Normal pointing forward-upward (0.7, 0, 0.71) provides reasonable lighting match.
+
+**Current implementation (loadModel.ts):**
+- DEFAULT_GEOSETS: includes 902 and 903
+- 903 Y-stretch: smoothstep blend, 1.75× at top (Z 0.73), 1.0× at bottom (Z 0.49)
+- Body barrel bottom ring: Z pull-down 0.08, Y narrow 0.92 (Z 0.72-0.80, |Y| > 0.40)
+- Crotch patch: 6-vertex trapezoid, top Y=±0.14 at Z=0.80 (hidden behind body), mid Y=±0.24 at Z=0.66 (visible), bottom Y=±0.18 at Z=0.52
+
+**Remaining seam:** Thin dark lines on outer thighs where body barrel meets 903. Cannot be fixed without vertex stitching (shared boundary vertices in the M2 export).
+**Reference:** `src/loadModel.ts` lines 127-170 (vertex mods), lines 269-301 (crotch patch)
+
+## [2026-02-26] Baking Bone Transforms (Stand Frame 0) Did Not Fix Thigh Gap
+
+**Context:** Modified `convert-model.ts` to bake bone transforms from the Stand animation at frame 0 directly into vertex positions, hoping this would close the gap between the pelvis/torso geoset and the upper thigh geosets.
+**Finding:** The thigh gap persists unchanged after baking bone transforms. All 5 camera angles (front, back, rear-quarter, top-back, legs close-up) show the same prominent black void between the underwear/pelvis area and the tops of the thighs. The thigh geometry tops remain flat/cut-off with sharp angular edges. The gap is approximately 20-30px in the full-body view and 40-50px in the legs close-up. This confirms the issue is NOT caused by un-applied bone rest-pose transforms.
+**Impact:** The thigh gap is likely caused by one of: (1) a missing geoset that bridges the pelvis to the thighs, (2) incorrect geoset selection omitting groin/inner-thigh geometry, or (3) the runtime vertex modifications (Y-stretch, barrel bottom ring pull-down) in loadModel.ts being overridden or no longer compatible with the baked positions. The previous approach of runtime vertex patching (geosets 902/903, Y-stretch, crotch patch) documented in the prior entry may need to be re-evaluated against the new baked vertex positions.
+**Reference:** `screenshots/human-male-legs-test.png`, `scripts/convert-model.ts`

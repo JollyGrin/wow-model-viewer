@@ -12,38 +12,35 @@ interface ModelManifest {
 
 // Geoset visibility for a naked character.
 //
-// For empty equipment slots, the geoset is determined by the slot's default.
-// Bare skin character: body + facial features + bare hands + legs + upper legs.
-// The body mesh has zero vertices from Z 0.20 to Z 0.72 (thighs are empty by
-// design). Geoset 903 (Z 0.49–0.73) overlaps the body mesh at Z 0.72 and
-// legs (502) at Z 0.49–0.61, providing continuous coverage with no gap.
+// The body mesh (geoset 0) has a hole from Z 0.2 to Z 0.7 (the entire thigh
+// region). This is filled by group 5 (boots/legs) and group 9 (upper legs).
+// For a naked character: 501 = bare legs, 903 = upper leg bridge to body.
 //
 // Geoset group reference (group = floor(id/100)):
-//   0xx: Hairstyles (pick one)
+//   0xx: Body (0) + hairstyles (1-18)
 //   1xx: Facial 1 (jaw/beard) — 101 = default
 //   2xx: Facial 2 (sideburns) — 201 = default
 //   3xx: Facial 3 (moustache) — 301 = default
 //   4xx: Gloves — 401 = bare hands
-//   5xx: Boots — 502 = wider legs (142 tris, Z 0.13–0.61)
+//   5xx: Boots/legs — 501 = bare legs, 502+ = boots
 //   7xx: Ears — 701 = ears visible
-//   9xx: Upper legs — 903 bridges legs to body (Z 0.49–0.73)
-//  10xx: Undershirt — 1002 fills upper back/chest (Z 0.93–1.11)
+//   9xx: Upper legs — 903 bridges 501→body (Z 0.49–0.73)
+//  10xx: Undershirt — none for naked
 //  11xx: Pants — none for naked
 //  12xx: Tabard — none
 //  13xx: Robe — none
 //  15xx: Cape — none
 const DEFAULT_GEOSETS = new Set([
-  0,     // body mesh (torso, waist, head, feet)
+  0,     // body mesh (torso Z≥0.7, feet Z≤0.2 — hole Z 0.2–0.7 for legs)
   5,     // hairstyle 4 (long hair with braids — matches Hair04 texture)
   101,   // facial 1 default (jaw geometry)
   201,   // facial 2 default
   301,   // facial 3 default
-  401,   // bare hands
-  502,   // legs (Z 0.13–0.61, Y ±0.36)
+  401,   // bare hands (Z 1.0–1.3)
+  501,   // bare legs (Z 0.13–0.61, Y ±0.31) — fills body hole
   701,   // ears visible
-  // 903 removed — thigh bridge geometry replaces it (903 is kneepads, doesn't
-  // taper from leg-width to hip-width)
-  1002,  // undershirt — fills upper back/chest (Z 0.93–1.11), above waist
+  902,   // upper legs wider (Z 0.34–0.61, Y ±0.37)
+  903,   // upper legs bridge (Z 0.49–0.73) — connects to body bottom
 ]);
 
 function isGeosetVisible(id: number, enabled: Set<number>): boolean {
@@ -129,9 +126,6 @@ export async function loadModel(
   const skinMaterial = new THREE.MeshLambertMaterial({
     map: skinTexture,
     side: THREE.DoubleSide,
-    polygonOffset: true,
-    polygonOffsetFactor: -1,
-    polygonOffsetUnits: -1,
   });
 
   const hairMaterial = hairTexture === skinTexture
@@ -141,7 +135,7 @@ export async function loadModel(
         side: THREE.DoubleSide,
       });
 
-  // Collect indices: all skin geosets merged, hair separate
+  // Collect indices: all skin geosets merged, hair separate.
   const skinIndices: number[] = [];
   const hairIndices: number[] = [];
 
@@ -223,114 +217,6 @@ export async function loadModel(
     patchGeom.setAttribute('uv', new THREE.InterleavedBufferAttribute(patchBuffer, 2, 6));
     patchGeom.setIndex(new THREE.BufferAttribute(patchIndices, 1));
     pivot.add(new THREE.Mesh(patchGeom, skinMaterial));
-  }
-
-  // Thigh bridge — tapered tubes from 502 top (Z ~0.58, leg-width) up into
-  // the body mesh (Z ~0.80, hip-width). The taper creates natural thigh shape.
-  // Body mesh renders in front at overlap zones so the bridge is only visible
-  // where no body geometry exists (the thigh void Z 0.17-0.72).
-  if (modelDir.includes('human-male')) {
-    const N = 6;      // vertices per ring
-    const RINGS = 5;   // rings per leg
-
-    // Bottom ring: matches 502 top boundary (Z ~0.55-0.61), centered at ~|Y|=0.18
-    const leftBottom: [number, number, number][] = [
-      [-0.108, -0.234, 0.614],   // 0: back-outer
-      [-0.037, -0.266, 0.603],   // 1: outer
-      [ 0.056, -0.228, 0.563],   // 2: front-outer
-      [ 0.051, -0.145, 0.549],   // 3: front-inner
-      [-0.011, -0.098, 0.571],   // 4: inner/crotch
-      [-0.107, -0.138, 0.599],   // 5: back-inner
-    ];
-
-    // Top ring: cross-section shifted toward hip center (|Y| 0.18 → 0.40)
-    // and pushed up to Z=0.85 (well inside body mesh). Body at Z=0.84 has
-    // |Y| ~0.55, our max |Y| ≈ 0.48 — safely inside with margin.
-    const bottomCenterY = -0.184;
-    const topCenterY = -0.40;
-    const topZ = 0.85;
-    const leftTop: [number, number, number][] = leftBottom.map(([x, y, _z]) => [
-      x,
-      topCenterY + (y - bottomCenterY),
-      topZ,
-    ] as [number, number, number]);
-
-    // UVs: map to skin-colored thigh region of composited texture.
-    // 502 top uses u=[0.50-0.99], v≈0.69; 903 uses v≈0.63-0.69.
-    // Use this range to get skin color (not underwear at v≈0.38-0.50).
-    const bottomUVs: [number, number][] = [
-      [0.80, 0.69], [0.75, 0.69], [0.68, 0.69],
-      [0.56, 0.69], [0.50, 0.69], [0.94, 0.69],
-    ];
-    const topUVs: [number, number][] = bottomUVs.map(([u]) => [u, 0.63]);
-
-    const totalVerts = N * RINGS * 2;
-    const positions = new Float32Array(totalVerts * 3);
-    const uvs = new Float32Array(totalVerts * 2);
-
-    function writeLeg(
-      bottom: [number, number, number][],
-      top: [number, number, number][],
-      baseVert: number,
-    ) {
-      for (let r = 0; r < RINGS; r++) {
-        const t = r / (RINGS - 1);
-        // Ease-out: gradual thigh taper, most natural look.
-        const tEase = 1 - (1 - t) * (1 - t);
-        for (let v = 0; v < N; v++) {
-          const vi = baseVert + r * N + v;
-          positions[vi * 3] = bottom[v][0] + (top[v][0] - bottom[v][0]) * tEase;
-          positions[vi * 3 + 1] = bottom[v][1] + (top[v][1] - bottom[v][1]) * tEase;
-          positions[vi * 3 + 2] = bottom[v][2] + (top[v][2] - bottom[v][2]) * t;
-          uvs[vi * 2] = bottomUVs[v][0] + (topUVs[v][0] - bottomUVs[v][0]) * t;
-          uvs[vi * 2 + 1] = bottomUVs[v][1] + (topUVs[v][1] - bottomUVs[v][1]) * t;
-        }
-      }
-    }
-
-    const mirror = (pts: [number, number, number][]) =>
-      pts.map(([x, y, z]) => [x, -y, z] as [number, number, number]);
-
-    writeLeg(leftBottom, leftTop, 0);
-    writeLeg(mirror(leftBottom), mirror(leftTop), N * RINGS);
-
-    const thighIdx: number[] = [];
-
-    function connectRings(baseA: number, baseB: number) {
-      for (let i = 0; i < N; i++) {
-        const j = (i + 1) % N;
-        thighIdx.push(baseA + i, baseB + i, baseA + j);
-        thighIdx.push(baseA + j, baseB + i, baseB + j);
-      }
-    }
-
-    // Left leg tube
-    for (let r = 0; r < RINGS - 1; r++) {
-      connectRings(r * N, (r + 1) * N);
-    }
-    // Right leg tube
-    const RB = N * RINGS;
-    for (let r = 0; r < RINGS - 1; r++) {
-      connectRings(RB + r * N, RB + (r + 1) * N);
-    }
-
-    // No crotch bridge — flat panel triangles between legs appear edge-on from
-    // the front as visible horizontal bars. The inner thigh gap is acceptable.
-
-    const thighGeom = new THREE.BufferGeometry();
-    thighGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    thighGeom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-    thighGeom.setIndex(new THREE.BufferAttribute(new Uint16Array(thighIdx), 1));
-    thighGeom.computeVertexNormals();
-
-    const bridgeMaterial = new THREE.MeshLambertMaterial({
-      map: skinTexture,
-      side: THREE.DoubleSide,
-      polygonOffset: true,
-      polygonOffsetFactor: 1,
-      polygonOffsetUnits: 1,
-    });
-    pivot.add(new THREE.Mesh(thighGeom, bridgeMaterial));
   }
 
   // Hair mesh — uses hair texture

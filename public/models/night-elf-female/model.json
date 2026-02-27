@@ -1,9 +1,9 @@
 {
-  "vertexCount": 3645,
-  "indexCount": 13572,
-  "triangleCount": 4524,
-  "vertexBufferSize": 116640,
-  "indexBufferSize": 27144,
+  "vertexCount": 3672,
+  "indexCount": 13668,
+  "triangleCount": 4556,
+  "vertexBufferSize": 117504,
+  "indexBufferSize": 27336,
   "vertexStride": 32,
   "groups": [
     {
@@ -205,6 +205,11 @@
       "id": 0,
       "indexStart": 13560,
       "indexCount": 12
+    },
+    {
+      "id": 0,
+      "indexStart": 13572,
+      "indexCount": 96
     }
   ]
 }
