@@ -30,7 +30,6 @@ const DEFAULT_GEOSETS = new Set([
   401,   // bare hands
   501,   // bare feet
   701,   // ears visible
-  1002,  // undershirt (fills upper back/chest gap)
   1301,  // trousers-as-legs (thigh geometry, Z 0.55–1.10)
 ]);
 
@@ -186,25 +185,38 @@ export async function loadModel(
 
   const fullIndexData = new Uint16Array(binBuffer, manifest.vertexBufferSize, manifest.indexCount);
 
-  const skinMaterial = new THREE.MeshLambertMaterial({
+  // Body mesh pushed back so clothing geosets (1301, 1002) render on top at overlap zones.
+  // This is how WoW layers body vs equipment — prevents the body "lip" from creating a skirt.
+  const bodyMaterial = new THREE.MeshLambertMaterial({
+    map: skinTexture,
+    side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+  });
+
+  const overlayMaterial = new THREE.MeshLambertMaterial({
     map: skinTexture,
     side: THREE.DoubleSide,
   });
 
   const hairMaterial = hairTexture === skinTexture
-    ? skinMaterial
+    ? overlayMaterial
     : new THREE.MeshLambertMaterial({
         map: hairTexture,
         side: THREE.DoubleSide,
       });
 
-  // Collect indices per material
-  const skinIndexList: number[] = [];
+  // Collect indices per layer: body (geoset 0) vs overlays vs hair
+  const bodyIndexList: number[] = [];
+  const overlayIndexList: number[] = [];
   const hairIndexList: number[] = [];
 
   for (const g of manifest.groups) {
     if (!isGeosetVisible(g.id, enabledGeosets)) continue;
-    const target = HAIR_GEOSETS.has(g.id) ? hairIndexList : skinIndexList;
+    const target = HAIR_GEOSETS.has(g.id) ? hairIndexList
+      : g.id === 0 ? bodyIndexList
+      : overlayIndexList;
     for (let i = 0; i < g.indexCount; i++) {
       target.push(fullIndexData[g.indexStart + i]);
     }
@@ -216,38 +228,37 @@ export async function loadModel(
   // Build skeleton
   const { skeleton, roots } = buildSkeleton(manifest.bones);
 
-  // Skin SkinnedMesh — owns the bone hierarchy
-  if (skinIndexList.length > 0) {
+  // Helper to create a SkinnedMesh from an index list
+  function makeSkinnedMesh(indexList: number[], material: THREE.Material): THREE.SkinnedMesh {
     const geom = new THREE.BufferGeometry();
     geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geom.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
     geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     geom.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4));
     geom.setAttribute('skinWeight', new THREE.BufferAttribute(skinWeights, 4));
-    geom.setIndex(new THREE.BufferAttribute(new Uint16Array(skinIndexList), 1));
+    geom.setIndex(new THREE.BufferAttribute(new Uint16Array(indexList), 1));
+    const mesh = new THREE.SkinnedMesh(geom, material);
+    mesh.bind(skeleton, new THREE.Matrix4());
+    return mesh;
+  }
 
-    const mesh = new THREE.SkinnedMesh(geom, skinMaterial);
-    // Attach all root bones to the mesh (bones with no parent)
+  // Body SkinnedMesh — base layer, pushed back via polygonOffset. Owns the bone hierarchy.
+  if (bodyIndexList.length > 0) {
+    const mesh = makeSkinnedMesh(bodyIndexList, bodyMaterial);
     for (const root of roots) {
       mesh.add(root);
     }
-    mesh.bind(skeleton, new THREE.Matrix4());
     pivot.add(mesh);
+  }
+
+  // Overlay SkinnedMesh — clothing geosets render on top of body
+  if (overlayIndexList.length > 0) {
+    pivot.add(makeSkinnedMesh(overlayIndexList, overlayMaterial));
   }
 
   // Hair SkinnedMesh — shares the same skeleton (bones are in scene graph via skin mesh)
   if (hairIndexList.length > 0) {
-    const geom = new THREE.BufferGeometry();
-    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geom.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-    geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-    geom.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4));
-    geom.setAttribute('skinWeight', new THREE.BufferAttribute(skinWeights, 4));
-    geom.setIndex(new THREE.BufferAttribute(new Uint16Array(hairIndexList), 1));
-
-    const hairMesh = new THREE.SkinnedMesh(geom, hairMaterial);
-    hairMesh.bind(skeleton, new THREE.Matrix4());
-    pivot.add(hairMesh);
+    pivot.add(makeSkinnedMesh(hairIndexList, hairMaterial));
   }
 
   const group = new THREE.Group();

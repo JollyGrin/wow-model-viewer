@@ -285,9 +285,7 @@ function convertModel(model: CharacterModel) {
     u8[byteBase + 39] = buf[srcOfs + 15];
   }
 
-  const indexBuffer = skin.rawTriangles;
-
-  const groups = skin.submeshes
+  let groups = skin.submeshes
     .filter(s => s.indexCount > 0 && s.id !== 65535)
     .map(s => ({
       id: s.id,
@@ -295,9 +293,72 @@ function convertModel(model: CharacterModel) {
       indexCount: s.indexCount,
     }));
 
+  // --- Strip body mesh lip triangles in the geoset 1301 overlap zone ---
+  // The body mesh (geoset 0) barrel extends below the waist, wider than geoset 1301,
+  // creating a visible "skirt" flap. Strip those bottom-barrel triangles at build time.
+  const has1301 = groups.some(g => g.id === 1301);
+  let lipStripped = 0;
+  if (has1301) {
+    // Find body barrel min Z (ignore feet at Z < 0.5)
+    let barrelMinZ = Infinity;
+    for (const g of groups) {
+      if (g.id !== 0) continue;
+      for (let t = 0; t < g.indexCount; t++) {
+        const vi = skin.rawTriangles[g.indexStart + t];
+        const z = f32[vi * STRIDE_F32 + 2];
+        if (z > 0.5 && z < barrelMinZ) barrelMinZ = z;
+      }
+    }
+
+    if (barrelMinZ < Infinity) {
+      const lipCutoff = barrelMinZ + 0.30;
+
+      // Rebuild index buffer, skipping lip triangles from geoset 0.
+      // Use min-vertex-Z: strip if ANY vertex is in the barrel zone below cutoff.
+      // This prevents straddling triangles from creating wing artifacts.
+      const newIndices: number[] = [];
+      const newGroups: typeof groups = [];
+
+      for (const g of groups) {
+        const newStart = newIndices.length;
+        for (let t = 0; t < g.indexCount; t += 3) {
+          const i0 = skin.rawTriangles[g.indexStart + t];
+          const i1 = skin.rawTriangles[g.indexStart + t + 1];
+          const i2 = skin.rawTriangles[g.indexStart + t + 2];
+
+          if (g.id === 0) {
+            const z0 = f32[i0 * STRIDE_F32 + 2];
+            const z1 = f32[i1 * STRIDE_F32 + 2];
+            const z2 = f32[i2 * STRIDE_F32 + 2];
+            const minZ = Math.min(z0, z1, z2);
+            const maxZ = Math.max(z0, z1, z2);
+            // Strip barrel tris where any vertex dips into the lip zone.
+            // Must be in barrel area (maxZ > 0.5, not feet) and below cutoff.
+            if (maxZ > 0.5 && minZ < lipCutoff) {
+              lipStripped++;
+              continue;
+            }
+          }
+
+          newIndices.push(i0, i1, i2);
+        }
+        const newCount = newIndices.length - newStart;
+        if (newCount > 0) {
+          newGroups.push({ id: g.id, indexStart: newStart, indexCount: newCount });
+        }
+      }
+
+      // Replace index buffer and groups
+      skin.rawTriangles = new Uint16Array(newIndices);
+      groups = newGroups;
+    }
+  }
+
+  const indexBuffer = skin.rawTriangles;
+
   // Write binary: vertex buffer + index buffer
   const vertexBytes = new Uint8Array(outBuf);
-  const indexBytes = new Uint8Array(indexBuffer.buffer);
+  const indexBytes = new Uint8Array(indexBuffer.buffer, indexBuffer.byteOffset, indexBuffer.byteLength);
   const binData = new Uint8Array(vertexBytes.byteLength + indexBytes.byteLength);
   binData.set(vertexBytes, 0);
   binData.set(indexBytes, vertexBytes.byteLength);
@@ -329,7 +390,7 @@ function convertModel(model: CharacterModel) {
     process.exit(1);
   }
 
-  return { vertexCount, triangleCount: manifest.triangleCount, groupCount: groups.length, boneCount: bones.length, binSize: binData.byteLength };
+  return { vertexCount, triangleCount: manifest.triangleCount, groupCount: groups.length, boneCount: bones.length, binSize: binData.byteLength, lipStripped };
 }
 
 // --- Main ---
@@ -342,7 +403,8 @@ function main() {
 
   for (const model of CHARACTER_MODELS) {
     const result = convertModel(model);
-    console.log(`${model.slug}: ${result.vertexCount} verts, ${result.triangleCount} tris, ${result.groupCount} groups, ${result.boneCount} bones, ${result.binSize} bytes`);
+    const lipNote = result.lipStripped > 0 ? ` (stripped ${result.lipStripped} lip tris)` : '';
+    console.log(`${model.slug}: ${result.vertexCount} verts, ${result.triangleCount} tris, ${result.groupCount} groups, ${result.boneCount} bones, ${result.binSize} bytes${lipNote}`);
     totalModels++;
     totalTris += result.triangleCount;
   }
