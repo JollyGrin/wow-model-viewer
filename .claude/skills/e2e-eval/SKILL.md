@@ -106,6 +106,16 @@ browser with SwiftShader flags (`--use-angle=swiftshader`). The web server auto-
 If the test fails with an infrastructure error (port in use, browser crash), fix and
 re-run. Infrastructure errors are not visual problems.
 
+### Step 3.5 — Archive screenshots
+
+After a successful test run, archive the screenshots for history:
+
+```bash
+bash scripts/archive-run.sh "<feature-or-change-label>"
+```
+
+Use a descriptive label based on what change you're evaluating. Capture the output path — this is the run folder you'll reference in findings.
+
 ### Step 4 — Evaluate the screenshot
 
 #### Step 4a — Reference comparison
@@ -167,7 +177,7 @@ If the screenshot shows a real problem (not a SwiftShader artifact):
    **Context:** What change was made
    **Finding:** What the screenshot showed
    **Impact:** How this affects the approach
-   **Reference:** File path and line, or the screenshot path
+   **Reference:** File path and line, or the run folder path from Step 3.5
    ```
 2. Fix the code.
 3. Go back to **Step 1**.
