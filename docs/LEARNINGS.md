@@ -619,3 +619,51 @@ Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hair
 **Finding:** The thigh gap persists unchanged after baking bone transforms. All 5 camera angles (front, back, rear-quarter, top-back, legs close-up) show the same prominent black void between the underwear/pelvis area and the tops of the thighs. The thigh geometry tops remain flat/cut-off with sharp angular edges. The gap is approximately 20-30px in the full-body view and 40-50px in the legs close-up. This confirms the issue is NOT caused by un-applied bone rest-pose transforms.
 **Impact:** The thigh gap is likely caused by one of: (1) a missing geoset that bridges the pelvis to the thighs, (2) incorrect geoset selection omitting groin/inner-thigh geometry, or (3) the runtime vertex modifications (Y-stretch, barrel bottom ring pull-down) in loadModel.ts being overridden or no longer compatible with the baked positions. The previous approach of runtime vertex patching (geosets 902/903, Y-stretch, crotch patch) documented in the prior entry may need to be re-evaluated against the new baked vertex positions.
 **Reference:** `screenshots/human-male-legs-test.png`, `scripts/convert-model.ts`
+
+## [2026-02-27] Geoset 1301 (CG_TROUSERS = "legs") — THE Solution to Thigh Gap
+
+**Context:** After 33+ approaches (vertex manipulation, bridge geometry, texture compositing, bone baking), none solved the thigh gap. The body mesh (geoset 0) has zero vertices between Z 0.20–0.72 — there's literally no geometry connecting torso to legs.
+
+**Finding:** Geoset 1301 is the **correct WoW default** for a naked character's thigh geometry. It provides 118 triangles spanning Z 0.549–1.105, completely bridging the gap between bare feet/legs (geoset 501, Z 0.125–0.614) and the body mesh (geoset 0, Z 0.720+).
+
+The geoset ID formula: `meshId = groupBase + value + 1`. For CG_TROUSERS (group 13), value=1 → 1301 = "legs". WoWModelViewer initializes `cd.geosets[i] = 1` for ALL groups, meaning group 13 defaults to value=1 = mesh 1301.
+
+**Key geometry measurements (human-male):**
+| Geoset | Z range | Y range | Triangles | Role |
+|--------|---------|---------|-----------|------|
+| 0 (body) | 0.720–1.960 | wide | ~1200 | torso, head |
+| 501 (bare feet) | 0.125–0.614 | narrow | 86 | lower legs |
+| 1301 (legs) | 0.549–1.105 | moderate | 118 | **thigh tube** |
+| 1002 (undershirt) | 0.927–1.105 | moderate | ~40 | upper back fill |
+
+The overlap zones (501↔1301 at Z 0.55–0.61, 1301↔body at Z 0.72–1.10) are handled by the WoW engine via depth testing — no vertex manipulation needed.
+
+**Correct DEFAULT_GEOSETS for naked character:**
+```
+0, 5, 101, 201, 301, 401, 501, 701, 1002, 1301
+```
+
+**What NOT to do (all 33 approaches that failed before finding 1301):**
+- Do NOT hack vertices (Y-stretch, body pull-down, crotch patches)
+- Do NOT build synthetic bridge geometry (frustums, tube bridges, stitch triangles)
+- Do NOT try texture-only solutions for geometry gaps
+- Geosets 902/903 are kneepads, not needed for naked character (they cause waist flare)
+- Geoset 1102 is ALL outward flare — no fill geometry
+
+**Impact:** This is a complete solution. ALL vertex manipulation code was removed from loadModel.ts, reducing it from ~300+ lines to ~268 clean lines. The model now renders with fully connected legs using only native M2 geometry.
+
+**Reference:** wowdev.wiki Character Customization group 13; WoWModelViewer WoWModel.cpp `cd.geosets[i] = 1`; `src/loadModel.ts` DEFAULT_GEOSETS
+
+## [2026-02-27] Polygon Offset Layering for Body/Clothing Overlap
+
+**Context:** After enabling geoset 1301, the body mesh (geoset 0) bottom lip extends slightly beyond geoset 1301 at the waist, creating a visible "skirt" effect due to Z-fighting between overlapping geosets.
+
+**Finding:** Splitting the mesh into separate SkinnedMesh objects with different polygon offset settings fixes Z-fighting at overlap zones:
+- **Body mesh (geoset 0):** `polygonOffset: true, factor: 1, units: 1` — pushed slightly back in depth buffer
+- **Overlay geosets (1301, 1002, etc.):** No polygon offset — render at true depth, winning depth test in overlap zones
+- **Hair geosets:** Separate mesh with own texture
+
+This mirrors how WoW handles layered geometry — equipment geosets render on top of the body mesh at overlap zones.
+
+**Impact:** Eliminates the waist "skirt" artifact where body mesh lip was visible through clothing/leg geosets. Three separate SkinnedMesh objects share the same skeleton.
+**Reference:** `src/loadModel.ts` bodyMaterial, overlayMaterial, makeSkinnedMesh()

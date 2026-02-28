@@ -91,3 +91,36 @@
   Code reduced from ~300+ lines (with snapping infrastructure) to ~210 lines (clean rendering).
 
   Remaining: upper thigh gap between waist and kneepads, visible from front. This is a model design limitation — WoW fills this with underwear texture compositing. Acceptable until texture compositing is implemented.
+
+## [2026-02-27] Task: Re-add 903 Y-stretch + crotch patch (approach #33)
+- Status: done
+- Hypothesis: Re-adding 903 Y-stretch (1.75× smoothstep) + body pull-down + crotch patch from approach #33 would fill the thigh gap on baked vertices, because the bone-baking LEARNINGS entry confirmed baking didn't affect thigh geometry.
+- Result: confirmed — massive black void (~80px) reduced to thin seam (~15-20px)
+- Prior art checked: LEARNINGS entries for approaches 30-33, bone baking experiment (2026-02-26), all 17 bridge approaches
+- Files changed: src/loadModel.ts
+- Screenshots: screenshots/runs/2026-02-27T14-23-16_fix-thigh-gap-before → screenshots/runs/2026-02-27T14-27-30_fix-thigh-gap-after
+- Decisions: Used same parameters as original #33 (1.75× smoothstep Z 0.458-0.733, body pull Z-=0.05 Y*=0.94, 6-vertex crotch trapezoid). Adjusted body pull threshold to |Y|>0.30 and Z 0.60-0.80 to match post-baked positions.
+- Notes: Vertex positions post-baking are nearly identical to pre-baked for geosets 903 and body mesh thigh zone. 903 Z range 0.458-0.733 (same as documented). Remaining seam at body/903 boundary is the documented limitation — requires vertex stitching or texture compositing to eliminate.
+- Next: N/A — thigh gap is at the geometric limit. Further improvement requires texture compositing (painting underwear texture over the seam zone).
+
+## [2026-02-27] Task: Discover geoset 1301 + remove all vertex hacking (BREAKTHROUGH)
+- Status: done
+- Hypothesis: Geoset 1301 (CG_TROUSERS, group 13 value=1) is the WoW default thigh geometry that bridges legs to torso, because WoWModelViewer initializes all geoset groups to value=1 and group 13 value=1 = mesh 1301.
+- Result: confirmed — 118 triangles, Z 0.549–1.105, completely fills the thigh gap
+- Prior art checked: All 33 prior approaches in LEARNINGS.md + thigh-gap.md memory
+- Files changed: src/loadModel.ts
+- Screenshots: screenshots/runs/2026-02-27T* (before/after)
+- Decisions: Removed ALL vertex hacking (903 Y-stretch, body pull-down, crotch patch). Set DEFAULT_GEOSETS to [0, 5, 101, 201, 301, 401, 501, 701, 1002, 1301]. Reverted to 501 from 502.
+- Notes: This was THE solution after 33 failed approaches. The thigh gap was never a rendering bug — it was a missing geoset. WoW's geoset system provides native thigh geometry that bridges the body mesh to the leg geosets.
+- Next: Fix waist "skirt" where body mesh lip extends beyond geoset 1301.
+
+## [2026-02-27] Task: Polygon offset layering for waist skirt fix
+- Status: done
+- Hypothesis: Splitting body mesh (geoset 0) and overlay geosets (1301, 1002) into separate SkinnedMesh objects with polygon offset on the body mesh will make overlays win the depth test in overlap zones, hiding the body mesh lip.
+- Result: partial — polygon offset prevents Z-fighting and makes overlays render on top in overlap zones. The body mesh lip is still visible at the sides where it extends beyond geoset 1301 laterally.
+- Prior art checked: LEARNINGS entries for polygon offset approaches
+- Files changed: src/loadModel.ts
+- Screenshots: See human-male-legs-test.png, human-male-front-test.png
+- Decisions: Three separate SkinnedMesh objects (body, overlay, hair). Body has polygonOffset factor=1 units=1. Overlays render at true depth.
+- Notes: The remaining visible seam at the waist is from the body mesh being geometrically wider than geoset 1301 at the sides. Polygon offset only helps where surfaces overlap in screen space — it can't hide body mesh triangles that extend beyond the overlay's silhouette. A pipeline-level fix may be needed (e.g., trimming body mesh triangles in convert-model.ts).
+- Next: Evaluate whether body mesh lip needs pipeline-level trimming or if current state is acceptable.

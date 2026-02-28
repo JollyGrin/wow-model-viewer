@@ -40,6 +40,14 @@ Requirements:
 
 ## Step 3 — Implement
 
+Archive the baseline screenshots **before** making any code changes (so we have a "before" snapshot):
+
+```bash
+bash scripts/archive-run.sh "<task-name>_before"
+```
+
+Capture the output path — this is the "before" run folder.
+
 Make the minimal code changes needed for ONE task. Follow existing patterns in the codebase.
 
 Rules:
@@ -55,7 +63,7 @@ Run these checks in order. Fix and retry if they fail (max 3 attempts each).
 2. **Build:** `bun run build`
 3. **Visual eval (if visual change):** Launch `/visual-eval` as a **Task agent**.
    - Use the Task tool with `subagent_type: "general-purpose"` and `run_in_background: true`
-   - Prompt: "Run the /visual-eval skill. Build the project, run Playwright screenshots, compare against references, and return the structured VERDICT report."
+   - Prompt: "Run the /visual-eval skill with run-label '<task-name>_after'. Build the project, run Playwright screenshots, compare against references, and return the structured VERDICT report."
    - While it runs, continue to **Step 5** (record progress with "eval: pending")
    - When the agent returns, read its structured result
    - If VERDICT is **REGRESSED**: next iteration must address the regression
@@ -82,6 +90,7 @@ Append to `ralph-progress.md` using this format:
 - Result: confirmed | refuted | partial
 - Prior art checked: <LEARNINGS/progress entries reviewed before starting>
 - Files changed: <list>
+- Screenshots: <before-run-folder> → <after-run-folder>
 - Decisions: <architectural choices>
 - Notes: <blockers, findings, issues>
 - Next: <what to try next, or N/A if done>

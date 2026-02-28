@@ -31,6 +31,17 @@ bunx playwright test e2e/human-male.spec.ts
 
 If the test crashes or times out, output BLOCKED with the error and stop.
 
+## Step 2.5 — Archive Screenshots
+
+If a `<run-label>` was provided by the caller, archive the screenshots:
+
+```bash
+bash scripts/archive-run.sh "<run-label>"
+```
+
+Capture the output — it's the run folder path (e.g. `screenshots/runs/2026-02-27T14-30-00_fix-thigh-gap`).
+If no label was provided, skip this step.
+
 ## Step 3 — Compare
 
 For each test screenshot in `screenshots/`, read it with the Read tool. Then check
@@ -103,7 +114,22 @@ DELTA: <no_reference>
 ISSUES: <comma-separated list, or "none">
 IMPROVEMENTS: <none>
 
+RUN: <run folder path, or "none" if no archive>
 SUMMARY: <One or two sentence overall assessment>
+```
+
+If a run folder was created in Step 2.5, append the full VERDICT block to the run's `run.md`:
+
+```bash
+# Replace the pending verdict placeholder
+cat >> <run-folder>/run.md << 'VERDICT_EOF'
+
+## Verdict (actual)
+
+VERDICT: <value>
+BUILD: <value>
+SUMMARY: <value>
+VERDICT_EOF
 ```
 
 ### Verdict rules
