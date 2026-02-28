@@ -667,3 +667,26 @@ This mirrors how WoW handles layered geometry — equipment geosets render on to
 
 **Impact:** Eliminates the waist "skirt" artifact where body mesh lip was visible through clothing/leg geosets. Three separate SkinnedMesh objects share the same skeleton.
 **Reference:** `src/loadModel.ts` bodyMaterial, overlayMaterial, makeSkinnedMesh()
+
+## [2026-02-28] Neck Gap — Triangle Fan Cap Does NOT Work
+
+**Context:** All 20 character models have a boundary loop (13-38 verts) at the neck where the head attaches to the body. Visible as a black gap from behind/side. Attempted to fill this with generated geometry.
+
+**Approaches tried (all failed):**
+1. **Triangle fan from centroid with inward offset** — center vertex pulled 0.03 along negative avg normal. Creates visible concave pinch from side view. The neck looks artificially narrowed/collapsed.
+2. **Triangle fan from centroid at flat position (no offset)** — polygonOffset on material to avoid z-fighting. Still produces a pinched neck appearance from side view. The fundamental issue is the boundary loop itself is narrow/constricted — a flat cap across it just makes the constriction visible as a flat surface.
+3. **Triangle fan with Y<0 filter (back-half only)** — only catches half the boundary loop, creating broken partial fan that clips into the chest.
+4. **Funnel approach (outer ring → 80% inner ring → cap)** — clipping fragments visible from side angles.
+
+**Root cause:** The neck boundary loop is NOT a simple hole that can be capped. It's a 3D ring wrapping around the neck interior at varying depths (Z 1.53–1.84 for human male). The body mesh genuinely lacks geometry in this region — the neck is designed to be hidden by head geometry + hair geosets + scalp textures in the WoW client. Any flat/concave cap across this non-planar ring creates artifacts from side angles.
+
+**What WoW actually does (from research):**
+- Hair geosets physically cover the neck hole for most hairstyles
+- `CharHairGeosets.dbc` has `ShowScalp` field per hairstyle
+- When ShowScalp=true, scalp textures from CharSections type=3 (TextureName[1]=scalp lower, TextureName[2]=scalp upper) are composited onto CR_FACE_UPPER/CR_FACE_LOWER texture regions
+- NO model viewer generates geometry for the neck hole
+
+**Additional finding:** Geoset 1002 is NOT an "undershirt that fills the upper back/chest gap" — it's a waist-area garment (gold skirt, Z 0.93–1.11). Adding it to DEFAULT_GEOSETS causes a visible skirt regression.
+
+**Impact:** The neck gap requires scalp texture compositing (needs CharHairGeosets.dbc + scalp BLP textures from patch files) or simply accepting the gap as a known limitation. Generated geometry approaches should not be attempted again.
+**Reference:** `scripts/find-all-holes.mjs`, `scripts/find-neck-holes.mjs`, screenshots archived in `screenshots/runs/2026-02-28T*`
