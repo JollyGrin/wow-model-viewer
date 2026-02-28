@@ -185,38 +185,25 @@ export async function loadModel(
 
   const fullIndexData = new Uint16Array(binBuffer, manifest.vertexBufferSize, manifest.indexCount);
 
-  // Body mesh pushed back so clothing geosets (1301, 1002) render on top at overlap zones.
-  // This is how WoW layers body vs equipment — prevents the body "lip" from creating a skirt.
-  const bodyMaterial = new THREE.MeshLambertMaterial({
-    map: skinTexture,
-    side: THREE.DoubleSide,
-    polygonOffset: true,
-    polygonOffsetFactor: 1,
-    polygonOffsetUnits: 1,
-  });
-
-  const overlayMaterial = new THREE.MeshLambertMaterial({
+  const skinMaterial = new THREE.MeshLambertMaterial({
     map: skinTexture,
     side: THREE.DoubleSide,
   });
 
   const hairMaterial = hairTexture === skinTexture
-    ? overlayMaterial
+    ? skinMaterial
     : new THREE.MeshLambertMaterial({
         map: hairTexture,
         side: THREE.DoubleSide,
       });
 
-  // Collect indices per layer: body (geoset 0) vs overlays vs hair
-  const bodyIndexList: number[] = [];
-  const overlayIndexList: number[] = [];
+  // Collect indices: skin (all non-hair geosets) vs hair
+  const skinIndexList: number[] = [];
   const hairIndexList: number[] = [];
 
   for (const g of manifest.groups) {
     if (!isGeosetVisible(g.id, enabledGeosets)) continue;
-    const target = HAIR_GEOSETS.has(g.id) ? hairIndexList
-      : g.id === 0 ? bodyIndexList
-      : overlayIndexList;
+    const target = HAIR_GEOSETS.has(g.id) ? hairIndexList : skinIndexList;
     for (let i = 0; i < g.indexCount; i++) {
       target.push(fullIndexData[g.indexStart + i]);
     }
@@ -242,18 +229,13 @@ export async function loadModel(
     return mesh;
   }
 
-  // Body SkinnedMesh — base layer, pushed back via polygonOffset. Owns the bone hierarchy.
-  if (bodyIndexList.length > 0) {
-    const mesh = makeSkinnedMesh(bodyIndexList, bodyMaterial);
+  // Skin SkinnedMesh — body, hands, feet, legs. Owns the bone hierarchy.
+  if (skinIndexList.length > 0) {
+    const mesh = makeSkinnedMesh(skinIndexList, skinMaterial);
     for (const root of roots) {
       mesh.add(root);
     }
     pivot.add(mesh);
-  }
-
-  // Overlay SkinnedMesh — clothing geosets render on top of body
-  if (overlayIndexList.length > 0) {
-    pivot.add(makeSkinnedMesh(overlayIndexList, overlayMaterial));
   }
 
   // Hair SkinnedMesh — shares the same skeleton (bones are in scene graph via skin mesh)

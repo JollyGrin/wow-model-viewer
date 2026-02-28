@@ -330,11 +330,14 @@ function convertModel(model: CharacterModel) {
             const z0 = f32[i0 * STRIDE_F32 + 2];
             const z1 = f32[i1 * STRIDE_F32 + 2];
             const z2 = f32[i2 * STRIDE_F32 + 2];
-            const minZ = Math.min(z0, z1, z2);
-            const maxZ = Math.max(z0, z1, z2);
-            // Strip barrel tris where any vertex dips into the lip zone.
-            // Must be in barrel area (maxZ > 0.5, not feet) and below cutoff.
-            if (maxZ > 0.5 && minZ < lipCutoff) {
+            const y0 = Math.abs(f32[i0 * STRIDE_F32 + 1]);
+            const y1 = Math.abs(f32[i1 * STRIDE_F32 + 1]);
+            const y2 = Math.abs(f32[i2 * STRIDE_F32 + 1]);
+            const centZ = (z0 + z1 + z2) / 3;
+            const centAbsY = (y0 + y1 + y2) / 3;
+            // Strip waist barrel tris: centroid in barrel zone AND wide (|Y| > 0.35).
+            // The |Y| guard preserves arm/shoulder tris that have low |Y|.
+            if (centZ > 0.5 && centZ < lipCutoff && centAbsY > 0.35) {
               lipStripped++;
               continue;
             }
