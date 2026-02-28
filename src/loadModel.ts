@@ -64,6 +64,9 @@ async function loadTexture(url: string): Promise<THREE.DataTexture> {
 // M2 texture types: 0=Hardcoded, 1=Body/skin, 2=Cape, 6=Hair, 8=Fur
 const HAIR_TEX_TYPE = 6;
 
+// Fallback for legacy model.json without textureType: geoset IDs that use hair texture
+const HAIR_GEOSETS_FALLBACK = new Set([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+
 // --- Skeleton builder ---
 
 function buildSkeleton(boneData: BoneInfo[]): { skeleton: THREE.Skeleton; roots: THREE.Bone[] } {
@@ -198,13 +201,18 @@ export async function loadModel(
         side: THREE.DoubleSide,
       });
 
-  // Collect indices: skin vs hair, based on per-submesh textureType from M2 batch data
+  // Collect indices: skin vs hair, based on per-submesh textureType from M2 batch data.
+  // textureType comes from the M2 batch → textureLookup → textureTable chain.
+  // Fallback for legacy model.json without textureType: use geoset group heuristic.
   const skinIndexList: number[] = [];
   const hairIndexList: number[] = [];
 
   for (const g of manifest.groups) {
     if (!isGeosetVisible(g.id, enabledGeosets)) continue;
-    const target = g.textureType === HAIR_TEX_TYPE ? hairIndexList : skinIndexList;
+    const isHair = g.textureType !== undefined && g.textureType >= 0
+      ? g.textureType === HAIR_TEX_TYPE
+      : HAIR_GEOSETS_FALLBACK.has(g.id);
+    const target = isHair ? hairIndexList : skinIndexList;
     for (let i = 0; i < g.indexCount; i++) {
       target.push(fullIndexData[g.indexStart + i]);
     }

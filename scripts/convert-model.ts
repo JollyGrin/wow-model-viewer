@@ -344,12 +344,13 @@ function convertModel(model: CharacterModel) {
   }
 
   let groups = skin.submeshes
+    .map((s, origIdx) => ({ ...s, origIdx }))
     .filter(s => s.indexCount > 0 && s.id !== 65535)
-    .map((s, i) => ({
+    .map(s => ({
       id: s.id,
       indexStart: s.indexStart,
       indexCount: s.indexCount,
-      textureType: submeshTexType.get(i) ?? -1,
+      textureType: submeshTexType.get(s.origIdx) ?? -1,
     }));
 
   const indexBuffer = skin.rawTriangles;
