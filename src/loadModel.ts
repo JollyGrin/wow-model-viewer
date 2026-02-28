@@ -15,7 +15,7 @@ interface ModelManifest {
   indexBufferSize: number;
   vertexStride: number;
   bones: BoneInfo[];
-  groups: Array<{ id: number; indexStart: number; indexCount: number }>;
+  groups: Array<{ id: number; indexStart: number; indexCount: number; textureType: number }>;
 }
 
 // Geoset visibility for a naked character.
@@ -61,7 +61,8 @@ async function loadTexture(url: string): Promise<THREE.DataTexture> {
   return texture;
 }
 
-const HAIR_GEOSETS = new Set([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+// M2 texture types: 0=Hardcoded, 1=Body/skin, 2=Cape, 6=Hair, 8=Fur
+const HAIR_TEX_TYPE = 6;
 
 // --- Skeleton builder ---
 
@@ -197,13 +198,13 @@ export async function loadModel(
         side: THREE.DoubleSide,
       });
 
-  // Collect indices: skin (all non-hair geosets) vs hair
+  // Collect indices: skin vs hair, based on per-submesh textureType from M2 batch data
   const skinIndexList: number[] = [];
   const hairIndexList: number[] = [];
 
   for (const g of manifest.groups) {
     if (!isGeosetVisible(g.id, enabledGeosets)) continue;
-    const target = HAIR_GEOSETS.has(g.id) ? hairIndexList : skinIndexList;
+    const target = g.textureType === HAIR_TEX_TYPE ? hairIndexList : skinIndexList;
     for (let i = 0; i < g.indexCount; i++) {
       target.push(fullIndexData[g.indexStart + i]);
     }
