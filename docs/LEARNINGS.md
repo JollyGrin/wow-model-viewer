@@ -690,3 +690,31 @@ This mirrors how WoW handles layered geometry — equipment geosets render on to
 
 **Impact:** The neck gap requires scalp texture compositing (needs CharHairGeosets.dbc + scalp BLP textures from patch files) or simply accepting the gap as a known limitation. Generated geometry approaches should not be attempted again.
 **Reference:** `scripts/find-all-holes.mjs`, `scripts/find-neck-holes.mjs`, screenshots archived in `screenshots/runs/2026-02-28T*`
+
+## [2026-02-28] Back-of-Head Gap — All Rendering Fixes Failed
+
+**Context:** Large gap at the back of the head/neck visible on ALL 20 character models. Investigated whether the issue is in the conversion pipeline or the rendering interpretation.
+
+**Diagnostics run:**
+- `scripts/diagnose-back.ts` — Raw M2 submesh data matches converted output exactly. All submeshes accounted for.
+- `scripts/check-remap.ts` — Vertex remap is identity. 0 position errors in first 20 verts. Triangle indices match raw data.
+- `scripts/check-back-geometry.ts` — Back geometry IS present in the data: 137 upper-back verts, 203 back-upper triangles for human male. Symmetric front/back distribution.
+- `scripts/check-bone-transforms.ts` — 50/138 bones have non-identity transforms but boneInverse is identity.
+- `scripts/find-holes.ts` — Body mesh (geoset 0) has 180 boundary edges in head/neck region (Z>1.2). The mesh is intentionally open at the back of the head.
+- `scripts/diagnose-head-gap.ts` — All Z-slices have back vertex coverage. The vertices exist but don't form a closed surface at the back of the head.
+
+**Key finding:** The body mesh has a large opening at the back of the head with boundary edges at Z 1.27–1.58, Y -0.20 to -0.40. No enabled geoset covers this region. Hair geoset 5 only extends Y -0.15 to 0.15 (too narrow). Geoset 1 (bald head) only covers Z 1.90–2.02 (too high).
+
+**Rendering fixes attempted — ALL FAILED:**
+1. **Bone identity fix** — Set all bone matrices to identity. No effect on gap.
+2. **FrontSide skin + BackSide fill mesh** — Renders interior faces through gaps with skin texture. Fills the hole visually in SwiftShader screenshots BUT user reports gap still present in actual browser.
+3. **Inner sphere** — Skin-colored sphere inside head. Extends beyond head silhouette, UV seam artifacts, visible through facial features.
+4. **Flat plane disc** — Positioned at back opening. Gap is 3D curved, flat disc doesn't cover it.
+5. **Solid-color BackSide fill** — Color mismatch with textured skin, still gap visible.
+
+**Impact:** The problem is NOT solvable with rendering tricks alone. The fundamental issue is that the M2 body mesh lacks geometry at the back of the head by design. Next investigation should:
+1. Compare our converted output against a known-good viewer (wow.export, WoW Model Viewer) to verify whether the pipeline is correct
+2. Check if there's additional geometry in the M2 that our converter is not extracting (e.g., a second skin view, additional submeshes, or a different vertex/index interpretation)
+3. Investigate whether the WoW client uses additional geosets or texture-based approaches we're not implementing
+
+**Reference:** `scripts/find-holes.ts`, `scripts/diagnose-head-gap.ts`, `scripts/check-bone-transforms.ts`
