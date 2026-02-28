@@ -1,9 +1,9 @@
 {
   "vertexCount": 4675,
-  "indexCount": 16380,
-  "triangleCount": 5460,
+  "indexCount": 16884,
+  "triangleCount": 5628,
   "vertexBufferSize": 187000,
-  "indexBufferSize": 32760,
+  "indexBufferSize": 33768,
   "vertexStride": 40,
   "bones": [
     {
@@ -2633,286 +2633,286 @@
     {
       "id": 0,
       "indexStart": 0,
-      "indexCount": 1356
+      "indexCount": 1860
     },
     {
       "id": 7,
-      "indexStart": 1356,
+      "indexStart": 1860,
       "indexCount": 288
     },
     {
       "id": 8,
-      "indexStart": 1644,
+      "indexStart": 2148,
       "indexCount": 270
     },
     {
       "id": 12,
-      "indexStart": 1914,
+      "indexStart": 2418,
       "indexCount": 336
     },
     {
       "id": 6,
-      "indexStart": 2250,
+      "indexStart": 2754,
       "indexCount": 294
     },
     {
       "id": 9,
-      "indexStart": 2544,
+      "indexStart": 3048,
       "indexCount": 222
     },
     {
       "id": 5,
-      "indexStart": 2766,
+      "indexStart": 3270,
       "indexCount": 348
     },
     {
       "id": 5,
-      "indexStart": 3114,
+      "indexStart": 3618,
       "indexCount": 96
     },
     {
       "id": 0,
-      "indexStart": 3210,
+      "indexStart": 3714,
       "indexCount": 12
     },
     {
       "id": 702,
-      "indexStart": 3222,
+      "indexStart": 3726,
       "indexCount": 42
     },
     {
       "id": 701,
-      "indexStart": 3264,
+      "indexStart": 3768,
       "indexCount": 18
     },
     {
       "id": 302,
-      "indexStart": 3282,
+      "indexStart": 3786,
       "indexCount": 66
     },
     {
       "id": 301,
-      "indexStart": 3348,
+      "indexStart": 3852,
       "indexCount": 36
     },
     {
       "id": 1,
-      "indexStart": 3384,
+      "indexStart": 3888,
       "indexCount": 132
     },
     {
       "id": 2,
-      "indexStart": 3516,
+      "indexStart": 4020,
       "indexCount": 186
     },
     {
       "id": 3,
-      "indexStart": 3702,
+      "indexStart": 4206,
       "indexCount": 366
     },
     {
       "id": 4,
-      "indexStart": 4068,
+      "indexStart": 4572,
       "indexCount": 162
     },
     {
       "id": 9,
-      "indexStart": 4230,
+      "indexStart": 4734,
       "indexCount": 96
     },
     {
       "id": 10,
-      "indexStart": 4326,
+      "indexStart": 4830,
       "indexCount": 24
     },
     {
       "id": 4,
-      "indexStart": 4350,
+      "indexStart": 4854,
       "indexCount": 96
     },
     {
       "id": 202,
-      "indexStart": 4446,
+      "indexStart": 4950,
       "indexCount": 60
     },
     {
       "id": 201,
-      "indexStart": 4506,
+      "indexStart": 5010,
       "indexCount": 12
     },
     {
       "id": 10,
-      "indexStart": 4518,
+      "indexStart": 5022,
       "indexCount": 312
     },
     {
       "id": 13,
-      "indexStart": 4830,
+      "indexStart": 5334,
       "indexCount": 354
     },
     {
       "id": 18,
-      "indexStart": 5184,
+      "indexStart": 5688,
       "indexCount": 210
     },
     {
       "id": 16,
-      "indexStart": 5394,
+      "indexStart": 5898,
       "indexCount": 1338
     },
     {
       "id": 102,
-      "indexStart": 6732,
+      "indexStart": 7236,
       "indexCount": 60
     },
     {
       "id": 101,
-      "indexStart": 6792,
+      "indexStart": 7296,
       "indexCount": 42
     },
     {
       "id": 11,
-      "indexStart": 6834,
+      "indexStart": 7338,
       "indexCount": 318
     },
     {
       "id": 18,
-      "indexStart": 7152,
+      "indexStart": 7656,
       "indexCount": 156
     },
     {
       "id": 17,
-      "indexStart": 7308,
+      "indexStart": 7812,
       "indexCount": 264
     },
     {
       "id": 14,
-      "indexStart": 7572,
+      "indexStart": 8076,
       "indexCount": 1698
     },
     {
       "id": 16,
-      "indexStart": 9270,
+      "indexStart": 9774,
       "indexCount": 24
     },
     {
       "id": 1501,
-      "indexStart": 9294,
+      "indexStart": 9798,
       "indexCount": 60
     },
     {
       "id": 401,
-      "indexStart": 9354,
+      "indexStart": 9858,
       "indexCount": 288
     },
     {
       "id": 402,
-      "indexStart": 9642,
+      "indexStart": 10146,
       "indexCount": 276
     },
     {
       "id": 403,
-      "indexStart": 9918,
+      "indexStart": 10422,
       "indexCount": 576
     },
     {
       "id": 404,
-      "indexStart": 10494,
+      "indexStart": 10998,
       "indexCount": 432
     },
     {
       "id": 802,
-      "indexStart": 10926,
+      "indexStart": 11430,
       "indexCount": 144
     },
     {
       "id": 803,
-      "indexStart": 11070,
+      "indexStart": 11574,
       "indexCount": 432
     },
     {
       "id": 1502,
-      "indexStart": 11502,
+      "indexStart": 12006,
       "indexCount": 252
     },
     {
       "id": 1503,
-      "indexStart": 11754,
+      "indexStart": 12258,
       "indexCount": 204
     },
     {
       "id": 1504,
-      "indexStart": 11958,
+      "indexStart": 12462,
       "indexCount": 228
     },
     {
       "id": 1506,
-      "indexStart": 12186,
+      "indexStart": 12690,
       "indexCount": 144
     },
     {
       "id": 1505,
-      "indexStart": 12330,
+      "indexStart": 12834,
       "indexCount": 156
     },
     {
       "id": 1301,
-      "indexStart": 12486,
+      "indexStart": 12990,
       "indexCount": 354
     },
     {
       "id": 1002,
-      "indexStart": 12840,
+      "indexStart": 13344,
       "indexCount": 96
     },
     {
       "id": 1102,
-      "indexStart": 12936,
+      "indexStart": 13440,
       "indexCount": 144
     },
     {
       "id": 1202,
-      "indexStart": 13080,
+      "indexStart": 13584,
       "indexCount": 144
     },
     {
       "id": 1302,
-      "indexStart": 13224,
+      "indexStart": 13728,
       "indexCount": 396
     },
     {
       "id": 501,
-      "indexStart": 13620,
+      "indexStart": 14124,
       "indexCount": 258
     },
     {
       "id": 902,
-      "indexStart": 13878,
+      "indexStart": 14382,
       "indexCount": 324
     },
     {
       "id": 903,
-      "indexStart": 14202,
+      "indexStart": 14706,
       "indexCount": 192
     },
     {
       "id": 503,
-      "indexStart": 14394,
+      "indexStart": 14898,
       "indexCount": 618
     },
     {
       "id": 502,
-      "indexStart": 15012,
+      "indexStart": 15516,
       "indexCount": 426
     },
     {
       "id": 504,
-      "indexStart": 15438,
+      "indexStart": 15942,
       "indexCount": 462
     },
     {
       "id": 15,
-      "indexStart": 15900,
+      "indexStart": 16404,
       "indexCount": 480
     }
   ]

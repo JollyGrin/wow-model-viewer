@@ -293,70 +293,6 @@ function convertModel(model: CharacterModel) {
       indexCount: s.indexCount,
     }));
 
-  // --- Strip body mesh lip triangles in the geoset 1301 overlap zone ---
-  // The body mesh (geoset 0) barrel extends below the waist, wider than geoset 1301,
-  // creating a visible "skirt" flap. Strip those bottom-barrel triangles at build time.
-  const has1301 = groups.some(g => g.id === 1301);
-  let lipStripped = 0;
-  if (has1301) {
-    // Find body barrel min Z (ignore feet at Z < 0.5)
-    let barrelMinZ = Infinity;
-    for (const g of groups) {
-      if (g.id !== 0) continue;
-      for (let t = 0; t < g.indexCount; t++) {
-        const vi = skin.rawTriangles[g.indexStart + t];
-        const z = f32[vi * STRIDE_F32 + 2];
-        if (z > 0.5 && z < barrelMinZ) barrelMinZ = z;
-      }
-    }
-
-    if (barrelMinZ < Infinity) {
-      const lipCutoff = barrelMinZ + 0.30;
-
-      // Rebuild index buffer, skipping lip triangles from geoset 0.
-      // Use min-vertex-Z: strip if ANY vertex is in the barrel zone below cutoff.
-      // This prevents straddling triangles from creating wing artifacts.
-      const newIndices: number[] = [];
-      const newGroups: typeof groups = [];
-
-      for (const g of groups) {
-        const newStart = newIndices.length;
-        for (let t = 0; t < g.indexCount; t += 3) {
-          const i0 = skin.rawTriangles[g.indexStart + t];
-          const i1 = skin.rawTriangles[g.indexStart + t + 1];
-          const i2 = skin.rawTriangles[g.indexStart + t + 2];
-
-          if (g.id === 0) {
-            const z0 = f32[i0 * STRIDE_F32 + 2];
-            const z1 = f32[i1 * STRIDE_F32 + 2];
-            const z2 = f32[i2 * STRIDE_F32 + 2];
-            const y0 = Math.abs(f32[i0 * STRIDE_F32 + 1]);
-            const y1 = Math.abs(f32[i1 * STRIDE_F32 + 1]);
-            const y2 = Math.abs(f32[i2 * STRIDE_F32 + 1]);
-            const centZ = (z0 + z1 + z2) / 3;
-            const centAbsY = (y0 + y1 + y2) / 3;
-            // Strip waist barrel tris: centroid in barrel zone AND wide (|Y| > 0.35).
-            // The |Y| guard preserves arm/shoulder tris that have low |Y|.
-            if (centZ > 0.5 && centZ < lipCutoff && centAbsY > 0.35) {
-              lipStripped++;
-              continue;
-            }
-          }
-
-          newIndices.push(i0, i1, i2);
-        }
-        const newCount = newIndices.length - newStart;
-        if (newCount > 0) {
-          newGroups.push({ id: g.id, indexStart: newStart, indexCount: newCount });
-        }
-      }
-
-      // Replace index buffer and groups
-      skin.rawTriangles = new Uint16Array(newIndices);
-      groups = newGroups;
-    }
-  }
-
   const indexBuffer = skin.rawTriangles;
 
   // Write binary: vertex buffer + index buffer
@@ -393,7 +329,7 @@ function convertModel(model: CharacterModel) {
     process.exit(1);
   }
 
-  return { vertexCount, triangleCount: manifest.triangleCount, groupCount: groups.length, boneCount: bones.length, binSize: binData.byteLength, lipStripped };
+  return { vertexCount, triangleCount: manifest.triangleCount, groupCount: groups.length, boneCount: bones.length, binSize: binData.byteLength };
 }
 
 // --- Main ---
@@ -406,8 +342,7 @@ function main() {
 
   for (const model of CHARACTER_MODELS) {
     const result = convertModel(model);
-    const lipNote = result.lipStripped > 0 ? ` (stripped ${result.lipStripped} lip tris)` : '';
-    console.log(`${model.slug}: ${result.vertexCount} verts, ${result.triangleCount} tris, ${result.groupCount} groups, ${result.boneCount} bones, ${result.binSize} bytes${lipNote}`);
+    console.log(`${model.slug}: ${result.vertexCount} verts, ${result.triangleCount} tris, ${result.groupCount} groups, ${result.boneCount} bones, ${result.binSize} bytes`);
     totalModels++;
     totalTris += result.triangleCount;
   }
