@@ -211,10 +211,18 @@ function compositeTexture(config: SkinTextureConfig): { width: number; height: n
     output = createSolidColorTex(width, height, color);
   }
 
-  if (overlays.faceLower) overlayRegion(output, width, decodeBlp(overlays.faceLower), REGION_RECTS.FACE_LOWER);
-  if (overlays.faceUpper) overlayRegion(output, width, decodeBlp(overlays.faceUpper), REGION_RECTS.FACE_UPPER);
-  if (overlays.torso)     overlayRegion(output, width, decodeBlp(overlays.torso),     REGION_RECTS.TORSO_UPPER);
-  if (overlays.pelvis)    overlayRegion(output, width, decodeBlp(overlays.pelvis),     REGION_RECTS.LEG_UPPER);
+  function tryOverlay(path: string | undefined, region: RegionRect) {
+    if (!path) return;
+    if (!existsSync(resolve(ROOT, path))) {
+      console.warn(`  WARN: overlay missing: ${path} — skipping`);
+      return;
+    }
+    overlayRegion(output, width, decodeBlp(path), region);
+  }
+  tryOverlay(overlays.faceLower, REGION_RECTS.FACE_LOWER);
+  tryOverlay(overlays.faceUpper, REGION_RECTS.FACE_UPPER);
+  tryOverlay(overlays.torso, REGION_RECTS.TORSO_UPPER);
+  tryOverlay(overlays.pelvis, REGION_RECTS.LEG_UPPER);
 
   return { width, height, rgba: output };
 }
