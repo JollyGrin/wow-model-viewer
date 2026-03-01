@@ -1,5 +1,36 @@
 # Learnings Journal
 
+## [2026-03-01] Back-of-Head/Neck Gap — SOLVED: Missing Geoset 1501
+
+**Context:** All 20 race/gender models had a large gap at the upper back / base of skull (Z 1.7–1.8) visible from behind. Many approaches had been tried and failed (boundary edge caps, inner spheres, planes, BackSide fill, bone identity, etc.). The gap was systemic across all models.
+
+**Finding:**
+- The body mesh (geoset 0) has **zero back-facing triangles** in the Z 1.7–1.8 band (X < -0.04). This is a genuine geometric hole — not a rendering or conversion issue.
+- **Geoset 1501** is the "bare back / no cape" geoset — 20 skin-textured triangles (textureType=1) covering Z 1.582–1.813, exactly the gap region. It was missing from our `DEFAULT_GEOSETS`.
+- WMVx (the reference WoW Model Viewer) enables 1501 by default via the rule: `geoset_id == 0 || (geoset_id > 100 && geoset_id % 100 == 1)`.
+- Group 15 = Cape. 1501 = "cape slot empty" (bare back). 1502+ = various cape lengths. Like 401 (bare hands) and 501 (bare feet), 1501 is body geometry that shows when no equipment is in that slot.
+
+**Root cause analysis method:**
+1. Listed ALL 57 submeshes from model.json with spatial bounds and textureType
+2. Identified which geosets have geometry in the gap region (Z 1.3–1.8, back of model)
+3. Determined coordinate system orientation: +X = front (face), -X = back, Y = left/right, Z = height
+4. Counted back-facing triangle coverage by Z band for active geosets — found Z 1.7–1.8 had **zero** triangles
+5. Verified geoset 1501 fills exactly that band (+10 tris at Z 1.7–1.8, +6 tris at Z 1.6–1.7)
+6. Cross-referenced with WMVx source code to confirm 1501 should be enabled by default
+
+**Impact:** Adding `1501` to `DEFAULT_GEOSETS` in `src/loadModel.ts` fixes the back gap across all models. No synthetic geometry, no rendering hacks — just enabling a geoset that was always in the M2 data.
+
+**Key principle: WoW character models are COMPLETE — every body region is covered by some geoset.** When you see a gap, the first thing to check is whether you're missing a geoset, not whether the mesh has holes. The M2 geoset system is designed so that the right combination of active geosets produces a watertight character.
+
+**WMVx default geoset rule (reference for future work):**
+```
+geoset_id == 0 || (geoset_id > 100 && geoset_id % 100 == 1)
+```
+This enables: 0 (body), 101, 201, 301, 401, 501, 601, 701, 801, 901, 1001, 1101, 1201, 1301, 1501, 1801.
+Not all models have all of these IDs — but when present, they should be enabled for a naked character.
+
+**Reference:** `src/loadModel.ts:24-35` (DEFAULT_GEOSETS), WMVx `CharacterCustomization.cpp` ModelDefaultsGeosetModifier
+
 ## [2026-03-01] Boundary Edge Cap — FAILED
 
 **Context:** Implemented boundary edge detection on geoset 0 to find and fill the back-of-head gap with a triangle fan cap. Tried solid-color, then textured with UVs + body mesh normals.
