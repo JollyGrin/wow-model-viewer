@@ -27,6 +27,16 @@ export interface BodyArmor {
   legUpperBase?: string;
   legLowerBase?: string;
   footBase?: string;
+  /** GeosetGroup[0] value for gloves slot (group 4). 1=401, 2=402, 3=403. 0/undefined = default bare hands. */
+  handGeoset?: number;
+  /** GeosetGroup[0] value for boots slot (group 5). 1=501, 2=502, 3=503. 0/undefined = default bare feet. */
+  footGeoset?: number;
+  /** Sleeve geoset (group 8). 2→802 fitted, 3→803 armored. 0/undefined = no sleeve geometry. */
+  sleeveGeoset?: number;
+  /** Wrist geoset (group 9). 2→902 leather, 3→903 armored. 0/undefined = no wrist geometry. */
+  wristGeoset?: number;
+  /** Robe leg extension (group 13). 2→1302 robe skirt. 0/undefined = default thigh (1301). */
+  robeGeoset?: number;
 }
 
 interface AttachmentPoint {
@@ -78,7 +88,20 @@ function resolveDefaultGeosets(
   result.add(0);           // body mesh (always)
   result.add(hairstyle);   // hairstyle from group 0
 
+  // Apply overrides first; track which groups are handled so DESIRED_GROUPS skips them
+  const handledGroups = new Set<number>();
+  if (groupOverrides) {
+    for (const [grp, meshId] of groupOverrides) {
+      const available = byGroup.get(grp);
+      if (!available || available.length === 0) continue;
+      handledGroups.add(grp);
+      // Use requested meshId if available; otherwise fall back to highest in group
+      result.add(available.includes(meshId) ? meshId : Math.max(...available));
+    }
+  }
+
   for (const { group, preferred, strict } of DESIRED_GROUPS) {
+    if (handledGroups.has(group)) continue; // override already handled this group
     const available = byGroup.get(group);
     if (!available || available.length === 0) continue;
     const target = group * 100 + preferred;
@@ -86,16 +109,6 @@ function resolveDefaultGeosets(
       result.add(target);
     } else if (!strict) {
       result.add(Math.min(...available));
-    }
-  }
-
-  // Apply per-group overrides (e.g. chest enabling geoset 802 for short sleeves)
-  if (groupOverrides) {
-    for (const [grp, meshId] of groupOverrides) {
-      const available = byGroup.get(grp);
-      if (available?.includes(meshId)) {
-        result.add(meshId);
-      }
     }
   }
 
@@ -248,7 +261,16 @@ export async function loadModel(
   const manifest: ModelManifest = await manifestRes.json();
   const binBuffer = await binRes.arrayBuffer();
 
-  const geosets = options?.enabledGeosets ?? resolveDefaultGeosets(manifest.groups, 5);
+  // Build geoset overrides from armor (boots swap group 5, gloves swap group 4)
+  const armorGeoOverrides = new Map<number, number>();
+  if (options?.armor?.handGeoset) armorGeoOverrides.set(4, 400 + options.armor.handGeoset);
+  if (options?.armor?.footGeoset) armorGeoOverrides.set(5, 500 + options.armor.footGeoset);
+  if (options?.armor?.sleeveGeoset) armorGeoOverrides.set(8, 800 + options.armor.sleeveGeoset);
+  if (options?.armor?.wristGeoset) armorGeoOverrides.set(9, 900 + options.armor.wristGeoset);
+  if (options?.armor?.robeGeoset) armorGeoOverrides.set(13, 1300 + options.armor.robeGeoset);
+
+  const geosets = options?.enabledGeosets ??
+    resolveDefaultGeosets(manifest.groups, 5, armorGeoOverrides.size > 0 ? armorGeoOverrides : undefined);
 
   // Derive gender suffix from modelDir slug (e.g. '/models/human-female' → 'F')
   const genderSuffix = modelDir.includes('-female') ? 'F' : 'M';

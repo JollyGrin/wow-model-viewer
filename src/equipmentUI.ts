@@ -7,10 +7,10 @@
 import type { BodyArmor } from './loadModel';
 
 interface WeaponEntry  { slug: string; name: string; }
-interface ChestEntry   { name: string; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; }
-interface LegsEntry    { name: string; legUpperBase: string; legLowerBase?: string; }
-interface BootsEntry   { name: string; footBase: string; }
-interface GlovesEntry  { name: string; handBase: string; armLowerBase?: string; }
+interface ChestEntry   { name: string; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
+interface LegsEntry    { name: string; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
+interface BootsEntry   { name: string; footBase: string; geosetValue: number; }
+interface GlovesEntry  { name: string; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
 
 interface ItemCatalog {
   weapons: WeaponEntry[];
@@ -42,17 +42,24 @@ export function getArmorOptions(): BodyArmor | undefined {
     armor.armUpperBase   = selection.chest.armUpperBase;
     armor.torsoUpperBase = selection.chest.torsoUpperBase;
     armor.torsoLowerBase = selection.chest.torsoLowerBase;
+    armor.sleeveGeoset   = selection.chest.sleeveGeoset || undefined;
+    armor.robeGeoset     = selection.chest.robeGeoset || undefined;
   }
   if (selection.legs) {
     armor.legUpperBase = selection.legs.legUpperBase;
     armor.legLowerBase = selection.legs.legLowerBase;
+    // Legs robeGeoset overrides chest robeGeoset (robe legs + non-robe chest = still 1302)
+    if (selection.legs.robeGeoset) armor.robeGeoset = selection.legs.robeGeoset;
   }
   if (selection.boots) {
-    armor.footBase = selection.boots.footBase;
+    armor.footBase   = selection.boots.footBase;
+    armor.footGeoset = selection.boots.geosetValue || undefined;
   }
   if (selection.gloves) {
     armor.handBase     = selection.gloves.handBase;
     armor.armLowerBase = selection.gloves.armLowerBase;
+    armor.handGeoset   = selection.gloves.geosetValue || undefined;
+    armor.wristGeoset  = selection.gloves.wristGeoset || undefined;
   }
   const hasAny = Object.values(armor).some(v => v);
   return hasAny ? armor : undefined;

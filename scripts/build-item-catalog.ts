@@ -73,10 +73,53 @@ const weapons = weaponSlugs.map(slug => ({ slug, name: slug }));
 
 // --- Chest (TorsoUpper is primary; link ArmUpper + TorsoLower by prefix) ---
 
-interface ChestEntry  { name: string; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; }
-interface LegsEntry   { name: string; legUpperBase: string; legLowerBase?: string; }
-interface BootsEntry  { name: string; footBase: string; }
-interface GlovesEntry { name: string; handBase: string; armLowerBase?: string; }
+interface ChestEntry  { name: string; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
+interface LegsEntry   { name: string; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
+interface BootsEntry  { name: string; footBase: string; geosetValue: number; }
+interface GlovesEntry { name: string; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
+
+/**
+ * Infer the GeosetGroup[0] variant (1–3) from a texture name prefix.
+ *   1 → geoset x01 (simple, e.g. 501 for boots) — cloth/light items
+ *   2 → geoset x02 (medium) — leather/mail
+ *   3 → geoset x03 (heavy) — plate
+ *
+ * 0 is not returned — use that to signal "no override" if needed; callers can
+ * decide to skip passing geoset=1 if that matches the naked default anyway.
+ */
+function inferGeosetValue(stem: string): number {
+  const lower = stem.toLowerCase();
+  if (lower.startsWith('plate_') || lower.startsWith('dk_') ||
+      lower.startsWith('blaumeux') || lower.startsWith('tauren')) return 3;
+  if (lower.startsWith('mail_') || lower.startsWith('chain_') ||
+      lower.startsWith('leather_')) return 2;
+  return 1; // cloth, robe, generic/unknown
+}
+
+/** Infer sleeve geoset for group 8. 0 = no sleeve geometry (cloth/other).
+ *  2 → 802 (fitted sleeve, robes/leather), 3 → 803 (armored sleeve, plate/mail). */
+function inferSleeveGeoset(stem: string): number {
+  const lower = stem.toLowerCase();
+  if (lower.startsWith('plate_') || lower.startsWith('dk_') ||
+      lower.startsWith('mail_') || lower.startsWith('chain_')) return 3;
+  if (lower.startsWith('robe_') || lower.startsWith('leather_')) return 2;
+  return 0;
+}
+
+/** Infer wrist geoset for group 9. 0 = no wrist geometry (cloth/other).
+ *  2 → 902 (leather bracers), 3 → 903 (armored bracers, plate/mail). */
+function inferWristGeoset(stem: string): number {
+  const lower = stem.toLowerCase();
+  if (lower.startsWith('plate_') || lower.startsWith('dk_') ||
+      lower.startsWith('mail_') || lower.startsWith('chain_')) return 3;
+  if (lower.startsWith('leather_')) return 2;
+  return 0;
+}
+
+/** Returns true if this stem represents a robe (long skirt geometry). */
+function isRobe(stem: string): boolean {
+  return stem.toLowerCase().startsWith('robe_');
+}
 
 const TU_SUFFIXES = ['_Chest_TU', '_Robe_TU'];
 const AU_SUFFIXES = ['_Sleeve_AU'];
@@ -107,6 +150,13 @@ for (const stem of listStems('TorsoUpperTexture')) {
     if (auStem) entry.armUpperBase   = baseFor('ArmUpperTexture', auStem);
     if (tlStem) entry.torsoLowerBase = baseFor('TorsoLowerTexture', tlStem);
   }
+  // Sleeve geoset: only set when arm texture exists and inference is non-zero
+  if (entry.armUpperBase) {
+    const sg = inferSleeveGeoset(stem);
+    if (sg) entry.sleeveGeoset = sg;
+  }
+  // Robe geoset: robes get extended leg geometry (group 13 → 1302)
+  if (isRobe(stem)) entry.robeGeoset = 2;
   chestMap.set(stem, entry);
 }
 
@@ -130,6 +180,8 @@ for (const stem of listStems('LegUpperTexture')) {
   const entry: LegsEntry = { name: stem, legUpperBase: baseFor('LegUpperTexture', stem) };
   const llStem = llByPrefix.get(prefix.toLowerCase());
   if (llStem) entry.legLowerBase = baseFor('LegLowerTexture', llStem);
+  // Robe legs get extended leg geometry (group 13 → 1302)
+  if (stem.toLowerCase().includes('_robe_lu')) entry.robeGeoset = 2;
   legsMap.set(stem, entry);
 }
 
@@ -138,7 +190,7 @@ for (const stem of listStems('LegUpperTexture')) {
 const bootsMap = new Map<string, BootsEntry>();
 for (const stem of listStems('FootTexture')) {
   if (!bootsMap.has(stem)) {
-    bootsMap.set(stem, { name: stem, footBase: baseFor('FootTexture', stem) });
+    bootsMap.set(stem, { name: stem, footBase: baseFor('FootTexture', stem), geosetValue: inferGeosetValue(stem) });
   }
 }
 
@@ -157,11 +209,16 @@ for (const stem of listStems('ArmLowerTexture')) {
 const glovesMap = new Map<string, GlovesEntry>();
 for (const stem of listStems('HandTexture')) {
   if (glovesMap.has(stem)) continue;
-  const entry: GlovesEntry = { name: stem, handBase: baseFor('HandTexture', stem) };
+  const entry: GlovesEntry = { name: stem, handBase: baseFor('HandTexture', stem), geosetValue: inferGeosetValue(stem) };
   const prefix = extractPrefix(stem, HA_SUFFIXES);
   if (prefix) {
     const alStem = alByPrefix.get(prefix.toLowerCase());
     if (alStem) entry.armLowerBase = baseFor('ArmLowerTexture', alStem);
+  }
+  // Wrist geoset: only set when bracer/arm lower texture exists and inference is non-zero
+  if (entry.armLowerBase) {
+    const wg = inferWristGeoset(stem);
+    if (wg) entry.wristGeoset = wg;
   }
   glovesMap.set(stem, entry);
 }
