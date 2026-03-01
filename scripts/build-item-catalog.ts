@@ -1,47 +1,65 @@
 /**
- * Build item catalog from converted assets.
+ * Build game-item catalog from WoW item DB + ItemDisplayInfo + available textures.
  *
- * Reads:
- *   public/items/weapon/ — converted weapon slugs
- *   public/item-textures/ — to enumerate available .tex files per region
- *   data/dbc/ItemDisplayInfo.json — supplement multi-texture groupings (chest)
+ * Joins:
+ *   data/external/items.json         — itemId → name, displayId, quality, inventoryType
+ *   data/dbc/ItemDisplayInfo.json    — displayId → Texture[0..7], GeosetGroup[0..2]
+ *   public/item-textures/            — available .tex files per region
+ *   public/items/weapon/             — available converted weapon M2s
+ *
+ * For each equippable item, checks if required textures are available.
+ * Items without a DB match are kept as unnamed entries at the bottom.
  *
  * Outputs: public/item-catalog.json
- *
- * Strategy:
- *   Weapons: read slugs from public/items/weapon/ directories
- *   Chest:   enumerate TorsoUpper .tex files, auto-link ArmUpper+TorsoLower by prefix
- *   Legs:    enumerate LegUpper .tex files (_Pant_LU or _Robe_LU), link LegLower
- *   Boots:   enumerate FootTexture .tex files
- *   Gloves:  enumerate HandTexture .tex files, link ArmLower
  *
  * Usage: bun run scripts/build-item-catalog.ts
  */
 
-import { writeFileSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { resolve, extname, basename } from 'path';
 
-
 const ROOT = resolve(import.meta.dirname, '..');
-
 const TEX_DIR = resolve(ROOT, 'public/item-textures');
+
+// --- Region constants ---
+
+const REGIONS = [
+  'ArmUpperTexture', 'ArmLowerTexture', 'HandTexture',
+  'TorsoUpperTexture', 'TorsoLowerTexture',
+  'LegUpperTexture', 'LegLowerTexture', 'FootTexture',
+] as const;
+
+// IDI Texture array indices → region dir
+// 0=ArmUpper, 1=ArmLower, 2=Hand, 3=TorsoUpper, 4=TorsoLower, 5=LegUpper, 6=LegLower, 7=Foot
+
+// inventoryType values for each slot
+const CHEST_TYPES = new Set([5, 20]); // Chest + Robe
+const LEGS_TYPES = new Set([7]);
+const BOOTS_TYPES = new Set([8]);
+const GLOVES_TYPES = new Set([10]);
+const WEAPON_TYPES = new Set([13, 14, 15, 17, 21, 22, 25, 26]); // 1H, shield, bow, 2H, MH, OH, thrown, ranged
+
+// Weapon subclass names (class=2)
+const WEAPON_SUBCLASS: Record<number, string> = {
+  0: 'Axe', 1: '2H Axe', 2: 'Bow', 3: 'Gun', 4: 'Mace', 5: '2H Mace',
+  6: 'Polearm', 7: 'Sword', 8: '2H Sword', 10: 'Staff', 13: 'Fist',
+  14: 'Misc', 15: 'Dagger', 16: 'Thrown', 17: 'Crossbow', 18: 'Wand',
+};
 
 // --- Helpers ---
 
-/** List .tex file stems in a region dir, stripping the gender/universal suffix.
- *  e.g. "Plate_A_01Silver_Chest_TU_U.tex" → "Plate_A_01Silver_Chest_TU" */
-function listStems(regionDir: string): string[] {
+/** List unique .tex stems in a region dir, stripping gender suffix. */
+function listStems(regionDir: string): Set<string> {
   const dir = resolve(TEX_DIR, regionDir);
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter(f => f.toLowerCase().endsWith('.tex'))
-    .map(f => {
-      let s = basename(f, extname(f)); // strip .tex
-      // strip _U / _M / _F suffix
-      if (/_[UMF]$/i.test(s)) s = s.slice(0, -2);
-      return s;
-    })
-    .filter(s => s.length > 0);
+  if (!existsSync(dir)) return new Set();
+  const stems = new Set<string>();
+  for (const f of readdirSync(dir)) {
+    if (!f.toLowerCase().endsWith('.tex')) continue;
+    let s = basename(f, extname(f));
+    if (/_[UMF]$/i.test(s)) s = s.slice(0, -2);
+    if (s.length > 0) stems.add(s);
+  }
+  return stems;
 }
 
 /** Base path for equip texture resolver (no gender suffix, no .tex). */
@@ -49,10 +67,7 @@ function baseFor(regionDir: string, stem: string): string {
   return `/item-textures/${regionDir}/${stem}`;
 }
 
-/**
- * Extract the "item prefix" from a tex stem by stripping a known region suffix.
- * E.g. "Plate_A_01Silver_Chest_TU" → "Plate_A_01Silver" using suffix "_Chest_TU"
- */
+/** Extract item prefix by stripping a known region suffix. */
 function extractPrefix(stem: string, suffixes: string[]): string | null {
   const lower = stem.toLowerCase();
   for (const suf of suffixes) {
@@ -63,51 +78,103 @@ function extractPrefix(stem: string, suffixes: string[]): string | null {
   return null;
 }
 
-// --- Weapons ---
+// --- Suffix patterns for companion texture matching ---
+
+const TU_SUFFIXES = ['_Chest_TU', '_Robe_TU'];
+const AU_SUFFIXES = ['_Sleeve_AU'];
+const TL_SUFFIXES = ['_Chest_TL', '_Robe_TL'];
+const LU_SUFFIXES = ['_Pant_LU', '_Robe_LU'];
+const LL_SUFFIXES = ['_Pant_LL', '_Robe_LL'];
+const FO_SUFFIXES = ['_Boot_FO', '_Sabot_FO', '_FO'];
+const LL_BOOT_SUFFIXES = ['_Boot_LL', '_LL'];
+const HA_SUFFIXES = ['_Glove_HA', '_Gauntlet_HA', '_HA'];
+const AL_SUFFIXES = ['_Glove_AL', '_Bracer_AL', '_Sleeve_AL', '_AL'];
+
+// --- Load data sources ---
+
+interface ItemRecord { itemId: number; name: string; displayId: number; inventoryType: number; quality: number; class: number; subclass: number; }
+interface IDIRecord { ID: number; Texture: string[]; GeosetGroup: number[]; ModelName: string[]; ModelTexture: string[]; }
+
+// Items DB
+const itemsPath = resolve(ROOT, 'data/external/items.json');
+const items: ItemRecord[] = existsSync(itemsPath) ? JSON.parse(readFileSync(itemsPath, 'utf-8')) : [];
+
+// ItemDisplayInfo
+const idiRaw = readFileSync(resolve(ROOT, 'data/dbc/ItemDisplayInfo.json'), 'utf-8');
+const idiRecords: IDIRecord[] = JSON.parse(idiRaw.split('\n')[14]);
+const idiByDisplayId = new Map<number, IDIRecord>();
+for (const rec of idiRecords) idiByDisplayId.set(rec.ID, rec);
+
+// --- Build available stem sets ---
+
+const stemSets: Record<string, Set<string>> = {};
+for (const r of REGIONS) stemSets[r] = listStems(r);
+
+// --- Build companion texture lookups (prefix → stem) ---
+
+function buildPrefixMap(regionDir: string, suffixes: string[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const stem of stemSets[regionDir]) {
+    const prefix = extractPrefix(stem, suffixes);
+    if (prefix) map.set(prefix.toLowerCase(), stem);
+  }
+  return map;
+}
+
+const auByPrefix = buildPrefixMap('ArmUpperTexture', AU_SUFFIXES);
+const tlByPrefix = buildPrefixMap('TorsoLowerTexture', TL_SUFFIXES);
+const llByPrefix = buildPrefixMap('LegLowerTexture', LL_SUFFIXES);
+const llBootByPrefix = buildPrefixMap('LegLowerTexture', LL_BOOT_SUFFIXES);
+const alByPrefix = buildPrefixMap('ArmLowerTexture', AL_SUFFIXES);
+
+// --- Build weapon slug set ---
 
 const weaponDir = resolve(ROOT, 'public/items/weapon');
-const weaponSlugs: string[] = existsSync(weaponDir)
-  ? readdirSync(weaponDir).filter(d => existsSync(resolve(weaponDir, d, 'model.json')))
-  : [];
-const weapons = weaponSlugs.map(slug => ({ slug, name: slug }));
+const weaponSlugSet = new Set<string>();
+if (existsSync(weaponDir)) {
+  for (const d of readdirSync(weaponDir)) {
+    if (existsSync(resolve(weaponDir, d, 'model.json'))) weaponSlugSet.add(d);
+  }
+}
 
-// --- Chest (TorsoUpper is primary; link ArmUpper + TorsoLower by prefix) ---
+// Map IDI ModelName stem (lowercase) → weapon slug
+const modelNameToSlug = new Map<string, string>();
+for (const slug of weaponSlugSet) {
+  // Slug format: lowercase, hyphens. ModelName stem: mixed case, underscores.
+  // Reverse: slug → possible stem patterns
+  modelNameToSlug.set(slug, slug);
+}
 
-interface ChestEntry  { name: string; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
-interface LegsEntry   { name: string; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
-interface BootsEntry  { name: string; footBase: string; legLowerBase?: string; geosetValue: number; }
-interface GlovesEntry { name: string; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
+function findWeaponSlug(modelName: string): string | undefined {
+  if (!modelName) return undefined;
+  const stem = basename(modelName, extname(modelName));
+  const slug = stem.toLowerCase().replace(/_/g, '-');
+  if (weaponSlugSet.has(slug)) return slug;
+  // Try prefix match (model might have color variant in slug)
+  for (const s of weaponSlugSet) {
+    if (s.startsWith(slug) || slug.startsWith(s)) return s;
+  }
+  return undefined;
+}
 
-/**
- * Infer the GeosetGroup[0] variant (1–3) from a texture name prefix.
- *   1 → geoset x01 (simple, e.g. 501 for boots) — cloth/light items
- *   2 → geoset x02 (medium) — leather/mail
- *   3 → geoset x03 (heavy) — plate
- *
- * 0 is not returned — use that to signal "no override" if needed; callers can
- * decide to skip passing geoset=1 if that matches the naked default anyway.
- */
+// --- Build catalog entries from items DB ---
+
+interface WeaponEntry { itemId: number; name: string; quality: number; slug: string; subclass?: string; }
+interface ChestEntry  { itemId?: number; name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
+interface LegsEntry   { itemId?: number; name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
+interface BootsEntry  { itemId?: number; name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
+interface GlovesEntry { itemId?: number; name: string; quality: number; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
+
+/** Infer geoset value (1-3) from texture stem name as fallback when IDI GeosetGroup is 0. */
 function inferGeosetValue(stem: string): number {
   const lower = stem.toLowerCase();
   if (lower.startsWith('plate_') || lower.startsWith('dk_') ||
       lower.startsWith('blaumeux') || lower.startsWith('tauren')) return 3;
   if (lower.startsWith('mail_') || lower.startsWith('chain_') ||
       lower.startsWith('leather_')) return 2;
-  return 1; // cloth, robe, generic/unknown
+  return 1;
 }
 
-/** Infer sleeve geoset for group 8. 0 = no sleeve geometry (cloth/other).
- *  2 → 802 (fitted sleeve, robes/leather), 3 → 803 (armored sleeve, plate/mail). */
-function inferSleeveGeoset(stem: string): number {
-  const lower = stem.toLowerCase();
-  if (lower.startsWith('plate_') || lower.startsWith('dk_') ||
-      lower.startsWith('mail_') || lower.startsWith('chain_')) return 3;
-  if (lower.startsWith('robe_') || lower.startsWith('leather_')) return 2;
-  return 0;
-}
-
-/** Infer wrist geoset for group 9. 0 = no wrist geometry (cloth/other).
- *  2 → 902 (leather bracers), 3 → 903 (armored bracers, plate/mail). */
 function inferWristGeoset(stem: string): number {
   const lower = stem.toLowerCase();
   if (lower.startsWith('plate_') || lower.startsWith('dk_') ||
@@ -116,146 +183,228 @@ function inferWristGeoset(stem: string): number {
   return 0;
 }
 
-/** Returns true if this stem represents a robe (long skirt geometry). */
-function isRobe(stem: string): boolean {
-  return stem.toLowerCase().startsWith('robe_');
+/** Check if an IDI texture name is available in a region's stem set. */
+function hasTex(regionIdx: number, texName: string): boolean {
+  if (!texName) return false;
+  return stemSets[REGIONS[regionIdx]].has(texName);
 }
 
-const TU_SUFFIXES = ['_Chest_TU', '_Robe_TU'];
-const AU_SUFFIXES = ['_Sleeve_AU'];
-const TL_SUFFIXES = ['_Chest_TL', '_Robe_TL'];
+/** Build a chest entry from IDI texture data. */
+function buildChestEntry(idi: IDIRecord, name: string, quality: number, itemId?: number): ChestEntry | null {
+  const tuName = idi.Texture[3]; // TorsoUpper
+  if (!tuName || !hasTex(3, tuName)) return null;
 
-// Build lookup sets for ArmUpper and TorsoLower by prefix
-const auByPrefix = new Map<string, string>(); // prefix_lower → au_stem
-const tlByPrefix = new Map<string, string>(); // prefix_lower → tl_stem
+  const entry: ChestEntry = { name, quality, torsoUpperBase: baseFor('TorsoUpperTexture', tuName) };
+  if (itemId !== undefined) entry.itemId = itemId;
 
-for (const stem of listStems('ArmUpperTexture')) {
-  const prefix = extractPrefix(stem, AU_SUFFIXES);
-  if (prefix) auByPrefix.set(prefix.toLowerCase(), stem);
-}
-for (const stem of listStems('TorsoLowerTexture')) {
-  const prefix = extractPrefix(stem, TL_SUFFIXES);
-  if (prefix) tlByPrefix.set(prefix.toLowerCase(), stem);
-}
-
-const chestMap = new Map<string, ChestEntry>();
-for (const stem of listStems('TorsoUpperTexture')) {
-  if (chestMap.has(stem)) continue;
-  const entry: ChestEntry = { name: stem, torsoUpperBase: baseFor('TorsoUpperTexture', stem) };
-  const prefix = extractPrefix(stem, TU_SUFFIXES);
+  // Link companion textures via prefix matching
+  const prefix = extractPrefix(tuName, TU_SUFFIXES);
   if (prefix) {
     const prefixLower = prefix.toLowerCase();
     const auStem = auByPrefix.get(prefixLower);
     const tlStem = tlByPrefix.get(prefixLower);
-    if (auStem) entry.armUpperBase   = baseFor('ArmUpperTexture', auStem);
+    if (auStem) entry.armUpperBase = baseFor('ArmUpperTexture', auStem);
     if (tlStem) entry.torsoLowerBase = baseFor('TorsoLowerTexture', tlStem);
   }
-  // Sleeve geoset: only set when arm texture exists and inference is non-zero
-  if (entry.armUpperBase) {
-    const sg = inferSleeveGeoset(stem);
-    if (sg) entry.sleeveGeoset = sg;
+
+  // Geosets from IDI
+  const gg = idi.GeosetGroup;
+  if (gg[0] >= 2 && entry.armUpperBase) entry.sleeveGeoset = gg[0];
+  if (gg[2] > 0) entry.robeGeoset = gg[2] + 1;
+
+  return entry;
+}
+
+/** Build a legs entry from IDI texture data. */
+function buildLegsEntry(idi: IDIRecord, name: string, quality: number, itemId?: number): LegsEntry | null {
+  const luName = idi.Texture[5]; // LegUpper
+  if (!luName || !hasTex(5, luName)) return null;
+
+  const entry: LegsEntry = { name, quality, legUpperBase: baseFor('LegUpperTexture', luName) };
+  if (itemId !== undefined) entry.itemId = itemId;
+
+  const prefix = extractPrefix(luName, LU_SUFFIXES);
+  if (prefix) {
+    const llStem = llByPrefix.get(prefix.toLowerCase());
+    if (llStem) entry.legLowerBase = baseFor('LegLowerTexture', llStem);
   }
-  // Robe geoset: robes get extended leg geometry (group 13 → 1302)
-  if (isRobe(stem)) entry.robeGeoset = 2;
-  chestMap.set(stem, entry);
+
+  if (idi.GeosetGroup[2] > 0) entry.robeGeoset = idi.GeosetGroup[2] + 1;
+
+  return entry;
 }
 
-// --- Legs (LegUpper primary = _Pant_LU or _Robe_LU files; link LegLower) ---
+/** Build a boots entry from IDI texture data. */
+function buildBootsEntry(idi: IDIRecord, name: string, quality: number, itemId?: number): BootsEntry | null {
+  const foName = idi.Texture[7]; // Foot
+  if (!foName || !hasTex(7, foName)) return null;
 
-const LU_PANT_SUFFIXES = ['_Pant_LU', '_Robe_LU'];
-const LL_PANT_SUFFIXES = ['_Pant_LL', '_Robe_LL'];
+  const gg0 = idi.GeosetGroup[0];
+  const geosetValue = gg0 || inferGeosetValue(foName);
 
-// Build LegLower lookup by prefix
-const llByPrefix = new Map<string, string>(); // prefix_lower → ll_stem
-for (const stem of listStems('LegLowerTexture')) {
-  const prefix = extractPrefix(stem, LL_PANT_SUFFIXES);
-  if (prefix) llByPrefix.set(prefix.toLowerCase(), stem);
-}
+  const entry: BootsEntry = { name, quality, footBase: baseFor('FootTexture', foName), geosetValue };
+  if (itemId !== undefined) entry.itemId = itemId;
 
-const legsMap = new Map<string, LegsEntry>();
-for (const stem of listStems('LegUpperTexture')) {
-  if (legsMap.has(stem)) continue;
-  const prefix = extractPrefix(stem, LU_PANT_SUFFIXES);
-  if (!prefix) continue; // skip _Belt_LU and non-matching patterns
-  const entry: LegsEntry = { name: stem, legUpperBase: baseFor('LegUpperTexture', stem) };
-  const llStem = llByPrefix.get(prefix.toLowerCase());
-  if (llStem) entry.legLowerBase = baseFor('LegLowerTexture', llStem);
-  // Robe legs get extended leg geometry (group 13 → 1302)
-  if (stem.toLowerCase().includes('_robe_lu')) entry.robeGeoset = 2;
-  legsMap.set(stem, entry);
-}
-
-// --- Boots (FootTexture primary; link LegLower by prefix for shin coverage) ---
-
-const FO_SUFFIXES = ['_Boot_FO', '_Sabot_FO', '_FO'];
-const LL_BOOT_SUFFIXES = ['_Boot_LL', '_LL'];
-
-// Build LegLower lookup by boot prefix
-const llBootByPrefix = new Map<string, string>(); // prefix_lower → ll_stem
-for (const stem of listStems('LegLowerTexture')) {
-  const prefix = extractPrefix(stem, LL_BOOT_SUFFIXES);
-  if (prefix) llBootByPrefix.set(prefix.toLowerCase(), stem);
-}
-
-const bootsMap = new Map<string, BootsEntry>();
-for (const stem of listStems('FootTexture')) {
-  if (bootsMap.has(stem)) continue;
-  const entry: BootsEntry = { name: stem, footBase: baseFor('FootTexture', stem), geosetValue: inferGeosetValue(stem) };
-  const prefix = extractPrefix(stem, FO_SUFFIXES);
+  const prefix = extractPrefix(foName, FO_SUFFIXES);
   if (prefix) {
     const prefixLower = prefix.toLowerCase();
-    // Try _Boot_LL first, then fall back to pant/robe LL (some boots share LL textures)
     const llStem = llBootByPrefix.get(prefixLower) ?? llByPrefix.get(prefixLower);
     if (llStem) entry.legLowerBase = baseFor('LegLowerTexture', llStem);
   }
-  bootsMap.set(stem, entry);
+
+  return entry;
 }
 
-// --- Gloves (HandTexture primary; link ArmLower by prefix) ---
+/** Build a gloves entry from IDI texture data. */
+function buildGlovesEntry(idi: IDIRecord, name: string, quality: number, itemId?: number): GlovesEntry | null {
+  const haName = idi.Texture[2]; // Hand
+  if (!haName || !hasTex(2, haName)) return null;
 
-const HA_SUFFIXES = ['_Glove_HA', '_Gauntlet_HA', '_HA'];
-const AL_SUFFIXES = ['_Glove_AL', '_Bracer_AL', '_Sleeve_AL', '_AL'];
+  const gg0 = idi.GeosetGroup[0];
+  const geosetValue = gg0 || inferGeosetValue(haName);
 
-// Build ArmLower lookup by prefix
-const alByPrefix = new Map<string, string>(); // prefix_lower → al_stem
-for (const stem of listStems('ArmLowerTexture')) {
-  const prefix = extractPrefix(stem, AL_SUFFIXES);
-  if (prefix) alByPrefix.set(prefix.toLowerCase(), stem);
-}
+  const entry: GlovesEntry = { name, quality, handBase: baseFor('HandTexture', haName), geosetValue };
+  if (itemId !== undefined) entry.itemId = itemId;
 
-const glovesMap = new Map<string, GlovesEntry>();
-for (const stem of listStems('HandTexture')) {
-  if (glovesMap.has(stem)) continue;
-  const entry: GlovesEntry = { name: stem, handBase: baseFor('HandTexture', stem), geosetValue: inferGeosetValue(stem) };
-  const prefix = extractPrefix(stem, HA_SUFFIXES);
+  const prefix = extractPrefix(haName, HA_SUFFIXES);
   if (prefix) {
     const alStem = alByPrefix.get(prefix.toLowerCase());
     if (alStem) entry.armLowerBase = baseFor('ArmLowerTexture', alStem);
   }
-  // Wrist geoset: only set when bracer/arm lower texture exists and inference is non-zero
+
   if (entry.armLowerBase) {
-    const wg = inferWristGeoset(stem);
+    const wg = inferWristGeoset(haName);
     if (wg) entry.wristGeoset = wg;
   }
-  glovesMap.set(stem, entry);
+
+  return entry;
 }
 
-// --- Output ---
+// --- Process items from DB ---
+
+const weapons: WeaponEntry[] = [];
+const chestItems: ChestEntry[] = [];
+const legsItems: LegsEntry[] = [];
+const bootsItems: BootsEntry[] = [];
+const glovesItems: GlovesEntry[] = [];
+
+// Track which IDI textures have been claimed by DB items
+const claimedChest = new Set<string>();  // TorsoUpper stem
+const claimedLegs = new Set<string>();   // LegUpper stem
+const claimedBoots = new Set<string>();  // Foot stem
+const claimedGloves = new Set<string>(); // Hand stem
+
+let dbMatched = 0;
+let dbNoIdi = 0;
+let dbNoTex = 0;
+
+for (const item of items) {
+  const idi = idiByDisplayId.get(item.displayId);
+  if (!idi) { dbNoIdi++; continue; }
+
+  if (WEAPON_TYPES.has(item.inventoryType)) {
+    const slug = findWeaponSlug(idi.ModelName[0]);
+    if (slug) {
+      const subclass = item.class === 2 ? WEAPON_SUBCLASS[item.subclass] : undefined;
+      weapons.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, subclass });
+      dbMatched++;
+    } else {
+      dbNoTex++;
+    }
+  } else if (CHEST_TYPES.has(item.inventoryType)) {
+    const entry = buildChestEntry(idi, item.name, item.quality, item.itemId);
+    if (entry) {
+      chestItems.push(entry);
+      claimedChest.add(idi.Texture[3]);
+      dbMatched++;
+    } else { dbNoTex++; }
+  } else if (LEGS_TYPES.has(item.inventoryType)) {
+    const entry = buildLegsEntry(idi, item.name, item.quality, item.itemId);
+    if (entry) {
+      legsItems.push(entry);
+      claimedLegs.add(idi.Texture[5]);
+      dbMatched++;
+    } else { dbNoTex++; }
+  } else if (BOOTS_TYPES.has(item.inventoryType)) {
+    const entry = buildBootsEntry(idi, item.name, item.quality, item.itemId);
+    if (entry) {
+      bootsItems.push(entry);
+      claimedBoots.add(idi.Texture[7]);
+      dbMatched++;
+    } else { dbNoTex++; }
+  } else if (GLOVES_TYPES.has(item.inventoryType)) {
+    const entry = buildGlovesEntry(idi, item.name, item.quality, item.itemId);
+    if (entry) {
+      glovesItems.push(entry);
+      claimedGloves.add(idi.Texture[2]);
+      dbMatched++;
+    } else { dbNoTex++; }
+  }
+}
+
+// --- Add unclaimed textures as unnamed entries (quality 0) ---
+// These are TBC-era or patch textures not in the vanilla item DB.
+
+let unclaimedCount = 0;
+
+for (const idi of idiRecords) {
+  // Chest
+  const tu = idi.Texture[3];
+  if (tu && hasTex(3, tu) && !claimedChest.has(tu)) {
+    const entry = buildChestEntry(idi, tu, 0);
+    if (entry) { chestItems.push(entry); unclaimedCount++; claimedChest.add(tu); }
+  }
+  // Legs
+  const lu = idi.Texture[5];
+  if (lu && hasTex(5, lu) && !claimedLegs.has(lu)) {
+    const entry = buildLegsEntry(idi, lu, 0);
+    if (entry) { legsItems.push(entry); unclaimedCount++; claimedLegs.add(lu); }
+  }
+  // Boots
+  const fo = idi.Texture[7];
+  if (fo && hasTex(7, fo) && !claimedBoots.has(fo)) {
+    const entry = buildBootsEntry(idi, fo, 0);
+    if (entry) { bootsItems.push(entry); unclaimedCount++; claimedBoots.add(fo); }
+  }
+  // Gloves
+  const ha = idi.Texture[2];
+  if (ha && hasTex(2, ha) && !claimedGloves.has(ha)) {
+    const entry = buildGlovesEntry(idi, ha, 0);
+    if (entry) { glovesItems.push(entry); unclaimedCount++; claimedGloves.add(ha); }
+  }
+}
+
+// Also add weapon slugs not claimed by any DB item
+const claimedWeaponSlugs = new Set(weapons.map(w => w.slug));
+for (const slug of weaponSlugSet) {
+  if (!claimedWeaponSlugs.has(slug)) {
+    weapons.push({ itemId: 0, name: slug, quality: 0, slug });
+    unclaimedCount++;
+  }
+}
+
+// --- Sort: quality desc, then name asc ---
+
+function sortItems<T extends { quality: number; name: string }>(arr: T[]): T[] {
+  return arr.sort((a, b) => b.quality - a.quality || a.name.localeCompare(b.name));
+}
 
 const catalog = {
-  weapons,
-  chest:  [...chestMap.values()],
-  legs:   [...legsMap.values()],
-  boots:  [...bootsMap.values()],
-  gloves: [...glovesMap.values()],
+  weapons: sortItems(weapons),
+  chest:   sortItems(chestItems),
+  legs:    sortItems(legsItems),
+  boots:   sortItems(bootsItems),
+  gloves:  sortItems(glovesItems),
 };
 
-writeFileSync(resolve(ROOT, 'public/item-catalog.json'), JSON.stringify(catalog, null, 2));
+writeFileSync(resolve(ROOT, 'public/item-catalog.json'), JSON.stringify(catalog));
 
-console.log('=== Item Catalog ===');
-console.log(`Weapons: ${catalog.weapons.length}`);
-console.log(`Chest:   ${catalog.chest.length}`);
-console.log(`Legs:    ${catalog.legs.length}`);
-console.log(`Boots:   ${catalog.boots.length}`);
-console.log(`Gloves:  ${catalog.gloves.length}`);
+console.log('=== Game Item Catalog ===');
+console.log(`Weapons: ${catalog.weapons.length} (${weapons.filter(w => w.itemId).length} named)`);
+console.log(`Chest:   ${catalog.chest.length} (${chestItems.filter(c => c.itemId).length} named)`);
+console.log(`Legs:    ${catalog.legs.length} (${legsItems.filter(l => l.itemId).length} named)`);
+console.log(`Boots:   ${catalog.boots.length} (${bootsItems.filter(b => b.itemId).length} named)`);
+console.log(`Gloves:  ${catalog.gloves.length} (${glovesItems.filter(g => g.itemId).length} named)`);
+console.log(`\nDB matched: ${dbMatched}, No IDI: ${dbNoIdi}, No textures: ${dbNoTex}`);
+console.log(`Unclaimed (unnamed): ${unclaimedCount}`);
 console.log('\nWritten: public/item-catalog.json');

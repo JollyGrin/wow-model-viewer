@@ -68,13 +68,55 @@ src/
 └── charTexture.ts    # Texture region compositing
 
 scripts/
-├── convert-model.ts    # M2 v256 → model.json + model.bin
-└── convert-textures.ts # BLP → skin.tex (composited atlas)
+├── convert-model.ts          # M2 v256 → model.json + model.bin
+├── convert-textures.ts       # BLP → skin.tex (composited atlas)
+├── convert-item.ts           # Item M2 + BLP → public/items/
+├── convert-item-textures.ts  # Armor BLP → public/item-textures/
+└── build-item-catalog.ts     # Build public/item-catalog.json
 
 public/models/<race>-<gender>/
 ├── model.json          # Manifest (bones, geosets, layout)
 ├── model.bin           # Vertex + index buffers
 └── textures/skin.tex   # RGBA texture atlas
+
+public/item-textures/   # gitignored — build with scripts below
+public/items/           # gitignored — build with scripts below
+```
+
+## Building Item Assets
+
+`public/item-textures/` and `public/items/` are gitignored and must be built locally from your patch data.
+
+### Item armor textures
+
+Reads BLPs from `data/patch/patch-3/Item/TextureComponents/` and writes `.tex` files to `public/item-textures/`:
+
+```bash
+bun run scripts/convert-item-textures.ts
+```
+
+### Weapon models
+
+Reads M2 + BLP files from all patches and writes converted models to `public/items/weapon/`:
+
+```bash
+bun run scripts/convert-item.ts
+```
+
+### Item catalog
+
+Builds `public/item-catalog.json` from `public/item-textures/` + `public/items/`:
+
+```bash
+bun run scripts/build-item-catalog.ts
+```
+
+Run all three in order after extracting your patch data:
+
+```bash
+bun run scripts/convert-item-textures.ts && \
+bun run scripts/convert-item.ts && \
+bun run scripts/build-item-catalog.ts
 ```
 
 ## Tech Stack

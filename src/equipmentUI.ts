@@ -1,16 +1,29 @@
 /**
- * Equipment UI — slot-based equipment picker with randomize support.
+ * Equipment UI — WoW-style item picker with quality colors and search.
  *
- * Loads /item-catalog.json, builds per-slot selects, exposes state accessors.
+ * Loads /item-catalog.json (game items with names + quality),
+ * builds per-slot searchable selects, exposes state accessors.
  */
 
 import type { BodyArmor } from './loadModel';
 
-interface WeaponEntry  { slug: string; name: string; }
-interface ChestEntry   { name: string; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
-interface LegsEntry    { name: string; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
-interface BootsEntry   { name: string; footBase: string; legLowerBase?: string; geosetValue: number; }
-interface GlovesEntry  { name: string; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
+// --- Quality colors (WoW standard) ---
+const QUALITY_COLOR: Record<number, string> = {
+  0: '#9d9d9d', // Poor (gray)
+  1: '#ffffff', // Common (white)
+  2: '#1eff00', // Uncommon (green)
+  3: '#0070dd', // Rare (blue)
+  4: '#a335ee', // Epic (purple)
+  5: '#ff8000', // Legendary (orange)
+};
+
+// --- Catalog types ---
+
+interface WeaponEntry  { itemId: number; name: string; quality: number; slug: string; subclass?: string; }
+interface ChestEntry   { itemId?: number; name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
+interface LegsEntry    { itemId?: number; name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
+interface BootsEntry   { itemId?: number; name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
+interface GlovesEntry  { itemId?: number; name: string; quality: number; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
 
 interface ItemCatalog {
   weapons: WeaponEntry[];
@@ -22,9 +35,9 @@ interface ItemCatalog {
 
 let catalog: ItemCatalog | null = null;
 
-// Active selections (undefined = None / no equipment)
+// Active selections
 const selection: {
-  weapon?: string;      // weapon slug or undefined
+  weapon?: string;
   chest?: ChestEntry;
   legs?: LegsEntry;
   boots?: BootsEntry;
@@ -39,7 +52,6 @@ export function getWeaponPath(): string | undefined {
 export function getArmorOptions(): BodyArmor | undefined {
   const armor: BodyArmor = {};
 
-  // --- Chest (highest priority for robe/dress flag) ---
   if (selection.chest) {
     armor.armUpperBase   = selection.chest.armUpperBase;
     armor.torsoUpperBase = selection.chest.torsoUpperBase;
@@ -48,7 +60,6 @@ export function getArmorOptions(): BodyArmor | undefined {
     armor.robeGeoset     = selection.chest.robeGeoset || undefined;
   }
 
-  // --- Legs (robe only applies if chest didn't set one: chest > legs priority) ---
   if (selection.legs) {
     armor.legUpperBase = selection.legs.legUpperBase;
     armor.legLowerBase = selection.legs.legLowerBase;
@@ -57,10 +68,8 @@ export function getArmorOptions(): BodyArmor | undefined {
     }
   }
 
-  // Dress flag: when active, boot geoset (501-599) and kneepads (group 9) are hidden
   const isDress = !!armor.robeGeoset;
 
-  // --- Boots (geoset + legLower suppressed under dress) ---
   if (selection.boots) {
     armor.footBase = selection.boots.footBase;
     if (!isDress) {
@@ -69,7 +78,6 @@ export function getArmorOptions(): BodyArmor | undefined {
     }
   }
 
-  // --- Gloves (wrist geoset suppressed under dress) ---
   if (selection.gloves) {
     armor.handBase     = selection.gloves.handBase;
     armor.armLowerBase = selection.gloves.armLowerBase;
@@ -83,60 +91,84 @@ export function getArmorOptions(): BodyArmor | undefined {
   return hasAny ? armor : undefined;
 }
 
-function buildSelect<T extends { name: string }>(
+// --- Display name helpers ---
+
+function weaponDisplayName(w: WeaponEntry): string {
+  if (!w.itemId) return w.slug;
+  return w.subclass ? `[${w.subclass}] ${w.name}` : w.name;
+}
+
+function itemDisplayName(item: { itemId?: number; name: string }): string {
+  return item.name;
+}
+
+// --- Filtered select builder ---
+
+/** Build a select + search input pair. Returns the container div. */
+function buildFilteredSelect<T extends { name: string; quality: number }>(
   id: string,
   items: T[],
+  displayFn: (item: T) => string,
   onSelect: (entry: T | undefined) => void,
-): HTMLSelectElement {
+): { container: HTMLDivElement; select: HTMLSelectElement } {
+  const container = document.createElement('div');
+  container.className = 'equip-select-wrap';
+
+  const search = document.createElement('input');
+  search.type = 'text';
+  search.className = 'equip-search';
+  search.placeholder = 'Search...';
+
   const sel = document.createElement('select');
   sel.id = id;
+  sel.size = 8;
 
-  const noneOpt = document.createElement('option');
-  noneOpt.value = '';
-  noneOpt.textContent = 'None';
-  sel.appendChild(noneOpt);
+  function populateOptions(filter: string) {
+    sel.innerHTML = '';
+    const noneOpt = document.createElement('option');
+    noneOpt.value = '';
+    noneOpt.textContent = 'None';
+    noneOpt.style.color = '#888';
+    sel.appendChild(noneOpt);
 
-  for (const item of items) {
-    const opt = document.createElement('option');
-    opt.value = item.name;
-    opt.textContent = item.name;
-    sel.appendChild(opt);
+    const lowerFilter = filter.toLowerCase();
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const display = displayFn(item);
+      if (lowerFilter && !display.toLowerCase().includes(lowerFilter)) continue;
+      const opt = document.createElement('option');
+      opt.value = String(i);
+      opt.textContent = display;
+      opt.style.color = QUALITY_COLOR[item.quality] || QUALITY_COLOR[1];
+      sel.appendChild(opt);
+    }
   }
 
-  sel.addEventListener('change', () => {
-    const match = items.find(i => i.name === sel.value);
-    onSelect(match);
+  populateOptions('');
+
+  search.addEventListener('input', () => {
+    populateOptions(search.value);
   });
 
-  return sel;
-}
-
-function buildWeaponSelect(items: WeaponEntry[], onSelect: (slug: string | undefined) => void): HTMLSelectElement {
-  const sel = document.createElement('select');
-  sel.id = 'equip-weapon';
-
-  const noneOpt = document.createElement('option');
-  noneOpt.value = '';
-  noneOpt.textContent = 'None';
-  sel.appendChild(noneOpt);
-
-  for (const item of items) {
-    const opt = document.createElement('option');
-    opt.value = item.slug;
-    opt.textContent = item.name;
-    sel.appendChild(opt);
-  }
-
   sel.addEventListener('change', () => {
-    onSelect(sel.value || undefined);
+    if (sel.value === '') {
+      onSelect(undefined);
+    } else {
+      onSelect(items[parseInt(sel.value, 10)]);
+    }
   });
 
-  return sel;
+  container.appendChild(search);
+  container.appendChild(sel);
+  return { container, select: sel };
 }
 
-function makeRow(label: string, select: HTMLSelectElement, diceSlot: string, onChange: () => void): HTMLDivElement {
+function makeRow(label: string, selectContainer: HTMLDivElement, select: HTMLSelectElement, diceSlot: string, onChange: () => void): HTMLDivElement {
   const row = document.createElement('div');
   row.className = 'equip-row';
+
+  const header = document.createElement('div');
+  header.className = 'equip-row-header';
 
   const lbl = document.createElement('span');
   lbl.className = 'equip-label';
@@ -145,29 +177,26 @@ function makeRow(label: string, select: HTMLSelectElement, diceSlot: string, onC
   const btn = document.createElement('button');
   btn.className = 'equip-dice';
   btn.dataset.slot = diceSlot;
-  btn.textContent = '🎲';
+  btn.textContent = '\u{1F3B2}';
   btn.title = `Random ${label}`;
   btn.addEventListener('click', () => {
-    randomizeSlot(diceSlot, onChange);
+    randomizeSlot(select, onChange);
   });
 
-  row.appendChild(lbl);
-  row.appendChild(select);
-  row.appendChild(btn);
+  header.appendChild(lbl);
+  header.appendChild(btn);
+
+  row.appendChild(header);
+  row.appendChild(selectContainer);
   return row;
 }
 
-function randomizeSlot(slot: string, onChange: () => void) {
-  if (!catalog) return;
-  const selEl = document.getElementById(`equip-${slot}`) as HTMLSelectElement | null;
-  if (!selEl) return;
-
-  const opts = Array.from(selEl.options).filter(o => o.value !== '');
+function randomizeSlot(sel: HTMLSelectElement, onChange: () => void) {
+  const opts = Array.from(sel.options).filter(o => o.value !== '');
   if (opts.length === 0) return;
-
   const pick = opts[Math.floor(Math.random() * opts.length)];
-  selEl.value = pick.value;
-  selEl.dispatchEvent(new Event('change'));
+  sel.value = pick.value;
+  sel.dispatchEvent(new Event('change'));
   onChange();
 }
 
@@ -193,51 +222,51 @@ function buildPanel(panel: HTMLElement, onChange: () => void) {
 
   const title = document.createElement('div');
   title.className = 'equip-title';
-  title.textContent = '── Equipment ──';
+  title.textContent = 'Equipment';
   panel.appendChild(title);
 
-  // Weapon row
-  const weaponSel = buildWeaponSelect(catalog.weapons, slug => {
-    selection.weapon = slug;
-    onChange();
-  });
-  panel.appendChild(makeRow('Weapon', weaponSel, 'weapon', onChange));
+  // Weapon
+  const { container: wCont, select: wSel } = buildFilteredSelect(
+    'equip-weapon', catalog.weapons, weaponDisplayName,
+    entry => { selection.weapon = entry?.slug; onChange(); },
+  );
+  panel.appendChild(makeRow('Weapon', wCont, wSel, 'weapon', onChange));
 
-  // Chest row
-  const chestSel = buildSelect<ChestEntry>('equip-chest', catalog.chest, entry => {
-    selection.chest = entry;
-    onChange();
-  });
-  panel.appendChild(makeRow('Chest', chestSel, 'chest', onChange));
+  // Chest
+  const { container: cCont, select: cSel } = buildFilteredSelect(
+    'equip-chest', catalog.chest, itemDisplayName,
+    entry => { selection.chest = entry; onChange(); },
+  );
+  panel.appendChild(makeRow('Chest', cCont, cSel, 'chest', onChange));
 
-  // Legs row
-  const legsSel = buildSelect<LegsEntry>('equip-legs', catalog.legs, entry => {
-    selection.legs = entry;
-    onChange();
-  });
-  panel.appendChild(makeRow('Legs', legsSel, 'legs', onChange));
+  // Legs
+  const { container: lCont, select: lSel } = buildFilteredSelect(
+    'equip-legs', catalog.legs, itemDisplayName,
+    entry => { selection.legs = entry; onChange(); },
+  );
+  panel.appendChild(makeRow('Legs', lCont, lSel, 'legs', onChange));
 
-  // Boots row
-  const bootsSel = buildSelect<BootsEntry>('equip-boots', catalog.boots, entry => {
-    selection.boots = entry;
-    onChange();
-  });
-  panel.appendChild(makeRow('Boots', bootsSel, 'boots', onChange));
+  // Boots
+  const { container: bCont, select: bSel } = buildFilteredSelect(
+    'equip-boots', catalog.boots, itemDisplayName,
+    entry => { selection.boots = entry; onChange(); },
+  );
+  panel.appendChild(makeRow('Boots', bCont, bSel, 'boots', onChange));
 
-  // Gloves row
-  const glovesSel = buildSelect<GlovesEntry>('equip-gloves', catalog.gloves, entry => {
-    selection.gloves = entry;
-    onChange();
-  });
-  panel.appendChild(makeRow('Gloves', glovesSel, 'gloves', onChange));
+  // Gloves
+  const { container: gCont, select: gSel } = buildFilteredSelect(
+    'equip-gloves', catalog.gloves, itemDisplayName,
+    entry => { selection.gloves = entry; onChange(); },
+  );
+  panel.appendChild(makeRow('Gloves', gCont, gSel, 'gloves', onChange));
 
-  // Randomize All button
+  // Randomize All
   const randomAll = document.createElement('button');
   randomAll.id = 'equip-randomize-all';
   randomAll.textContent = 'Randomize All';
   randomAll.addEventListener('click', () => {
-    for (const slot of ['weapon', 'chest', 'legs', 'boots', 'gloves']) {
-      randomizeSlot(slot, () => {});
+    for (const s of [wSel, cSel, lSel, bSel, gSel]) {
+      randomizeSlot(s, () => {});
     }
     onChange();
   });
