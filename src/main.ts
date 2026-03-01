@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { loadModel } from './loadModel'
 import { loadAnimations, AnimationController } from './animation'
+import { initEquipmentUI, getWeaponPath, getArmorOptions } from './equipmentUI'
 
 const RACES = [
   { label: 'Blood Elf', slug: 'blood-elf' },
@@ -132,7 +133,7 @@ function populateAnimDropdown(controller: AnimationController) {
   }
 }
 
-async function switchModel() {
+export async function switchModel() {
   if (loading) return
   loading = true
 
@@ -142,12 +143,8 @@ async function switchModel() {
   try {
     const [loaded, animData] = await Promise.all([
       loadModel(modelDir, {
-        weapon: '/items/weapon/sword-2h-claymore-b-02',
-        chest: {
-          armUpperBase:   '/item-textures/ArmUpperTexture/Plate_A_01Silver_Sleeve_AU',
-          torsoUpperBase: '/item-textures/TorsoUpperTexture/Plate_A_01Silver_Chest_TU',
-          torsoLowerBase: '/item-textures/TorsoLowerTexture/Plate_A_01Silver_Chest_TL',
-        },
+        weapon: getWeaponPath(),
+        armor: getArmorOptions(),
       }),
       loadAnimations(modelDir),
     ])
@@ -185,7 +182,8 @@ animSelect.addEventListener('change', () => {
 raceSelect.addEventListener('change', switchModel)
 genderSelect.addEventListener('change', switchModel)
 
-// Load initial model
+// Init equipment UI and load initial model
+initEquipmentUI(switchModel)
 switchModel()
 
 function animate() {

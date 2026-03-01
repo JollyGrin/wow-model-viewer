@@ -18,10 +18,15 @@ export interface LoadedModel {
  *  Resolver tries _{gender}.tex → _U.tex → .tex, using the first that loads.
  *  Example: '/item-textures/ArmUpperTexture/Plate_A_01Silver_Sleeve_AU'
  */
-export interface ChestEquipment {
+export interface BodyArmor {
   armUpperBase?: string;
+  armLowerBase?: string;
+  handBase?: string;
   torsoUpperBase?: string;
   torsoLowerBase?: string;
+  legUpperBase?: string;
+  legLowerBase?: string;
+  footBase?: string;
 }
 
 interface AttachmentPoint {
@@ -230,7 +235,7 @@ export async function loadModel(
   options?: {
     enabledGeosets?: Set<number>;
     weapon?: string; // URL to item dir, e.g. '/items/weapon/sword-2h-claymore-b-02'
-    chest?: ChestEquipment;
+    armor?: BodyArmor;
   },
 ): Promise<LoadedModel> {
   const texturesDir = `${modelDir}/textures/`;
@@ -248,10 +253,12 @@ export async function loadModel(
   // Derive gender suffix from modelDir slug (e.g. '/models/human-female' → 'F')
   const genderSuffix = modelDir.includes('-female') ? 'F' : 'M';
 
-  // Load skin texture — with equipment compositing when chest is provided
+  // Load skin texture — with equipment compositing when armor is provided
   let skinTexture: THREE.Texture;
   try {
-    if (options?.chest) {
+    const armor = options?.armor;
+    const hasArmor = armor && Object.values(armor).some(v => v);
+    if (hasArmor) {
       const baseImageData = await loadTexImageData(`${texturesDir}skin.tex`);
       const layers: Array<{ imageData: ImageData; region: CharRegion; layer: number }> = [];
 
@@ -272,9 +279,14 @@ export async function loadModel(
         if (imageData) layers.push({ imageData, region, layer: 20 });
       }
 
-      await tryAddLayer(options.chest.armUpperBase, CharRegion.ARM_UPPER);
-      await tryAddLayer(options.chest.torsoUpperBase, CharRegion.TORSO_UPPER);
-      await tryAddLayer(options.chest.torsoLowerBase, CharRegion.TORSO_LOWER);
+      await tryAddLayer(armor.armUpperBase,   CharRegion.ARM_UPPER);
+      await tryAddLayer(armor.armLowerBase,   CharRegion.ARM_LOWER);
+      await tryAddLayer(armor.handBase,       CharRegion.HAND);
+      await tryAddLayer(armor.torsoUpperBase, CharRegion.TORSO_UPPER);
+      await tryAddLayer(armor.torsoLowerBase, CharRegion.TORSO_LOWER);
+      await tryAddLayer(armor.legUpperBase,   CharRegion.LEG_UPPER);
+      await tryAddLayer(armor.legLowerBase,   CharRegion.LEG_LOWER);
+      await tryAddLayer(armor.footBase,       CharRegion.FOOT);
 
       const canvas = composeCharTexture(baseImageData, layers);
       // Read composited pixels back and upload as DataTexture (preserves flipY=false convention)

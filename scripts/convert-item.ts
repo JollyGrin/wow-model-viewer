@@ -1,6 +1,9 @@
 /**
  * Convert item M2 + BLP texture to web-ready format.
  *
+ * Dynamically discovers all weapon M2s across patches (highest patch wins).
+ * Uses ItemDisplayInfo.json to look up the companion BLP texture name.
+ *
  * Output vertex format (32 bytes per vertex):
  *   position  3×float32  12B  offset 0
  *   normal    3×float32  12B  offset 12
@@ -14,31 +17,88 @@
  * Usage: bun run scripts/convert-item.ts
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'fs';
+import { resolve, basename, extname } from 'path';
 
 const { Blp, BLP_IMAGE_FORMAT } = await import('@wowserhq/format');
 
 const ROOT = resolve(import.meta.dirname, '..');
-const EXTRACT_DIR = resolve(ROOT, 'data/extracted');
 
-interface ItemConfig {
-  category: string;   // e.g. 'weapon'
-  slug: string;       // e.g. 'sword-2h-claymore-b-02'
-  m2Path: string;     // relative to data/extracted/
-  blpPath: string;    // relative to data/extracted/
+// Patch directories in reverse order (highest patch wins)
+const PATCH_DIRS = ['patch-9', 'patch-8', 'patch-7', 'patch-6', 'patch-5', 'patch-4', 'patch-3', 'patch-2'];
+const WEAPON_SUBPATH = 'Item/ObjectComponents/Weapon';
+
+// --- Build ItemDisplayInfo texture lookup: modelName_stem_lower → modelTexture ---
+
+interface DisplayRecord {
+  ModelName: string[];
+  ModelTexture: string[];
 }
 
-const ITEMS: ItemConfig[] = [
-  {
-    category: 'weapon',
-    slug: 'sword-2h-claymore-b-02',
-    m2Path: 'Item/ObjectComponents/Weapon/Sword_2H_Claymore_B_02.m2',
-    blpPath: 'Item/ObjectComponents/Weapon/Sword_2H_Claymore_B_02Green.blp',
-  },
-];
+const displayInfoRaw = readFileSync(resolve(ROOT, 'data/dbc/ItemDisplayInfo.json'), 'utf-8');
+// Line 15 (1-indexed) is the JSON array; 14 lines of tool log precede it
+const displayRecords: DisplayRecord[] = JSON.parse(displayInfoRaw.split('\n')[14]);
 
-// --- M2 Parser (adapted from convert-model.ts, accepts version 256–264) ---
+// Map: lowercase stem (no ext) → first ModelTexture value
+const modelTextureMap = new Map<string, string>();
+for (const rec of displayRecords) {
+  if (rec.ModelName?.[0] && rec.ModelTexture?.[0]) {
+    const stem = basename(rec.ModelName[0], extname(rec.ModelName[0])).toLowerCase();
+    if (!modelTextureMap.has(stem)) {
+      modelTextureMap.set(stem, rec.ModelTexture[0]);
+    }
+  }
+}
+
+// --- Build BLP index across all patches (highest patch wins) ---
+// Map: lowercase_filename_no_ext → full absolute path
+
+const blpIndex = new Map<string, string>();
+
+// Process patches in REVERSE order so earlier iteration (higher patch) wins
+for (const patchName of PATCH_DIRS) {
+  const weaponDir = resolve(ROOT, 'data/patch', patchName, WEAPON_SUBPATH);
+  if (!existsSync(weaponDir)) continue;
+
+  const files = readdirSync(weaponDir);
+  for (const f of files) {
+    if (!f.toLowerCase().endsWith('.blp')) continue;
+    const key = basename(f, extname(f)).toLowerCase();
+    // Higher patch set first — only set if not already set (higher patch takes priority)
+    // Since we iterate from patch-9 down, the first write wins
+    if (!blpIndex.has(key)) {
+      blpIndex.set(key, resolve(weaponDir, f));
+    }
+  }
+}
+
+// --- Discover M2 files across all patches (highest patch wins) ---
+
+interface WeaponM2 {
+  slug: string;
+  stem: string;
+  m2Path: string;
+}
+
+const weaponM2s: WeaponM2[] = [];
+const seenSlugs = new Set<string>();
+
+for (const patchName of PATCH_DIRS) {
+  const weaponDir = resolve(ROOT, 'data/patch', patchName, WEAPON_SUBPATH);
+  if (!existsSync(weaponDir)) continue;
+
+  const files = readdirSync(weaponDir);
+  for (const f of files) {
+    if (!f.toLowerCase().endsWith('.m2')) continue;
+    const stem = basename(f, extname(f));
+    const slug = stem.toLowerCase().replace(/_/g, '-');
+    if (seenSlugs.has(slug)) continue;
+    seenSlugs.add(slug);
+    weaponM2s.push({ slug, stem, m2Path: resolve(weaponDir, f) });
+  }
+}
+
+// --- M2 Parser ---
 
 interface M2Arr { count: number; ofs: number; }
 
@@ -65,41 +125,31 @@ function parseItemM2(buf: Buffer) {
   off += 8; // bones
   off += 8; // keyBoneLookup
   const vertices = arr(off); off += 8;
-  const views = arr(off); off += 8; // in v256 this is M2Array (8B), others uint32 (4B)
-
-  console.log(`  M2 version ${version}: ${vertices.count} vertices, view ofs=${views.ofs}`);
+  const views = arr(off); off += 8;
 
   return { vertices, views, version, buf, view };
 }
 
-// Parse the embedded skin (view 0) to get submeshes and triangle indices.
-// For v256 embedded skin: 32-byte submesh structs, 24-byte batch structs.
 function parseItemView0(_buf: Buffer, view: DataView, viewsArr: M2Arr) {
   function arr(off: number): M2Arr {
     return { count: view.getUint32(off, true), ofs: view.getUint32(off + 4, true) };
   }
 
   const viewOfs = viewsArr.ofs;
-  const vertexIndices = arr(viewOfs);       // skin vertex idx → model vertex idx
-  const triangleIndices = arr(viewOfs + 8); // triangle index list
-
-  // For non-v256 (separate .skin files), the view struct layout differs.
-  // We only support embedded skin (v256) here.
+  const vertexIndices = arr(viewOfs);
+  const triangleIndices = arr(viewOfs + 8);
   const submeshesArr = arr(viewOfs + 24);
 
-  // Read vertex remap
   const remap = new Uint16Array(vertexIndices.count);
   for (let i = 0; i < vertexIndices.count; i++) {
     remap[i] = view.getUint16(vertexIndices.ofs + i * 2, true);
   }
 
-  // Read triangle indices
   const rawTriangles = new Uint16Array(triangleIndices.count);
   for (let i = 0; i < triangleIndices.count; i++) {
     rawTriangles[i] = view.getUint16(triangleIndices.ofs + i * 2, true);
   }
 
-  // Parse submeshes (32 bytes each for v256)
   interface Submesh { vertexStart: number; vertexCount: number; indexStart: number; indexCount: number; }
   const submeshes: Submesh[] = [];
   const SUBMESH_SIZE = 32;
@@ -116,16 +166,6 @@ function parseItemView0(_buf: Buffer, view: DataView, viewsArr: M2Arr) {
   return { remap, rawTriangles, submeshes };
 }
 
-// --- BLP → .tex converter ---
-
-function decodeBlp(blpPath: string): { width: number; height: number; rgba: Uint8Array } {
-  const blpData = readFileSync(blpPath);
-  const blp = new Blp();
-  blp.load(blpData as any);
-  const image = blp.getImage(0, BLP_IMAGE_FORMAT.IMAGE_ABGR8888);
-  return { width: image.width, height: image.height, rgba: new Uint8Array(image.data) };
-}
-
 function writeTexFile(outPath: string, width: number, height: number, rgba: Uint8Array): number {
   const header = new Uint8Array(4);
   const headerView = new DataView(header.buffer);
@@ -138,38 +178,54 @@ function writeTexFile(outPath: string, width: number, height: number, rgba: Uint
   return output.byteLength;
 }
 
-// --- Item conversion ---
+// Find the companion BLP for an M2 stem.
+// Strategy:
+//   1. ItemDisplayInfo lookup: find ModelTexture for this M2 stem, look up that BLP
+//   2. Exact stem match: {stem}.blp
+//   3. First BLP starting with stem (any color variant)
+function findCompanionBlp(stem: string): string | null {
+  const stemLower = stem.toLowerCase();
 
-const VERTEX_STRIDE = 32; // pos(12) + normal(12) + uv(8)
+  // 1. ItemDisplayInfo lookup
+  const modelTexture = modelTextureMap.get(stemLower);
+  if (modelTexture) {
+    const texLower = modelTexture.toLowerCase();
+    const fromDbi = blpIndex.get(texLower);
+    if (fromDbi) return fromDbi;
+  }
 
-function convertItem(item: ItemConfig) {
-  const m2FullPath = resolve(EXTRACT_DIR, item.m2Path);
-  const blpFullPath = resolve(EXTRACT_DIR, item.blpPath);
-  const outDir = resolve(ROOT, 'public/items', item.category, item.slug);
+  // 2. Exact stem match
+  const exact = blpIndex.get(stemLower);
+  if (exact) return exact;
+
+  // 3. First BLP starting with stem (color variant)
+  const prefix = stemLower;
+  for (const [key, path] of blpIndex) {
+    if (key.startsWith(prefix) && key !== prefix) {
+      return path;
+    }
+  }
+
+  return null;
+}
+
+const VERTEX_STRIDE = 32;
+
+function convertWeapon(weapon: WeaponM2): {
+  vertexCount: number; triangleCount: number; submeshCount: number; binSize: number; texSize: number; texDims: string;
+} {
+  const outDir = resolve(ROOT, 'public/items/weapon', weapon.slug);
   const outBin = resolve(outDir, 'model.bin');
   const outJson = resolve(outDir, 'model.json');
   const outTexDir = resolve(outDir, 'textures');
   const outTex = resolve(outTexDir, 'main.tex');
 
-  if (!existsSync(m2FullPath)) {
-    console.error(`  ERROR: M2 not found: ${m2FullPath}`);
-    console.error(`  Run extract-from-mpq.ts first.`);
-    process.exit(1);
-  }
-  if (!existsSync(blpFullPath)) {
-    console.error(`  ERROR: BLP not found: ${blpFullPath}`);
-    console.error(`  Run extract-from-mpq.ts first.`);
-    process.exit(1);
-  }
-
-  const buf = readFileSync(m2FullPath);
+  const buf = readFileSync(weapon.m2Path);
   const m2 = parseItemM2(buf);
   const skin = parseItemView0(buf, m2.view, m2.views);
 
-  // Build output vertex buffer (32 bytes per vertex).
-  // M2 vertex (48 bytes): pos(3f) boneWeights(4u8) boneIndices(4u8) normal(3f) uv1(2f) uv2(2f)
   const vertexCount = skin.remap.length;
-  const STRIDE_F32 = VERTEX_STRIDE / 4; // 8
+  const STRIDE_F32 = VERTEX_STRIDE / 4;
   const outBuf = new Float32Array(vertexCount * STRIDE_F32);
 
   for (let i = 0; i < vertexCount; i++) {
@@ -177,31 +233,22 @@ function convertItem(item: ItemConfig) {
     const srcOfs = m2.vertices.ofs + modelIdx * 48;
     const o = i * STRIDE_F32;
 
-    // Position (M2 offset 0)
     outBuf[o + 0] = m2.view.getFloat32(srcOfs + 0,  true);
     outBuf[o + 1] = m2.view.getFloat32(srcOfs + 4,  true);
     outBuf[o + 2] = m2.view.getFloat32(srcOfs + 8,  true);
-
-    // Normal (M2 offset 20)
     outBuf[o + 3] = m2.view.getFloat32(srcOfs + 20, true);
     outBuf[o + 4] = m2.view.getFloat32(srcOfs + 24, true);
     outBuf[o + 5] = m2.view.getFloat32(srcOfs + 28, true);
-
-    // UV (M2 offset 32)
     outBuf[o + 6] = m2.view.getFloat32(srcOfs + 32, true);
     outBuf[o + 7] = m2.view.getFloat32(srcOfs + 36, true);
   }
 
-  // Collect ALL triangle indices (no geoset filtering for items)
   const indexBuffer = skin.rawTriangles;
-
-  // Sanity check
   const maxIdx = Math.max(...Array.from(indexBuffer));
   if (maxIdx >= vertexCount) {
     throw new Error(`Index ${maxIdx} out of range (${vertexCount} verts)`);
   }
 
-  // Write binary: vertex buffer + index buffer
   const vertexBytes = new Uint8Array(outBuf.buffer);
   const indexBytes = new Uint8Array(indexBuffer.buffer, indexBuffer.byteOffset, indexBuffer.byteLength);
   const binData = new Uint8Array(vertexBytes.byteLength + indexBytes.byteLength);
@@ -222,8 +269,13 @@ function convertItem(item: ItemConfig) {
   writeFileSync(outJson, JSON.stringify(manifest, null, 2));
 
   // Convert BLP texture
-  const { width, height, rgba } = decodeBlp(blpFullPath);
-  const texBytes = writeTexFile(outTex, width, height, rgba);
+  const blpPath = findCompanionBlp(weapon.stem)!;
+  const blpData = readFileSync(blpPath);
+  const blp = new Blp();
+  blp.load(blpData as any);
+  const image = blp.getImage(0, BLP_IMAGE_FORMAT.IMAGE_ABGR8888);
+  const rgba = new Uint8Array(image.data);
+  const texBytes = writeTexFile(outTex, image.width, image.height, rgba);
 
   return {
     vertexCount,
@@ -231,24 +283,52 @@ function convertItem(item: ItemConfig) {
     submeshCount: skin.submeshes.length,
     binSize: binData.byteLength,
     texSize: texBytes,
-    texDims: `${width}x${height}`,
+    texDims: `${image.width}x${image.height}`,
   };
 }
 
 // --- Main ---
 
 function main() {
-  console.log(`Converting ${ITEMS.length} item(s)...\n`);
+  console.log(`Discovered ${weaponM2s.length} weapon M2s across all patches.\n`);
 
-  for (const item of ITEMS) {
-    console.log(`${item.category}/${item.slug}:`);
-    const result = convertItem(item);
-    console.log(`  ${result.vertexCount} verts, ${result.triangleCount} tris, ${result.submeshCount} submeshes`);
-    console.log(`  model.bin: ${result.binSize}B`);
-    console.log(`  main.tex: ${result.texDims} → ${result.texSize}B`);
+  let converted = 0;
+  let skipped = 0;
+  let missingBlp = 0;
+  let errors = 0;
+
+  for (const weapon of weaponM2s) {
+    const outJson = resolve(ROOT, 'public/items/weapon', weapon.slug, 'model.json');
+
+    // Skip if already converted
+    if (existsSync(outJson)) {
+      skipped++;
+      continue;
+    }
+
+    // Check companion BLP exists
+    const blpPath = findCompanionBlp(weapon.stem);
+    if (!blpPath) {
+      console.warn(`  SKIP (no BLP): ${weapon.slug}`);
+      missingBlp++;
+      continue;
+    }
+
+    try {
+      const result = convertWeapon(weapon);
+      console.log(`  OK: ${weapon.slug} — ${result.vertexCount}v ${result.triangleCount}t ${result.texDims}`);
+      converted++;
+    } catch (err: any) {
+      console.error(`  ERROR: ${weapon.slug} — ${err.message}`);
+      errors++;
+    }
   }
 
-  console.log('\n=== Done ===');
+  console.log('\n=== Summary ===');
+  console.log(`Converted:   ${converted}`);
+  console.log(`Skipped:     ${skipped} (already exists)`);
+  console.log(`Missing BLP: ${missingBlp}`);
+  console.log(`Errors:      ${errors}`);
 }
 
 main();

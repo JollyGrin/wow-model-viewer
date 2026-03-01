@@ -25,12 +25,81 @@
       cursor: pointer;
       outline: none;
     }
-    #controls select:hover {
-      border-color: rgba(255, 255, 255, 0.4);
+    #controls select:hover { border-color: rgba(255, 255, 255, 0.4); }
+    #controls select:focus { border-color: rgba(200, 180, 120, 0.6); }
+
+    /* Equipment panel */
+    #equipment-panel {
+      position: absolute;
+      top: 50px;
+      left: 12px;
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 260px;
+      font-family: 'Segoe UI', Arial, sans-serif;
     }
-    #controls select:focus {
-      border-color: rgba(200, 180, 120, 0.6);
+    .equip-title {
+      color: rgba(200, 180, 120, 0.9);
+      font-size: 11px;
+      text-align: center;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
     }
+    .equip-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .equip-label {
+      color: #c8c0b0;
+      font-size: 12px;
+      width: 46px;
+      flex-shrink: 0;
+    }
+    .equip-row select {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.6);
+      color: #e0d8c8;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 4px 6px;
+      font-size: 11px;
+      border-radius: 3px;
+      cursor: pointer;
+      outline: none;
+      min-width: 0;
+    }
+    .equip-row select:hover { border-color: rgba(255, 255, 255, 0.4); }
+    .equip-row select:focus { border-color: rgba(200, 180, 120, 0.6); }
+    .equip-dice {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      color: #e0d8c8;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 2px 5px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .equip-dice:hover { background: rgba(255, 255, 255, 0.18); }
+    #equip-randomize-all {
+      margin-top: 4px;
+      background: rgba(200, 180, 120, 0.15);
+      border: 1px solid rgba(200, 180, 120, 0.4);
+      border-radius: 4px;
+      color: rgba(200, 180, 120, 0.9);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 5px 0;
+    }
+    #equip-randomize-all:hover { background: rgba(200, 180, 120, 0.28); }
   </style>
 </head>
 <body>
@@ -42,6 +111,7 @@
     </select>
     <select id="anim-select"></select>
   </div>
+  <div id="equipment-panel"></div>
   <canvas id="canvas"></canvas>
   <script type="module" src="/src/main.ts"></script>
 </body>

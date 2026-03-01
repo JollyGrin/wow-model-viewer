@@ -1,0 +1,2731 @@
+{
+  "weapons": [
+    {
+      "slug": "sword-2h-guts-q-01",
+      "name": "sword-2h-guts-q-01"
+    },
+    {
+      "slug": "mace-1h-blacksmithing-d-02",
+      "name": "mace-1h-blacksmithing-d-02"
+    },
+    {
+      "slug": "bow-2h-crossbow-blacktemple-d-01",
+      "name": "bow-2h-crossbow-blacktemple-d-01"
+    },
+    {
+      "slug": "mace-2h-stratholme-d-02",
+      "name": "mace-2h-stratholme-d-02"
+    },
+    {
+      "slug": "knife-1h-blood-a-05",
+      "name": "knife-1h-blood-a-05"
+    },
+    {
+      "slug": "bow-1h-blood-b-01",
+      "name": "bow-1h-blood-b-01"
+    },
+    {
+      "slug": "knife-1h-draenei-a-03",
+      "name": "knife-1h-draenei-a-03"
+    },
+    {
+      "slug": "knife-1h-blood-a-02",
+      "name": "knife-1h-blood-a-02"
+    },
+    {
+      "slug": "sword-1h-miev-d-01",
+      "name": "sword-1h-miev-d-01"
+    },
+    {
+      "slug": "sword-1h-blood-a-01",
+      "name": "sword-1h-blood-a-01"
+    },
+    {
+      "slug": "knife-1h-zulaman-d-03",
+      "name": "knife-1h-zulaman-d-03"
+    },
+    {
+      "slug": "knife-1h-zulaman-d-04",
+      "name": "knife-1h-zulaman-d-04"
+    },
+    {
+      "slug": "firearm-2h-rifle-blood-b-01",
+      "name": "firearm-2h-rifle-blood-b-01"
+    },
+    {
+      "slug": "stave-2h-zulaman-d-01",
+      "name": "stave-2h-zulaman-d-01"
+    },
+    {
+      "slug": "club-2h-q-a01",
+      "name": "club-2h-q-a01"
+    },
+    {
+      "slug": "mace-1h-blacksmithing-d-03",
+      "name": "mace-1h-blacksmithing-d-03"
+    },
+    {
+      "slug": "stave-2h-draenei-a-01",
+      "name": "stave-2h-draenei-a-01"
+    },
+    {
+      "slug": "knife-1h-zulaman-d-02",
+      "name": "knife-1h-zulaman-d-02"
+    },
+    {
+      "slug": "sword-2h-blood-b-02",
+      "name": "sword-2h-blood-b-02"
+    },
+    {
+      "slug": "axe-1h-zulaman-d-01",
+      "name": "axe-1h-zulaman-d-01"
+    },
+    {
+      "slug": "knife-1h-blood-a-03",
+      "name": "knife-1h-blood-a-03"
+    },
+    {
+      "slug": "stave-2h-feral-d-01",
+      "name": "stave-2h-feral-d-01"
+    },
+    {
+      "slug": "misc-2h-brewfest-a-01",
+      "name": "misc-2h-brewfest-a-01"
+    },
+    {
+      "slug": "knife-1h-blood-a-04",
+      "name": "knife-1h-blood-a-04"
+    },
+    {
+      "slug": "mace-1h-ice-q-01",
+      "name": "mace-1h-ice-q-01"
+    },
+    {
+      "slug": "firearm-2h-rifle-blood-c-01",
+      "name": "firearm-2h-rifle-blood-c-01"
+    },
+    {
+      "slug": "mace-1h-flail-a-01",
+      "name": "mace-1h-flail-a-01"
+    },
+    {
+      "slug": "axe-2h-zulaman-d-01",
+      "name": "axe-2h-zulaman-d-01"
+    },
+    {
+      "slug": "mace-2h-emerald-sanctum",
+      "name": "mace-2h-emerald-sanctum"
+    },
+    {
+      "slug": "knife-1h-coilfang-d-02",
+      "name": "knife-1h-coilfang-d-02"
+    },
+    {
+      "slug": "sword-2h-blood-c-02",
+      "name": "sword-2h-blood-c-02"
+    },
+    {
+      "slug": "axe-2h-blood-a-02",
+      "name": "axe-2h-blood-a-02"
+    },
+    {
+      "slug": "polearm-2h-hellfire-d-01",
+      "name": "polearm-2h-hellfire-d-01"
+    },
+    {
+      "slug": "offhand-zulaman-d-02",
+      "name": "offhand-zulaman-d-02"
+    },
+    {
+      "slug": "offhand-draenei-a-02",
+      "name": "offhand-draenei-a-02"
+    },
+    {
+      "slug": "axe-2h-guitar-c-02",
+      "name": "axe-2h-guitar-c-02"
+    },
+    {
+      "slug": "sword-1h-alliancecovenant-d-01",
+      "name": "sword-1h-alliancecovenant-d-01"
+    },
+    {
+      "slug": "sword-2h-blood-c-03",
+      "name": "sword-2h-blood-c-03"
+    },
+    {
+      "slug": "mace-1h-zulaman-d-02",
+      "name": "mace-1h-zulaman-d-02"
+    },
+    {
+      "slug": "stave-2h-long-b-02dark",
+      "name": "stave-2h-long-b-02dark"
+    },
+    {
+      "slug": "axe-1h-blood-a-03",
+      "name": "axe-1h-blood-a-03"
+    },
+    {
+      "slug": "thrown-1h-giant-weaponboulder",
+      "name": "thrown-1h-giant-weaponboulder"
+    },
+    {
+      "slug": "axe-1h-blood-a-02",
+      "name": "axe-1h-blood-a-02"
+    },
+    {
+      "slug": "sword-2h-claymore-b-02",
+      "name": "sword-2h-claymore-b-02"
+    },
+    {
+      "slug": "sword-1h-churchie",
+      "name": "sword-1h-churchie"
+    },
+    {
+      "slug": "sword-2h-lothar-a-01",
+      "name": "sword-2h-lothar-a-01"
+    },
+    {
+      "slug": "sword-2h-draenei-a-02",
+      "name": "sword-2h-draenei-a-02"
+    },
+    {
+      "slug": "knife-1h-blood-b-01",
+      "name": "knife-1h-blood-b-01"
+    },
+    {
+      "slug": "bow-2h-crossbow-outlandraid-d-04",
+      "name": "bow-2h-crossbow-outlandraid-d-04"
+    },
+    {
+      "slug": "wand-1h-zulaman-d-01",
+      "name": "wand-1h-zulaman-d-01"
+    },
+    {
+      "slug": "sword-1h-zulaman-d-02",
+      "name": "sword-1h-zulaman-d-02"
+    },
+    {
+      "slug": "stave-2h-blood-a-01",
+      "name": "stave-2h-blood-a-01"
+    },
+    {
+      "slug": "mace-1h-blood-a-01",
+      "name": "mace-1h-blood-a-01"
+    },
+    {
+      "slug": "sword-1h-shivan-d-01",
+      "name": "sword-1h-shivan-d-01"
+    },
+    {
+      "slug": "sword-2h-blood-a-01",
+      "name": "sword-2h-blood-a-01"
+    },
+    {
+      "slug": "bow-2h-crossbow-outlandraid-d-05",
+      "name": "bow-2h-crossbow-outlandraid-d-05"
+    },
+    {
+      "slug": "stave-2h-hunterepic-d-01",
+      "name": "stave-2h-hunterepic-d-01"
+    },
+    {
+      "slug": "stave-2h-sunwell-d-01",
+      "name": "stave-2h-sunwell-d-01"
+    },
+    {
+      "slug": "sword-1h-zulaman-d-03",
+      "name": "sword-1h-zulaman-d-03"
+    },
+    {
+      "slug": "bow-1h-sunwell-d-02",
+      "name": "bow-1h-sunwell-d-02"
+    },
+    {
+      "slug": "stave-2h-feral-d-03",
+      "name": "stave-2h-feral-d-03"
+    },
+    {
+      "slug": "knife-1h-blood-a-01",
+      "name": "knife-1h-blood-a-01"
+    },
+    {
+      "slug": "stave-2h-feral-pvp-c-01",
+      "name": "stave-2h-feral-pvp-c-01"
+    },
+    {
+      "slug": "polearm-2h-blood-elf-d-01",
+      "name": "polearm-2h-blood-elf-d-01"
+    },
+    {
+      "slug": "sword-1h-blood-a-02",
+      "name": "sword-1h-blood-a-02"
+    },
+    {
+      "slug": "mace-1h-blacksmithing-d-01",
+      "name": "mace-1h-blacksmithing-d-01"
+    },
+    {
+      "slug": "wand-1h-outlandraid-d-01",
+      "name": "wand-1h-outlandraid-d-01"
+    },
+    {
+      "slug": "bow-2h-crossbow-outlandpvp-d-01",
+      "name": "bow-2h-crossbow-outlandpvp-d-01"
+    },
+    {
+      "slug": "stave-2h-zulaman-d-03",
+      "name": "stave-2h-zulaman-d-03"
+    },
+    {
+      "slug": "sword-1h-akama-d-01",
+      "name": "sword-1h-akama-d-01"
+    },
+    {
+      "slug": "sword-1h-blood-a-03",
+      "name": "sword-1h-blood-a-03"
+    },
+    {
+      "slug": "knife-1h-zulaman-d-01",
+      "name": "knife-1h-zulaman-d-01"
+    },
+    {
+      "slug": "sword-2h-blood-b-01",
+      "name": "sword-2h-blood-b-01"
+    },
+    {
+      "slug": "stave-2h-zulaman-d-02",
+      "name": "stave-2h-zulaman-d-02"
+    },
+    {
+      "slug": "bow-1h-zulaman-d-01",
+      "name": "bow-1h-zulaman-d-01"
+    },
+    {
+      "slug": "knife-1h-coilfang-d-01",
+      "name": "knife-1h-coilfang-d-01"
+    },
+    {
+      "slug": "glave-1h-blood-c-01",
+      "name": "glave-1h-blood-c-01"
+    },
+    {
+      "slug": "sword-2h-blood-c-01",
+      "name": "sword-2h-blood-c-01"
+    },
+    {
+      "slug": "staff-2h-ogre-head",
+      "name": "staff-2h-ogre-head"
+    },
+    {
+      "slug": "axe-2h-blood-a-01",
+      "name": "axe-2h-blood-a-01"
+    },
+    {
+      "slug": "firearm-2h-rifle-zulaman-d-01",
+      "name": "firearm-2h-rifle-zulaman-d-01"
+    },
+    {
+      "slug": "mace-1h-zulaman-d-01",
+      "name": "mace-1h-zulaman-d-01"
+    },
+    {
+      "slug": "offhand-zulaman-d-01",
+      "name": "offhand-zulaman-d-01"
+    },
+    {
+      "slug": "club-1h-q-a01",
+      "name": "club-1h-q-a01"
+    },
+    {
+      "slug": "axe-2h-guitar-c-01",
+      "name": "axe-2h-guitar-c-01"
+    },
+    {
+      "slug": "misc-2h-tuskarfishingpole-a-01",
+      "name": "misc-2h-tuskarfishingpole-a-01"
+    },
+    {
+      "slug": "axe-2h-gorehowl-c-01",
+      "name": "axe-2h-gorehowl-c-01"
+    },
+    {
+      "slug": "mace-1h-hyjal-d-01",
+      "name": "mace-1h-hyjal-d-01"
+    },
+    {
+      "slug": "thrown-1h-coilfang-dagger-d-01",
+      "name": "thrown-1h-coilfang-dagger-d-01"
+    },
+    {
+      "slug": "hand-1h-lobster-claw",
+      "name": "hand-1h-lobster-claw"
+    },
+    {
+      "slug": "firearm-2h-rifle-blood-d-01",
+      "name": "firearm-2h-rifle-blood-d-01"
+    },
+    {
+      "slug": "sword-2h-zulaman-d-01",
+      "name": "sword-2h-zulaman-d-01"
+    },
+    {
+      "slug": "offhand-karazhan-q-01",
+      "name": "offhand-karazhan-q-01"
+    },
+    {
+      "slug": "sword-2h-draenei-a-01",
+      "name": "sword-2h-draenei-a-01"
+    },
+    {
+      "slug": "sword-2h-epic-a-03alt",
+      "name": "sword-2h-epic-a-03alt"
+    },
+    {
+      "slug": "axe-1h-blood-a-01",
+      "name": "axe-1h-blood-a-01"
+    },
+    {
+      "slug": "sword-1h-zulaman-d-01",
+      "name": "sword-1h-zulaman-d-01"
+    },
+    {
+      "slug": "stave-2h-blood-a-02",
+      "name": "stave-2h-blood-a-02"
+    },
+    {
+      "slug": "mace-1h-blood-a-02",
+      "name": "mace-1h-blood-a-02"
+    },
+    {
+      "slug": "knife-1h-blood-b-02",
+      "name": "knife-1h-blood-b-02"
+    },
+    {
+      "slug": "axe-2h-anchor",
+      "name": "axe-2h-anchor"
+    },
+    {
+      "slug": "bow-1h-blood-a-01",
+      "name": "bow-1h-blood-a-01"
+    },
+    {
+      "slug": "wand-1h-zulaman-d-02",
+      "name": "wand-1h-zulaman-d-02"
+    },
+    {
+      "slug": "stave-2h-blacktemple-d-01",
+      "name": "stave-2h-blacktemple-d-01"
+    },
+    {
+      "slug": "firearm-2h-rifle-blood-a-01",
+      "name": "firearm-2h-rifle-blood-a-01"
+    },
+    {
+      "slug": "firearm-2h-rifle-ulduar-d-01",
+      "name": "firearm-2h-rifle-ulduar-d-01"
+    },
+    {
+      "slug": "knife-1h-darkness-q-01",
+      "name": "knife-1h-darkness-q-01"
+    },
+    {
+      "slug": "hammer-1h-rune-q-01",
+      "name": "hammer-1h-rune-q-01"
+    },
+    {
+      "slug": "sword-2h-blood-a-02",
+      "name": "sword-2h-blood-a-02"
+    },
+    {
+      "slug": "bow-2h-crossbow-outlandraid-d-06",
+      "name": "bow-2h-crossbow-outlandraid-d-06"
+    },
+    {
+      "slug": "bow-2h-crossbow-outlandraid-d-01",
+      "name": "bow-2h-crossbow-outlandraid-d-01"
+    }
+  ],
+  "chest": [
+    {
+      "name": "Leather_Blood_B_01Blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_B_01Blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_Blood_B_01Blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_B_01Blue_Chest_TL"
+    },
+    {
+      "name": "Leather_Blood_B_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_B_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_Blood_B_01Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_B_01Black_Chest_TL"
+    },
+    {
+      "name": "Mail_A_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_A_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_A_01Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_A_01Black_Chest_TL"
+    },
+    {
+      "name": "GruntOutfit_ShatteredHand_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/GruntOutfit_ShatteredHand_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/GruntOutfit_ShatteredHand_chest_tl"
+    },
+    {
+      "name": "Robe_Draenei_A_01Cream_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Draenei_A_01Cream_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Draenei_A_01Cream_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Draenei_A_01Cream_Chest_TL"
+    },
+    {
+      "name": "Cloth_Blood_A_02Blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Cloth_Blood_A_02Blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Cloth_Blood_A_02Blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Cloth_Blood_A_02Blue_Chest_TL"
+    },
+    {
+      "name": "tabard_a_42gnomereganexiles_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_42gnomereganexiles_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_42gnomereganexiles_chest_tl"
+    },
+    {
+      "name": "Robe_Blood_A_02Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_A_02Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_A_02Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_A_02Black_Chest_TL"
+    },
+    {
+      "name": "Robe_Blood_A_02Purple_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_A_02Purple_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_A_02Purple_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_A_02Purple_Chest_TL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01Purple_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Zulaman_D_01Purple_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Zulaman_D_01Purple_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Zulaman_D_01Purple_Chest_TL"
+    },
+    {
+      "name": "Mail_E_01_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_E_01_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_E_01_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_E_01_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_54Hellscream_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_54Hellscream_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/TABARD_A_54HELLSCREAM_CHEST_TL"
+    },
+    {
+      "name": "tabard_a_64explorersguild_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_64explorersguild_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_64explorersguild_chest_tl"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Light_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Plate_ZulAman_D_01Light_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Plate_ZulAman_D_01Light_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Plate_ZulAman_D_01Light_Chest_TL"
+    },
+    {
+      "name": "Mail_E_01Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_E_01Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_E_01Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_E_01Red_Chest_TL"
+    },
+    {
+      "name": "tauren_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tauren_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/tauren_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tauren_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_18VioletEye_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_18VioletEye_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_18VioletEye_Chest_TL"
+    },
+    {
+      "name": "blaumeux_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/blaumeux_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/blaumeux_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Blaumeux_Chest_TL"
+    },
+    {
+      "name": "Robe_C_03White_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_C_03White_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_C_03White_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_C_03White_Chest_TL"
+    },
+    {
+      "name": "TABARD_A_30NATURE_CHEST_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/TABARD_A_30NATURE_CHEST_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/TABARD_A_30NATURE_CHEST_TL"
+    },
+    {
+      "name": "Tabard_A_26Sunshatter_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_26Sunshatter_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_26Sunshatter_Chest_TL"
+    },
+    {
+      "name": "Plate_ZulAman_D_01_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Plate_ZulAman_D_01_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Plate_ZulAman_D_01_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Plate_ZulAman_D_01_Chest_TL"
+    },
+    {
+      "name": "tabard_a_41darnassus_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_41darnassus_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_41darnassus_chest_tl"
+    },
+    {
+      "name": "tabard_a_59wildhammerclan_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_59wildhammerclan_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_59wildhammerclan_chest_tl"
+    },
+    {
+      "name": "Mail_Blood_B_01Purple_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_B_01Purple_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_B_01Purple_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_B_01Purple_Chest_TL"
+    },
+    {
+      "name": "GruntOutfit_Warsong_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/GruntOutfit_Warsong_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/GruntOutfit_Warsong_chest_tl"
+    },
+    {
+      "name": "Mail_F_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_F_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_F_01Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_F_01Black_Chest_TL"
+    },
+    {
+      "name": "Leather_Blood_B_01Orange_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_B_01Orange_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_Blood_B_01Orange_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_B_01Orange_Chest_TL"
+    },
+    {
+      "name": "tabard_a_91courtfarondis_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_91courtfarondis_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_91courtfarondis_chest_tl"
+    },
+    {
+      "name": "Cloth_Blood_A_01Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Cloth_Blood_A_01Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Cloth_Blood_A_01Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Cloth_Blood_A_01Red_Chest_TL"
+    },
+    {
+      "name": "Robe_Draenei_A_01Browm_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Draenei_A_01Browm_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Draenei_A_01Browm_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Draenei_A_01Browm_Chest_TL"
+    },
+    {
+      "name": "pirate_blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/pirate_blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/pirate_blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/pirate_blue_Chest_TL"
+    },
+    {
+      "name": "Robe_Draenei_A_01Blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Draenei_A_01Blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Draenei_A_01Blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Draenei_A_01Blue_Chest_TL"
+    },
+    {
+      "name": "Leather_Blood_A_01Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_A_01Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_Blood_A_01Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_A_01Red_Chest_TL"
+    },
+    {
+      "name": "Mail_Blood_01Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_01Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_01Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_01Red_Chest_TL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01DarkYellow_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Zulaman_D_01DarkYellow_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Zulaman_D_01DarkYellow_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Zulaman_D_01DarkYellow_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_01Darkmoon_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_01Darkmoon_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_01Darkmoon_Chest_TL"
+    },
+    {
+      "name": "tabard_a_43orgrimmar_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_43orgrimmar_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_43orgrimmar_chest_tl"
+    },
+    {
+      "name": "Mail_E_02Purple_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_E_02Purple_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_E_02Purple_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_E_02Purple_Chest_TL"
+    },
+    {
+      "name": "Leather_Blood_B_01Purple_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_B_01Purple_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_Blood_B_01Purple_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_B_01Purple_Chest_TL"
+    },
+    {
+      "name": "TABARD_A_31ARCANE_CHEST_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/TABARD_A_31ARCANE_CHEST_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/TABARD_A_31ARCANE_CHEST_TL"
+    },
+    {
+      "name": "Mail_Blood_B_01Blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_B_01Blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_B_01Blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_B_01Blue_Chest_TL"
+    },
+    {
+      "name": "tabard_a_40darkspeartrolls_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_40darkspeartrolls_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_40darkspeartrolls_chest_tl"
+    },
+    {
+      "name": "Mail_Blood_B_01Orange_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_B_01Orange_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_B_01Orange_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_B_01Orange_Chest_TL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_ZulAman_D_01_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_ZulAman_D_01_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_ZulAman_D_01_Chest_TL"
+    },
+    {
+      "name": "Robe_Blood_B_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_B_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_B_01Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_B_01Black_Chest_TL"
+    },
+    {
+      "name": "Mail_E_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_E_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_E_01Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_E_01Black_Chest_TL"
+    },
+    {
+      "name": "Leather_ZulAman_D_01Green_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_ZulAman_D_01Green_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_ZulAman_D_01Green_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_ZulAman_D_01Green_Chest_TL"
+    },
+    {
+      "name": "Robe_Blood_A_02Blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_A_02Blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_A_02Blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_A_02Blue_Chest_TL"
+    },
+    {
+      "name": "tabard_a_44thunderbluff_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_44thunderbluff_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_44thunderbluff_chest_tl"
+    },
+    {
+      "name": "tabard_a_46silvermooncity_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_46silvermooncity_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_46silvermooncity_chest_tl"
+    },
+    {
+      "name": "Mail_E_02Blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_E_02Blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_E_02Blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_E_02Blue_Chest_TL"
+    },
+    {
+      "name": "Leather_Blood_A_02Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_A_02Black_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_A_02Black_Chest_TL"
+    },
+    {
+      "name": "Mail_F_01Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_F_01Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_F_01Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_F_01Red_Chest_TL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_ZulAman_D_01Blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_ZulAman_D_01Blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_ZulAman_D_01Blue_Chest_TL"
+    },
+    {
+      "name": "Robe_D_04_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_D_04_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_D_04_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_D_04_Chest_TL"
+    },
+    {
+      "name": "tabard_a_71kezan_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_71kezan_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_71kezan_chest_tl"
+    },
+    {
+      "name": "Tabard_A_21IllidansArmy_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_21IllidansArmy_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_21IllidansArmy_Chest_TL"
+    },
+    {
+      "name": "DK_green_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/DK_green_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/DK_green_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/DK_green_Chest_TL"
+    },
+    {
+      "name": "Robe_Blood_A_01Purple_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_A_01Purple_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_A_01Purple_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_A_01Purple_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_09BloodWatch_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_09BloodWatch_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_09BloodWatch_Chest_TL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_ZulAman_D_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_ZulAman_D_01Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_ZulAman_D_01Black_Chest_TL"
+    },
+    {
+      "name": "Mail_Blood_B_01Crimson_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_B_01Crimson_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_B_01Crimson_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_B_01Crimson_Chest_TL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Zulaman_D_01_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Zulaman_D_01_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Zulaman_D_01_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_01AchievementsExplorer01_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_01AchievementsExplorer01_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_01AchievementsExplorer01_Chest_TL"
+    },
+    {
+      "name": "Leather_Blood_A_01Maroon_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_A_01Maroon_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_Blood_A_01Maroon_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_A_01Maroon_Chest_TL"
+    },
+    {
+      "name": "tabard_a_revantusktrolls_CHEST_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_revantusktrolls_CHEST_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_revantusktrolls_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_20CenarionExpedition_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_20CenarionExpedition_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_20CenarionExpedition_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_29Competition_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_29Competition_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_29Competition_Chest_TL"
+    },
+    {
+      "name": "Mail_Blood_A_02Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_A_02Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_A_02Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_A_02Red_Chest_TL"
+    },
+    {
+      "name": "Mail_E_01White_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_E_01White_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_E_01White_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_E_01White_Chest_TL"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Plate_ZulAman_D_01Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Plate_ZulAman_D_01Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Plate_ZulAman_D_01Red_Chest_TL"
+    },
+    {
+      "name": "Robe_A_07Gray_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_A_07Gray_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_A_07Gray_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_A_07Gray_Chest_TL"
+    },
+    {
+      "name": "Leather_Blood_B_01Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_B_01Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_Blood_B_01Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_B_01Red_Chest_TL"
+    },
+    {
+      "name": "Goblin_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Goblin_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Goblin_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Goblin_Chest_TL"
+    },
+    {
+      "name": "Cloth_Blood_A_01Blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Cloth_Blood_A_01Blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Cloth_Blood_A_01Blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Cloth_Blood_A_01Blue_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_50ArenaRed_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_50ArenaRed_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_50ArenaRed_Chest_TL"
+    },
+    {
+      "name": "Mail_Blood_A_02Purple_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_A_02Purple_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_A_02Purple_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_A_02Purple_Chest_TL"
+    },
+    {
+      "name": "Mail_E_02_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_E_02_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_E_02_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_E_02_Chest_TL"
+    },
+    {
+      "name": "Robe_Blood_A_01Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_A_01Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_A_01Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_A_01Red_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_27SummerAlliance_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_27SummerAlliance_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_27SummerAlliance_Chest_TL"
+    },
+    {
+      "name": "Cloth_B_03RedPhoenix_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Cloth_B_03RedPhoenix_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Cloth_B_03RedPhoenix_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Cloth_B_03RedPhoenix_Chest_TL"
+    },
+    {
+      "name": "Cloth_Blood_A_02Gold_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Cloth_Blood_A_02Gold_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Cloth_Blood_A_02Gold_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Cloth_Blood_A_02Gold_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_11Kurenai_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_11Kurenai_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_11Kurenai_Chest_TL"
+    },
+    {
+      "name": "Plate_RaidWarrior_A_01Orange_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Plate_RaidWarrior_A_01Orange_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Plate_RaidWarrior_A_01Orange_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Plate_RaidWarrior_A_01Orange_Chest_TL"
+    },
+    {
+      "name": "Leather_ZulAman_D_01Turquoise_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_ZulAman_D_01Turquoise_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_ZulAman_D_01Turquoise_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_ZulAman_D_01Turquoise_Chest_TL"
+    },
+    {
+      "name": "TABARD_A_33BRILLIANCE_CHEST_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/TABARD_A_33BRILLIANCE_CHEST_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/TABARD_A_33BRILLIANCE_CHEST_TL"
+    },
+    {
+      "name": "Tabard_A_10Maghar_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_10Maghar_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_10Maghar_Chest_TL"
+    },
+    {
+      "name": "troll_feather_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/troll_feather_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/troll_feather_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/troll_feather_Chest_TL"
+    },
+    {
+      "name": "Leather_B_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_B_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_B_01Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_B_01Black_Chest_TL"
+    },
+    {
+      "name": "Robe_Blood_A_02Green_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_A_02Green_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_A_02Green_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_A_02Green_Chest_TL"
+    },
+    {
+      "name": "tabard_a_37ironforge_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_37ironforge_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_37ironforge_chest_tl"
+    },
+    {
+      "name": "cloth_uisuit_a_01_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/cloth_uisuit_a_01_chest_tu",
+      "armUpperBase": "/item-textures/ArmUpperTexture/cloth_uisuit_a_01_sleeve_au",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/cloth_uisuit_a_01_chest_tl"
+    },
+    {
+      "name": "Tabard_A_Highelf_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_Highelf_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_Highelf_Chest_TL"
+    },
+    {
+      "name": "tabard_a_68forsaken_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_68forsaken_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_68forsaken_chest_tl"
+    },
+    {
+      "name": "tabard_a_45undercity_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_45undercity_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_45undercity_chest_tl"
+    },
+    {
+      "name": "Cloth_Blood_A_02Orange_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Cloth_Blood_A_02Orange_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Cloth_Blood_A_02Orange_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Cloth_Blood_A_02Orange_Chest_TL"
+    },
+    {
+      "name": "tabard_a_38stormwind_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_38stormwind_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_38stormwind_chest_tl"
+    },
+    {
+      "name": "Leather_Blood_A_01Purple_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_A_01Purple_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_Blood_A_01Purple_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_A_01Purple_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_17NetherstormGoblins_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_17NetherstormGoblins_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_17NetherstormGoblins_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_19BronzeDragonflight_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_19BronzeDragonflight_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_19BronzeDragonflight_Chest_TL"
+    },
+    {
+      "name": "GruntOutfit_Blackrock_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/GruntOutfit_Blackrock_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/GruntOutfit_Blackrock_chest_tl"
+    },
+    {
+      "name": "Mail_F_01Green_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_F_01Green_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_F_01Green_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_F_01Green_Chest_TL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01Green_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Zulaman_D_01Green_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Zulaman_D_01Green_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Zulaman_D_01Green_Chest_TL"
+    },
+    {
+      "name": "Robe_Draenei_A_01Gold_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Draenei_A_01Gold_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Draenei_A_01Gold_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Draenei_A_01Gold_Chest_TL"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Dark_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Plate_ZulAman_D_01Dark_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Plate_ZulAman_D_01Dark_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Plate_ZulAman_D_01Dark_Chest_TL"
+    },
+    {
+      "name": "TABARD_A_31ARCANE_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/TABARD_A_31ARCANE_TU"
+    },
+    {
+      "name": "tabard_a_86warden_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_86warden_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_86warden_chest_tl"
+    },
+    {
+      "name": "tabard_a_57silverhand_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/tabard_a_57silverhand_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/tabard_a_57silverhand_chest_tl"
+    },
+    {
+      "name": "Tabard_A_01BloodKnight_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_01BloodKnight_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_01BloodKnight_Chest_TL"
+    },
+    {
+      "name": "Robe_Blood_B_01Purple_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_B_01Purple_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_B_01Purple_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_B_01Purple_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_07Lothar_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_07Lothar_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_07Lothar_Chest_TL"
+    },
+    {
+      "name": "Mail_Blood_B_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_B_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_B_01Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_B_01Black_Chest_TL"
+    },
+    {
+      "name": "TaurenChieftain_BlueVersion_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/TaurenChieftain_BlueVersion_TU"
+    },
+    {
+      "name": "Robe_Blood_A_01Yellow_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_A_01Yellow_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_A_01Yellow_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_A_01Yellow_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_06Tranquillen_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_06Tranquillen_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_06Tranquillen_Chest_TL"
+    },
+    {
+      "name": "Mail_Blood_B_01Yellow_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_B_01Yellow_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_B_01Yellow_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_B_01Yellow_Chest_TL"
+    },
+    {
+      "name": "Robe_Blood_B_01Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_B_01Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_B_01Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_B_01Red_Chest_TL"
+    },
+    {
+      "name": "Mail_Blood_01Blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_01Blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_01Blue_Sleeve_AU"
+    },
+    {
+      "name": "Tabard_A_28SummerHorde_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_28SummerHorde_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_28SummerHorde_Chest_TL"
+    },
+    {
+      "name": "Mail_E_01Green_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_E_01Green_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_E_01Green_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_E_01Green_Chest_TL"
+    },
+    {
+      "name": "Leather_Blood_A_01Blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_A_01Blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_Blood_A_01Blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_A_01Blue_Chest_TL"
+    },
+    {
+      "name": "Leather_ZulAman_D_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_ZulAman_D_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_ZulAman_D_01Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_ZulAman_D_01Black_Chest_TL"
+    },
+    {
+      "name": "Robe_Blood_A_02Gold_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_A_02Gold_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_A_02Gold_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_A_02Gold_Chest_TL"
+    },
+    {
+      "name": "DK_bluegold_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/DK_bluegold_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/DK_bluegold_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/DK_bluegold_Chest_TL"
+    },
+    {
+      "name": "DK_blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/DK_blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/DK_blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/DK_blue_Chest_TL"
+    },
+    {
+      "name": "Cloth_Blood_A_01Orange_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Cloth_Blood_A_01Orange_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Cloth_Blood_A_01Orange_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Cloth_Blood_A_01Orange_Chest_TL"
+    },
+    {
+      "name": "Defias_Green_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Defias_Green_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/defias_green_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/defias_green_Chest_TL"
+    },
+    {
+      "name": "Mail_E_02Gold_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_E_02Gold_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_E_02Gold_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_E_02Gold_Chest_TL"
+    },
+    {
+      "name": "Mail_F_01_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_F_01_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_F_01_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_F_01_Chest_TL"
+    },
+    {
+      "name": "Leather_Blood_A_02Green_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_A_02Green_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_A_02Green_Chest_TL"
+    },
+    {
+      "name": "Cloth_Blood_A_02Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Cloth_Blood_A_02Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Cloth_Blood_A_02Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Cloth_Blood_A_02Black_Chest_TL"
+    },
+    {
+      "name": "Robe_Blood_B_01Orange_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_B_01Orange_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_B_01Orange_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_B_01Orange_Chest_TL"
+    },
+    {
+      "name": "priest_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/priest_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/priest_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/priest_Chest_TL"
+    },
+    {
+      "name": "Cloth_Blood_A_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Cloth_Blood_A_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Cloth_Blood_A_01Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Cloth_Blood_A_01Black_Chest_TL"
+    },
+    {
+      "name": "Tabard_A_23InvertedIllidan_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_23InvertedIllidan_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_23InvertedIllidan_Chest_TL"
+    },
+    {
+      "name": "Mail_Blood_B_01Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_B_01Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_B_01Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_B_01Red_Chest_TL"
+    },
+    {
+      "name": "Robe_Horde_C_01Purple_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Horde_C_01Purple_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Horde_C_01Purple_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Horde_C_01Purple_Chest_TL"
+    },
+    {
+      "name": "GruntOutfit_TwilightHammer_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/GruntOutfit_TwilightHammer_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/GruntOutfit_TwilightHammer_chest_tl"
+    },
+    {
+      "name": "Tabard_A_07Thrallmar_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Tabard_A_07Thrallmar_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Tabard_A_07Thrallmar_Chest_TL"
+    },
+    {
+      "name": "Leather_Blood_C_02_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_C_02_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_Blood_C_02_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_C_02_Chest_TL"
+    },
+    {
+      "name": "Leather_ZulAman_D_01_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_ZulAman_D_01_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_ZulAman_D_01_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_ZulAman_D_01_Chest_TL"
+    },
+    {
+      "name": "Cloth_Blood_A_02Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Cloth_Blood_A_02Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Cloth_Blood_A_02Red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Cloth_Blood_A_02Red_Chest_TL"
+    },
+    {
+      "name": "TABARD_A_34FURY_CHEST_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/TABARD_A_34FURY_CHEST_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/TABARD_A_34FURY_CHEST_TL"
+    },
+    {
+      "name": "Mail_Blood_A_02Orange_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_A_02Orange_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_A_02Orange_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_A_02Orange_Chest_TL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Green_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_ZulAman_D_01Green_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_ZulAman_D_01Green_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_ZulAman_D_01Green_Chest_TL"
+    },
+    {
+      "name": "Mail_Blood_01Green_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Mail_Blood_01Green_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Mail_Blood_01Green_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Mail_Blood_01Green_Chest_TL"
+    },
+    {
+      "name": "Leather_Blood_A_02Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_Blood_A_02Red_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Leather_Blood_A_02Red_Chest_TL"
+    },
+    {
+      "name": "Robe_Draenei_A_01Purple_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Draenei_A_01Purple_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Draenei_A_01Purple_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Draenei_A_01Purple_Chest_TL"
+    },
+    {
+      "name": "TABARD_A_32VOID_CHEST_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/TABARD_A_32VOID_CHEST_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/TABARD_A_32VOID_CHEST_TL"
+    },
+    {
+      "name": "Leather_A_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Leather_A_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Leather_A_01Black_Sleeve_AU"
+    },
+    {
+      "name": "Cloth_Blood_A_01Gold_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Cloth_Blood_A_01Gold_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Cloth_Blood_A_01Gold_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Cloth_Blood_A_01Gold_Chest_TL"
+    },
+    {
+      "name": "Robe_Blood_B_01Blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Robe_Blood_B_01Blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Robe_Blood_B_01Blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Robe_Blood_B_01Blue_Chest_TL"
+    },
+    {
+      "name": "robe_d_03teal_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/robe_d_03teal_Chest_TU"
+    },
+    {
+      "name": "GruntOutfit_Regular_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/GruntOutfit_Regular_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/GruntOutfit_Regular_chest_tl"
+    },
+    {
+      "name": "DK_red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/DK_red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/DK_red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/DK_red_Chest_TL"
+    },
+    {
+      "name": "GruntOutfit_Dragonmaw_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/GruntOutfit_Dragonmaw_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/GruntOutfit_Dragonmaw_chest_tl"
+    },
+    {
+      "name": "mage_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/mage_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/mage_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/mage_Chest_TL"
+    },
+    {
+      "name": "pirate_Red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/pirate_Red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/pirate_red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/pirate_red_Chest_TL"
+    },
+    {
+      "name": "DK_white_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/DK_white_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/DK_white_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/DK_white_Chest_TL"
+    },
+    {
+      "name": "Defias_blue_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Defias_blue_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/defias_blue_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/defias_blue_Chest_TL"
+    },
+    {
+      "name": "robe_d_03brown_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/robe_d_03brown_Chest_TU"
+    },
+    {
+      "name": "TABARD_A_35DEFENDER_CHEST_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/TABARD_A_35DEFENDER_CHEST_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/TABARD_A_35DEFENDER_CHEST_TL"
+    },
+    {
+      "name": "TaurenChieftain_Grimtotem_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/TaurenChieftain_Grimtotem_TU"
+    },
+    {
+      "name": "Dwarf00_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Dwarf00_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Dwarf00_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Dwarf00_Chest_TL"
+    },
+    {
+      "name": "Plate_A_01Silver_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Plate_A_01Silver_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Plate_A_01Silver_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Plate_A_01Silver_Chest_TL"
+    },
+    {
+      "name": "Plate_A_01Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Plate_A_01Black_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Plate_A_01Black_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Plate_A_01Black_Chest_TL"
+    },
+    {
+      "name": "TABARD_A_54HELLSCREAM_CHEST_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/TABARD_A_54HELLSCREAM_CHEST_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/TABARD_A_54HELLSCREAM_CHEST_TL"
+    },
+    {
+      "name": "robe_d_03Black_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/robe_d_03Black_Chest_TU"
+    },
+    {
+      "name": "evil_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/evil_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/evil_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/evil_Chest_TL"
+    },
+    {
+      "name": "troll_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/troll_Chest_TU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/troll_Chest_TL"
+    },
+    {
+      "name": "GruntOutfit_Frostwolf_chest_tu",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/GruntOutfit_Frostwolf_chest_tu",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/GruntOutfit_Frostwolf_chest_tl"
+    },
+    {
+      "name": "robe_d_03magenta_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/robe_d_03magenta_Chest_TU"
+    },
+    {
+      "name": "troll_red_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/troll_red_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/troll_red_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/TROLL_red_Chest_TL"
+    },
+    {
+      "name": "Dwarf_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Dwarf_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Dwarf_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Dwarf_Chest_TL"
+    },
+    {
+      "name": "Dwarf01_Chest_TU",
+      "torsoUpperBase": "/item-textures/TorsoUpperTexture/Dwarf01_Chest_TU",
+      "armUpperBase": "/item-textures/ArmUpperTexture/Dwarf01_Sleeve_AU",
+      "torsoLowerBase": "/item-textures/TorsoLowerTexture/Dwarf01_Chest_TL"
+    }
+  ],
+  "legs": [
+    {
+      "name": "Leather_ZulAman_D_01Green_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_ZulAman_D_01Green_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_ZulAman_D_01Green_Pant_LL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01Purple_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Zulaman_D_01Purple_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01Purple_Pant_LL"
+    },
+    {
+      "name": "GruntOutfit_Regular_pant_lu",
+      "legUpperBase": "/item-textures/LegUpperTexture/GruntOutfit_Regular_pant_lu",
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_Regular_pant_ll"
+    },
+    {
+      "name": "Leather_Blood_A_01Maroon_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_A_01Maroon_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_A_01Maroon_Pant_LL"
+    },
+    {
+      "name": "Robe_Draenei_A_01Browm_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Draenei_A_01Browm_Robe_LU"
+    },
+    {
+      "name": "DK_red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/DK_red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/DK_red_Pant_LL"
+    },
+    {
+      "name": "defias_green_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/defias_green_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/defias_green_Pant_LL"
+    },
+    {
+      "name": "Leather_ZulAman_D_01Black_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_ZulAman_D_01Black_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_ZulAman_D_01Black_Pant_LL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01RobePurple_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Zulaman_D_01RobePurple_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01RobePurple_Robe_LL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01RobeDarkYellow_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Zulaman_D_01RobeDarkYellow_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01RobeDarkYellow_Robe_LL"
+    },
+    {
+      "name": "Leather_Blood_B_01Purple_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_B_01Purple_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_B_01Purple_Pant_LL"
+    },
+    {
+      "name": "Leather_ZulAman_D_01_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_ZulAman_D_01_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_ZulAman_D_01_Pant_LL"
+    },
+    {
+      "name": "Robe_Blood_A_02Blue_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_A_02Blue_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_A_02Blue_Robe_LL"
+    },
+    {
+      "name": "Mail_E_02Blue_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_E_02Blue_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_02Blue_Pant_LL"
+    },
+    {
+      "name": "Mail_E_02Purple_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_E_02Purple_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_02Purple_Pant_LL"
+    },
+    {
+      "name": "GruntOutfit_Warsong_pant_lu",
+      "legUpperBase": "/item-textures/LegUpperTexture/GruntOutfit_Warsong_pant_lu",
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_Warsong_pant_ll"
+    },
+    {
+      "name": "Leather_Blood_A_01Purple_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_A_01Purple_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_A_01Purple_Pant_LL"
+    },
+    {
+      "name": "GruntOutfit_Frostwolf_pant_lu",
+      "legUpperBase": "/item-textures/LegUpperTexture/GruntOutfit_Frostwolf_pant_lu",
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_Frostwolf_pant_ll"
+    },
+    {
+      "name": "Leather_A_05BlueHotpants_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_A_05BlueHotpants_Pant_LU"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Black_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_ZulAman_D_01Black_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_ZulAman_D_01Black_Pant_LL"
+    },
+    {
+      "name": "Leather_Blood_B_01Orange_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_B_01Orange_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_B_01Orange_Pant_LL"
+    },
+    {
+      "name": "Mail_Blood_A_02Red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_A_02Red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_A_02Red_Pant_LL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01RobeGreen_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Zulaman_D_01RobeGreen_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01RobeGreen_Robe_LL"
+    },
+    {
+      "name": "Mail_Blood_A_02Black_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_A_02Black_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_A_02Black_Pant_LL"
+    },
+    {
+      "name": "Mail_E_01White_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_E_01White_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_01White_Pant_LL"
+    },
+    {
+      "name": "Mail_Blood_B_01Blue_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_B_01Blue_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Blue_Pant_LL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Green_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_ZulAman_D_01Green_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_ZulAman_D_01Green_Pant_LL"
+    },
+    {
+      "name": "Plate_RaidWarrior_A_01Orange_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Plate_RaidWarrior_A_01Orange_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_RaidWarrior_A_01Orange_Pant_LL"
+    },
+    {
+      "name": "Leather_ZulAman_D_01Turquoise_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_ZulAman_D_01Turquoise_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_ZulAman_D_01Turquoise_Pant_LL"
+    },
+    {
+      "name": "GruntOutfit_Dragonmaw_pant_lu",
+      "legUpperBase": "/item-textures/LegUpperTexture/GruntOutfit_Dragonmaw_pant_lu",
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_Dragonmaw_pant_ll"
+    },
+    {
+      "name": "Mail_F_01_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_F_01_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_F_01_Pant_LL"
+    },
+    {
+      "name": "Blaumeux_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Blaumeux_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Blaumeux_Pant_LL"
+    },
+    {
+      "name": "Robe_Blood_B_01Black_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_B_01Black_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_B_01Black_Robe_LL"
+    },
+    {
+      "name": "Robe_Blood_B_01Red_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_B_01Red_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_B_01Red_Robe_LL"
+    },
+    {
+      "name": "Robe_Horde_C_01Purple_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Horde_C_01Purple_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Horde_C_01Purple_Pant_LL"
+    },
+    {
+      "name": "Mail_E_01Red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_E_01Red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_01Red_Pant_LL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Blue_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_ZulAman_D_01Blue_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_ZulAman_D_01Blue_Robe_LL"
+    },
+    {
+      "name": "Robe_Blood_B_01Purple_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_B_01Purple_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_B_01Purple_Robe_LL"
+    },
+    {
+      "name": "Plate_B_29Sentinel_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Plate_B_29Sentinel_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_B_29Sentinel_Pant_LL"
+    },
+    {
+      "name": "Leather_Blood_C_02_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_C_02_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_C_02_Robe_LL"
+    },
+    {
+      "name": "Leather_Blood_B_01Black_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_B_01Black_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_B_01Black_Pant_LL"
+    },
+    {
+      "name": "Mail_E_01Green_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_E_01Green_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_01Green_Pant_LL"
+    },
+    {
+      "name": "Mail_Blood_01Blue_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_01Blue_Pant_LU"
+    },
+    {
+      "name": "Mail_F_01Red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_F_01Red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_F_01Red_Pant_LL"
+    },
+    {
+      "name": "Robe_Blood_B_01Blue_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_B_01Blue_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_B_01Blue_Robe_LL"
+    },
+    {
+      "name": "Robe_Blood_A_02Purple_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_A_02Purple_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_A_02Purple_Robe_LL"
+    },
+    {
+      "name": "Mail_E_01Black_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_E_01Black_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_01Black_Pant_LL"
+    },
+    {
+      "name": "Robe_Draenei_A_01Cream_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Draenei_A_01Cream_Robe_LU"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Dark_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Plate_ZulAman_D_01Dark_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_ZulAman_D_01Dark_Pant_LL"
+    },
+    {
+      "name": "GruntOutfit_ShatteredHand_pant_lu",
+      "legUpperBase": "/item-textures/LegUpperTexture/GruntOutfit_ShatteredHand_pant_lu",
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_ShatteredHand_pant_ll"
+    },
+    {
+      "name": "cloth_uisuit_a_01_pant_lu",
+      "legUpperBase": "/item-textures/LegUpperTexture/cloth_uisuit_a_01_pant_lu",
+      "legLowerBase": "/item-textures/LegLowerTexture/cloth_uisuit_a_01_pant_ll"
+    },
+    {
+      "name": "Robe_ZulAman_D_01_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_ZulAman_D_01_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_ZulAman_D_01_Robe_LL"
+    },
+    {
+      "name": "Plate_ZulAman_D_01_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Plate_ZulAman_D_01_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_ZulAman_D_01_Pant_LL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01DarkYellow_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Zulaman_D_01DarkYellow_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01DarkYellow_Pant_LL"
+    },
+    {
+      "name": "Leather_Blood_B_01Blue_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_B_01Blue_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_B_01Blue_Pant_LL"
+    },
+    {
+      "name": "Leather_Blood_A_02Red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_A_02Red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_A_02Red_Pant_LL"
+    },
+    {
+      "name": "Dwarf01_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Dwarf01_Pant_LU"
+    },
+    {
+      "name": "troll_feather_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/troll_feather_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/troll_feather_Pant_LL"
+    },
+    {
+      "name": "Robe_Blood_B_01Orange_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_B_01Orange_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_B_01Orange_Robe_LL"
+    },
+    {
+      "name": "Robe_Draenei_A_01Gold_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Draenei_A_01Gold_Robe_LU"
+    },
+    {
+      "name": "Mail_Blood_A_02Orange_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_A_02Orange_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_A_02Orange_Pant_LL"
+    },
+    {
+      "name": "evil_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/evil_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/evil_Pant_LL"
+    },
+    {
+      "name": "defias_blue_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/defias_blue_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/defias_blue_Pant_LL"
+    },
+    {
+      "name": "Robe_Blood_A_02Gold_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_A_02Gold_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_A_02Gold_Robe_LL"
+    },
+    {
+      "name": "Mail_E_02Gold_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_E_02Gold_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_02Gold_Pant_LL"
+    },
+    {
+      "name": "Dwarf_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Dwarf_Pant_LU"
+    },
+    {
+      "name": "Leather_Blood_A_01Blue_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_A_01Blue_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_A_01Blue_Pant_LL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01Robe_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Zulaman_D_01Robe_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01Robe_Robe_LL"
+    },
+    {
+      "name": "Mail_E_01_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_E_01_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_01_Pant_LL"
+    },
+    {
+      "name": "Dwarf00_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Dwarf00_Pant_LU"
+    },
+    {
+      "name": "Mail_Blood_B_01Purple_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_B_01Purple_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Purple_Pant_LL"
+    },
+    {
+      "name": "priest_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/priest_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/priest_Pant_LL"
+    },
+    {
+      "name": "Mail_Blood_A_02Blue_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_A_02Blue_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_A_02Blue_Pant_LL"
+    },
+    {
+      "name": "orc_green_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/orc_green_Pant_LU"
+    },
+    {
+      "name": "Mail_E_02_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_E_02_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_02_Pant_LL"
+    },
+    {
+      "name": "DK_white_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/DK_white_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/DK_white_Pant_LL"
+    },
+    {
+      "name": "Leather_Blood_A_01Red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_A_01Red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_A_01Red_Pant_LL"
+    },
+    {
+      "name": "GruntOutfit_TwilightHammer_pant_lu",
+      "legUpperBase": "/item-textures/LegUpperTexture/GruntOutfit_TwilightHammer_pant_lu",
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_TwilightHammer_pant_ll"
+    },
+    {
+      "name": "Robe_Blood_A_01Yellow_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_A_01Yellow_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_A_01Yellow_Pant_LL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Green_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_ZulAman_D_01Green_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_ZulAman_D_01Green_Pant_LL"
+    },
+    {
+      "name": "Mail_Blood_B_01Crimson_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_B_01Crimson_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Crimson_Pant_LL"
+    },
+    {
+      "name": "Mail_Blood_B_01Orange_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_B_01Orange_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Orange_Pant_LL"
+    },
+    {
+      "name": "Robe_Draenei_A_01Purple_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Draenei_A_01Purple_Robe_LU"
+    },
+    {
+      "name": "Leather_A_05PurpleHotpants_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_A_05PurpleHotpants_Pant_LU"
+    },
+    {
+      "name": "Mail_Blood_B_01Black_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_B_01Black_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Black_Pant_LL"
+    },
+    {
+      "name": "troll_red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/troll_red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/troll_red_Pant_LL"
+    },
+    {
+      "name": "Mail_Blood_A_02Purple_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_A_02Purple_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_A_02Purple_Pant_LL"
+    },
+    {
+      "name": "Mail_Blood_01Red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_01Red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_01Red_Pant_LL"
+    },
+    {
+      "name": "DK_bluegold_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/DK_bluegold_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/DK_bluegold_Pant_LL"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Light_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Plate_ZulAman_D_01Light_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_ZulAman_D_01Light_Pant_LL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Zulaman_D_01_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01_Pant_LL"
+    },
+    {
+      "name": "Leather_Blood_B_01Red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_B_01Red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_B_01Red_Pant_LL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Black_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_ZulAman_D_01Black_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_ZulAman_D_01Black_Pant_LL"
+    },
+    {
+      "name": "GruntOutfit_Blackrock_pant_lu",
+      "legUpperBase": "/item-textures/LegUpperTexture/GruntOutfit_Blackrock_pant_lu",
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_Blackrock_pant_ll"
+    },
+    {
+      "name": "orc_red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/orc_red_Pant_LU"
+    },
+    {
+      "name": "pirate_red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/pirate_red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/pirate_Red_Pant_LL"
+    },
+    {
+      "name": "Leather_Blood_A_02Black_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_A_02Black_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_A_02Black_Pant_LL"
+    },
+    {
+      "name": "Robe_Draenei_A_01Blue_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Draenei_A_01Blue_Robe_LU"
+    },
+    {
+      "name": "orc_purple_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/orc_purple_Pant_LU"
+    },
+    {
+      "name": "Robe_Blood_A_01Purple_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_A_01Purple_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_A_01Purple_Pant_LL"
+    },
+    {
+      "name": "DK_green_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/DK_green_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/DK_green_Pant_LL"
+    },
+    {
+      "name": "Leather_Blood_A_02Green_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Leather_Blood_A_02Green_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_A_02Green_Pant_LL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Blue_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_ZulAman_D_01Blue_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_ZulAman_D_01Blue_Robe_LL"
+    },
+    {
+      "name": "pirate_blue_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/pirate_blue_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/pirate_blue_Pant_LL"
+    },
+    {
+      "name": "troll_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/troll_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/troll_Pant_LL"
+    },
+    {
+      "name": "Mail_F_01Black_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_F_01Black_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_F_01Black_Pant_LL"
+    },
+    {
+      "name": "Mail_Blood_01Green_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_01Green_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_01Green_Pant_LL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01Green_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Zulaman_D_01Green_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01Green_Pant_LL"
+    },
+    {
+      "name": "DK_blue_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/DK_blue_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/DK_blue_Pant_LL"
+    },
+    {
+      "name": "mage_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/mage_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/mage_Pant_LL"
+    },
+    {
+      "name": "Mail_Blood_B_01Yellow_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_B_01Yellow_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Yellow_Pant_LL"
+    },
+    {
+      "name": "Robe_A_07Gray_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_A_07Gray_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_A_07Gray_Robe_LL"
+    },
+    {
+      "name": "Robe_Blood_A_02Green_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_A_02Green_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_A_02Green_Robe_LL"
+    },
+    {
+      "name": "Goblin_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Goblin_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Goblin_Pant_LL"
+    },
+    {
+      "name": "orc_dark_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/orc_dark_Pant_LU"
+    },
+    {
+      "name": "Mail_F_01Green_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_F_01Green_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_F_01Green_Pant_LL"
+    },
+    {
+      "name": "Robe_Blood_A_01Red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_A_01Red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_A_01Red_Pant_LL"
+    },
+    {
+      "name": "tauren_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/tauren_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/tauren_Pant_LL"
+    },
+    {
+      "name": "Robe_Blood_A_02Black_Robe_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Robe_Blood_A_02Black_Robe_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Robe_Blood_A_02Black_Robe_LL"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Plate_ZulAman_D_01Red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_ZulAman_D_01Red_Pant_LL"
+    },
+    {
+      "name": "Mail_Blood_B_01Red_Pant_LU",
+      "legUpperBase": "/item-textures/LegUpperTexture/Mail_Blood_B_01Red_Pant_LU",
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Red_Pant_LL"
+    }
+  ],
+  "boots": [
+    {
+      "name": "Leather_ZulAman_D_01_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_ZulAman_D_01_Boot_FO"
+    },
+    {
+      "name": "Mail_E_02Blue_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_E_02Blue_Boot_FO"
+    },
+    {
+      "name": "GruntOutfit_Warsong_boot_fo",
+      "footBase": "/item-textures/FootTexture/GruntOutfit_Warsong_boot_fo"
+    },
+    {
+      "name": "Mail_E_02Purple_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_E_02Purple_Boot_FO"
+    },
+    {
+      "name": "GruntOutfit_Frostwolf_boot_fo",
+      "footBase": "/item-textures/FootTexture/GruntOutfit_Frostwolf_boot_fo"
+    },
+    {
+      "name": "socks2_fo",
+      "footBase": "/item-textures/FootTexture/socks2_fo"
+    },
+    {
+      "name": "socks3_fo",
+      "footBase": "/item-textures/FootTexture/socks3_fo"
+    },
+    {
+      "name": "Leather_Blood_B_01Orange_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_Blood_B_01Orange_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_A_02Red_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_A_02Red_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_A_02Black_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_A_02Black_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_B_01Blue_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Blue_Boot_FO"
+    },
+    {
+      "name": "Plate_RaidWarrior_A_01Orange_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Plate_RaidWarrior_A_01Orange_Boot_FO"
+    },
+    {
+      "name": "Leather_ZulAman_D_01Turquoise_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_ZulAman_D_01Turquoise_Boot_FO"
+    },
+    {
+      "name": "Mail_E_01White_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_E_01White_Boot_FO"
+    },
+    {
+      "name": "Leather_ZulAman_D_01Green_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_ZulAman_D_01Green_Boot_FO"
+    },
+    {
+      "name": "Mail_Zulaman_D_01Purple_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Zulaman_D_01Purple_Boot_FO"
+    },
+    {
+      "name": "GruntOutfit_Regular_boot_fo",
+      "footBase": "/item-textures/FootTexture/GruntOutfit_Regular_boot_fo"
+    },
+    {
+      "name": "DK_red_Boot_FO",
+      "footBase": "/item-textures/FootTexture/DK_red_Boot_FO"
+    },
+    {
+      "name": "Defias_green_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Defias_green_Boot_FO"
+    },
+    {
+      "name": "Leather_ZulAman_D_01Black_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_ZulAman_D_01Black_Boot_FO"
+    },
+    {
+      "name": "Leather_Blood_B_01Purple_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_Blood_B_01Purple_Boot_FO"
+    },
+    {
+      "name": "Mail_E_01Black_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_E_01Black_Boot_FO"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Dark_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Plate_ZulAman_D_01Dark_Boot_FO"
+    },
+    {
+      "name": "GruntOutfit_ShatteredHand_boot_fo",
+      "footBase": "/item-textures/FootTexture/GruntOutfit_ShatteredHand_boot_fo"
+    },
+    {
+      "name": "Plate_ZulAman_D_01_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Plate_ZulAman_D_01_Boot_FO"
+    },
+    {
+      "name": "Mail_E_01Green_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_E_01Green_Boot_FO"
+    },
+    {
+      "name": "Mail_E_01_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_E_01_Boot_FO"
+    },
+    {
+      "name": "Mail_Zulaman_D_01DarkYellow_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Zulaman_D_01DarkYellow_Boot_FO"
+    },
+    {
+      "name": "Leather_Blood_A_02Red_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_Blood_A_02Red_Boot_FO"
+    },
+    {
+      "name": "Leather_Blood_B_01Blue_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_Blood_B_01Blue_Boot_FO"
+    },
+    {
+      "name": "Mail_E_01Red_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_E_01Red_Boot_FO"
+    },
+    {
+      "name": "Dwarf01_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Dwarf01_Boot_FO"
+    },
+    {
+      "name": "GruntOutfit_Dragonmaw_boot_fo",
+      "footBase": "/item-textures/FootTexture/GruntOutfit_Dragonmaw_boot_fo"
+    },
+    {
+      "name": "Mail_F_01_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_F_01_Boot_FO"
+    },
+    {
+      "name": "Blaumeux_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Blaumeux_Boot_FO"
+    },
+    {
+      "name": "Leather_Blood_B_01Black_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_Blood_B_01Black_Boot_FO"
+    },
+    {
+      "name": "Mail_F_01Red_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_F_01Red_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_A_02Blue_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_A_02Blue_Boot_FO"
+    },
+    {
+      "name": "leather_sexyboots_fo",
+      "footBase": "/item-textures/FootTexture/leather_sexyboots_fo"
+    },
+    {
+      "name": "Mail_E_02_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_E_02_Boot_FO"
+    },
+    {
+      "name": "DK_white_Boot_FO",
+      "footBase": "/item-textures/FootTexture/DK_white_Boot_FO"
+    },
+    {
+      "name": "Leather_Blood_A_01Red_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_Blood_A_01Red_Boot_FO"
+    },
+    {
+      "name": "GruntOutfit_TwilightHammer_boot_fo",
+      "footBase": "/item-textures/FootTexture/GruntOutfit_TwilightHammer_boot_fo"
+    },
+    {
+      "name": "Mail_Blood_B_01Crimson_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Crimson_Boot_FO"
+    },
+    {
+      "name": "armor_maldraxxuscosmetic_d_01_roguenecromancers_boot_fo",
+      "footBase": "/item-textures/FootTexture/armor_maldraxxuscosmetic_d_01_roguenecromancers_boot_fo"
+    },
+    {
+      "name": "Mail_Blood_B_01Orange_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Orange_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_B_01Black_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Black_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_A_02Purple_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_A_02Purple_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_01Red_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_01Red_Boot_FO"
+    },
+    {
+      "name": "DK_bluegold_Boot_FO",
+      "footBase": "/item-textures/FootTexture/DK_bluegold_Boot_FO"
+    },
+    {
+      "name": "Mail_Zulaman_D_01_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Zulaman_D_01_Boot_FO"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Light_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Plate_ZulAman_D_01Light_Boot_FO"
+    },
+    {
+      "name": "Leather_Blood_B_01Red_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_Blood_B_01Red_Boot_FO"
+    },
+    {
+      "name": "GruntOutfit_Blackrock_boot_fo",
+      "footBase": "/item-textures/FootTexture/GruntOutfit_Blackrock_boot_fo"
+    },
+    {
+      "name": "pirate_red_Boot_FO",
+      "footBase": "/item-textures/FootTexture/pirate_red_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_A_02Orange_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_A_02Orange_Boot_FO"
+    },
+    {
+      "name": "evil_Boot_FO",
+      "footBase": "/item-textures/FootTexture/evil_Boot_FO"
+    },
+    {
+      "name": "Defias_blue_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Defias_blue_Boot_FO"
+    },
+    {
+      "name": "Mail_E_02Gold_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_E_02Gold_Boot_FO"
+    },
+    {
+      "name": "socks_fo",
+      "footBase": "/item-textures/FootTexture/socks_fo"
+    },
+    {
+      "name": "Dwarf_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Dwarf_Boot_FO"
+    },
+    {
+      "name": "Dwarf00_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Dwarf00_Boot_FO"
+    },
+    {
+      "name": "socks1_fo",
+      "footBase": "/item-textures/FootTexture/socks1_fo"
+    },
+    {
+      "name": "priest_Boot_FO",
+      "footBase": "/item-textures/FootTexture/priest_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_B_01Purple_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Purple_Boot_FO"
+    },
+    {
+      "name": "Mail_F_01Black_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_F_01Black_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_01Green_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_01Green_Boot_FO"
+    },
+    {
+      "name": "Mail_Zulaman_D_01Green_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Zulaman_D_01Green_Boot_FO"
+    },
+    {
+      "name": "mage_Boot_FO",
+      "footBase": "/item-textures/FootTexture/mage_Boot_FO"
+    },
+    {
+      "name": "DK_blue_Boot_FO",
+      "footBase": "/item-textures/FootTexture/DK_blue_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_B_01Yellow_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Yellow_Boot_FO"
+    },
+    {
+      "name": "Mail_F_01Green_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_F_01Green_Boot_FO"
+    },
+    {
+      "name": "tauren_Boot_FO",
+      "footBase": "/item-textures/FootTexture/tauren_Boot_FO"
+    },
+    {
+      "name": "Mail_Blood_B_01Red_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Red_Boot_FO"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Red_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Plate_ZulAman_D_01Red_Boot_FO"
+    },
+    {
+      "name": "armor_maldraxxuscosmetic_d_01_frontlinenecromancers_boot_fo",
+      "footBase": "/item-textures/FootTexture/armor_maldraxxuscosmetic_d_01_frontlinenecromancers_boot_fo"
+    },
+    {
+      "name": "Leather_Blood_A_02Black_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_Blood_A_02Black_Boot_FO"
+    },
+    {
+      "name": "TaurenChieftain_Grimtotem_Boot_FO",
+      "footBase": "/item-textures/FootTexture/TaurenChieftain_Grimtotem_Boot_FO"
+    },
+    {
+      "name": "TaurenChieftain_BlueVersion_Boot_FO",
+      "footBase": "/item-textures/FootTexture/TaurenChieftain_BlueVersion_Boot_FO"
+    },
+    {
+      "name": "Plate_A_01Black_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Plate_A_01Black_Boot_FO"
+    },
+    {
+      "name": "Leather_Blood_C_02_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_Blood_C_02_Boot_FO"
+    },
+    {
+      "name": "DK_green_Boot_FO",
+      "footBase": "/item-textures/FootTexture/DK_green_Boot_FO"
+    },
+    {
+      "name": "Leather_Blood_A_02Green_Boot_FO",
+      "footBase": "/item-textures/FootTexture/Leather_Blood_A_02Green_Boot_FO"
+    },
+    {
+      "name": "pirate_blue_Boot_FO",
+      "footBase": "/item-textures/FootTexture/pirate_blue_Boot_FO"
+    }
+  ],
+  "gloves": [
+    {
+      "name": "troll_Glove_HA",
+      "handBase": "/item-textures/HandTexture/troll_Glove_HA"
+    },
+    {
+      "name": "Leather_Blood_B_01Blue_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_Blood_B_01Blue_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_B_01Blue_Bracer_AL"
+    },
+    {
+      "name": "troll_red_Glove_HA",
+      "handBase": "/item-textures/HandTexture/troll_red_Glove_HA"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Light_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Plate_ZulAman_D_01Light_Glove_HA"
+    },
+    {
+      "name": "Mail_E_01_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_E_01_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_01_Sleeve_AL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01Purple_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Zulaman_D_01Purple_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Zulaman_D_01Purple_Bracer_AL"
+    },
+    {
+      "name": "Plate_ZulAman_D_01_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Plate_ZulAman_D_01_Glove_HA"
+    },
+    {
+      "name": "Mail_E_02Purple_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_E_02Purple_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_02Purple_Sleeve_AL"
+    },
+    {
+      "name": "Leather_Blood_A_01Red_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_Blood_A_01Red_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_A_01Red_Bracer_AL"
+    },
+    {
+      "name": "evil_hand",
+      "handBase": "/item-textures/HandTexture/evil_hand"
+    },
+    {
+      "name": "Leather_ZulAman_D_01Green_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_ZulAman_D_01Green_Glove_HA"
+    },
+    {
+      "name": "Mail_Blood_B_01Orange_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_B_01Orange_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Orange_Sleeve_AL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Robe_ZulAman_D_01_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Robe_ZulAman_D_01_Sleeve_AL"
+    },
+    {
+      "name": "Leather_Blood_B_01Purple_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_Blood_B_01Purple_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_B_01Purple_Bracer_AL"
+    },
+    {
+      "name": "Mail_F_01Red_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_F_01Red_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_F_01Red_Sleeve_AL"
+    },
+    {
+      "name": "Mail_E_02Blue_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_E_02Blue_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_02Blue_Bracer_AL"
+    },
+    {
+      "name": "Mail_Blood_A_02Red_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_A_02Red_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_A_02Red_Bracer_AL"
+    },
+    {
+      "name": "Mail_Blood_B_01Crimson_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_B_01Crimson_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Crimson_Bracer_AL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Zulaman_D_01_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Zulaman_D_01_Bracer_AL"
+    },
+    {
+      "name": "Mail_E_01White_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_E_01White_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_01White_Sleeve_AL"
+    },
+    {
+      "name": "GruntOutfit_Regular_glove_ha",
+      "handBase": "/item-textures/HandTexture/GruntOutfit_Regular_glove_ha"
+    },
+    {
+      "name": "Mail_E_02_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_E_02_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_02_Bracer_AL"
+    },
+    {
+      "name": "Mail_Blood_A_02Purple_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_A_02Purple_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_A_02Purple_Bracer_AL"
+    },
+    {
+      "name": "TaurenChieftain_BlueVersion_Glove_HA",
+      "handBase": "/item-textures/HandTexture/TaurenChieftain_BlueVersion_Glove_HA"
+    },
+    {
+      "name": "defias_blue_Glove_HA",
+      "handBase": "/item-textures/HandTexture/defias_blue_Glove_HA"
+    },
+    {
+      "name": "DK_white_Glove_HA",
+      "handBase": "/item-textures/HandTexture/DK_white_Glove_HA"
+    },
+    {
+      "name": "Leather_ZulAman_D_01Turquoise_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_ZulAman_D_01Turquoise_Glove_HA"
+    },
+    {
+      "name": "Mail_Blood_B_01Black_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_B_01Black_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Black_Bracer_AL"
+    },
+    {
+      "name": "Leather_ZulAman_D_01Black_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_ZulAman_D_01Black_Glove_HA"
+    },
+    {
+      "name": "GruntOutfit_Blackrock_glove_ha",
+      "handBase": "/item-textures/HandTexture/GruntOutfit_Blackrock_glove_ha"
+    },
+    {
+      "name": "mage_hand",
+      "handBase": "/item-textures/HandTexture/mage_hand"
+    },
+    {
+      "name": "Mail_F_01_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_F_01_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_F_01_Sleeve_AL"
+    },
+    {
+      "name": "Mail_E_02Gold_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_E_02Gold_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_02Gold_Sleeve_AL"
+    },
+    {
+      "name": "Leather_ZulAman_D_01_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_ZulAman_D_01_Glove_HA"
+    },
+    {
+      "name": "Mail_Blood_A_02Black_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_A_02Black_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_A_02Black_Bracer_AL"
+    },
+    {
+      "name": "GruntOutfit_ShatteredHand_glove_ha",
+      "handBase": "/item-textures/HandTexture/GruntOutfit_ShatteredHand_glove_ha"
+    },
+    {
+      "name": "Leather_Blood_C_02_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_Blood_C_02_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_C_02_Sleeve_AL"
+    },
+    {
+      "name": "DK_Red_Glove_HA",
+      "handBase": "/item-textures/HandTexture/DK_Red_Glove_HA"
+    },
+    {
+      "name": "Mail_Blood_A_02Blue_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_A_02Blue_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_A_02Blue_Bracer_AL"
+    },
+    {
+      "name": "Leather_Blood_A_02Red_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_Blood_A_02Red_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_A_02Red_Bracer_AL"
+    },
+    {
+      "name": "DK_Blue_Glove_HA",
+      "handBase": "/item-textures/HandTexture/DK_Blue_Glove_HA"
+    },
+    {
+      "name": "DK_Bluegold_Glove_HA",
+      "handBase": "/item-textures/HandTexture/DK_Bluegold_Glove_HA"
+    },
+    {
+      "name": "GruntOutfit_TwilightHammer_glove_ha",
+      "handBase": "/item-textures/HandTexture/GruntOutfit_TwilightHammer_glove_ha"
+    },
+    {
+      "name": "priest_glove_HA",
+      "handBase": "/item-textures/HandTexture/priest_glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/priest_Sleeve_AL"
+    },
+    {
+      "name": "defias_green_Glove_HA",
+      "handBase": "/item-textures/HandTexture/defias_green_Glove_HA"
+    },
+    {
+      "name": "Mail_F_01Green_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_F_01Green_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_F_01Green_Sleeve_AL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01Green_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Zulaman_D_01Green_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Zulaman_D_01Green_Bracer_AL"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Dark_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Plate_ZulAman_D_01Dark_Glove_HA"
+    },
+    {
+      "name": "GruntOutfit_Warsong_glove_ha",
+      "handBase": "/item-textures/HandTexture/GruntOutfit_Warsong_glove_ha"
+    },
+    {
+      "name": "Plate_RaidWarrior_A_01Orange_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Plate_RaidWarrior_A_01Orange_Glove_HA"
+    },
+    {
+      "name": "Mail_Blood_01Green_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_01Green_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_01Green_Bracer_AL"
+    },
+    {
+      "name": "Mail_Blood_B_01Red_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_B_01Red_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Red_Sleeve_AL"
+    },
+    {
+      "name": "troll_feather_Glove_HA",
+      "handBase": "/item-textures/HandTexture/troll_feather_Glove_HA"
+    },
+    {
+      "name": "Mail_Blood_A_02Orange_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_A_02Orange_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_A_02Orange_Bracer_AL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Green_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Robe_ZulAman_D_01Green_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Robe_ZulAman_D_01Green_Sleeve_AL"
+    },
+    {
+      "name": "Plate_D_06_Black_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Plate_D_06_Black_Glove_HA"
+    },
+    {
+      "name": "Leather_Blood_A_02Green_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_Blood_A_02Green_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_A_02Green_Bracer_AL"
+    },
+    {
+      "name": "Mail_Blood_B_01Yellow_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_B_01Yellow_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Yellow_Bracer_AL"
+    },
+    {
+      "name": "Mail_E_01Green_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_E_01Green_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_01Green_Sleeve_AL"
+    },
+    {
+      "name": "GruntOutfit_Frostwolf_glove_ha",
+      "handBase": "/item-textures/HandTexture/GruntOutfit_Frostwolf_glove_ha"
+    },
+    {
+      "name": "Mail_Blood_01Red_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_01Red_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_01Red_Bracer_AL"
+    },
+    {
+      "name": "Mail_Zulaman_D_01DarkYellow_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Zulaman_D_01DarkYellow_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Zulaman_D_01DarkYellow_Bracer_AL"
+    },
+    {
+      "name": "Mail_Blood_B_01Purple_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_B_01Purple_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Purple_Bracer_AL"
+    },
+    {
+      "name": "Mail_F_01Black_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_F_01Black_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_F_01Black_Sleeve_AL"
+    },
+    {
+      "name": "DK_Green_Glove_HA",
+      "handBase": "/item-textures/HandTexture/DK_Green_Glove_HA"
+    },
+    {
+      "name": "GruntOutfit_Dragonmaw_glove_ha",
+      "handBase": "/item-textures/HandTexture/GruntOutfit_Dragonmaw_glove_ha"
+    },
+    {
+      "name": "Leather_Blood_B_01Orange_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_Blood_B_01Orange_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_B_01Orange_Bracer_AL"
+    },
+    {
+      "name": "Goblin_HA",
+      "handBase": "/item-textures/HandTexture/Goblin_HA"
+    },
+    {
+      "name": "Mail_E_01Red_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_E_01Red_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_01Red_Sleeve_AL"
+    },
+    {
+      "name": "Blaumeux_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Blaumeux_Glove_HA"
+    },
+    {
+      "name": "Leather_Blood_B_01Black_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_Blood_B_01Black_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_B_01Black_Bracer_AL"
+    },
+    {
+      "name": "Plate_ZulAman_D_01Red_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Plate_ZulAman_D_01Red_Glove_HA"
+    },
+    {
+      "name": "Leather_Blood_B_01Red_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_Blood_B_01Red_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_B_01Red_Bracer_AL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Black_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Robe_ZulAman_D_01Black_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Robe_ZulAman_D_01Black_Bracer_AL"
+    },
+    {
+      "name": "tauren_Glove_HA",
+      "handBase": "/item-textures/HandTexture/tauren_Glove_HA"
+    },
+    {
+      "name": "Leather_Blood_A_02Black_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Leather_Blood_A_02Black_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_A_02Black_Bracer_AL"
+    },
+    {
+      "name": "Robe_ZulAman_D_01Blue_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Robe_ZulAman_D_01Blue_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Robe_ZulAman_D_01Blue_Bracer_AL"
+    },
+    {
+      "name": "TaurenChieftain_Grimtotem_Glove_HA",
+      "handBase": "/item-textures/HandTexture/TaurenChieftain_Grimtotem_Glove_HA"
+    },
+    {
+      "name": "Mail_Blood_B_01Blue_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_Blood_B_01Blue_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Blue_Sleeve_AL"
+    },
+    {
+      "name": "Mail_E_01Black_Glove_HA",
+      "handBase": "/item-textures/HandTexture/Mail_E_01Black_Glove_HA",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_01Black_Sleeve_AL"
+    }
+  ]
+}
