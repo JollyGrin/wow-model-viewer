@@ -233,6 +233,7 @@ export async function loadModel(
   for (const g of manifest.groups) {
     if (!geosets.has(g.id)) continue;
     if (g.textureType === 2) continue; // cape-textured geometry — skip when no cape equipped
+    if (g.id === 0 && g.textureType === 0) continue; // hardcoded-texture body submesh (cape anchors)
     const isHair = g.textureType !== undefined && g.textureType >= 0
       ? g.textureType === HAIR_TEX_TYPE
       : HAIR_GEOSETS_FALLBACK.has(g.id);
