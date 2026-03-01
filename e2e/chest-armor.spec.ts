@@ -19,6 +19,7 @@ const GENDERS = ['male', 'female'];
 const SCREENSHOTS_DIR = path.join(import.meta.dirname, '../screenshots/chest-armor');
 
 test('silver plate chest armor appears correctly on all 20 race/gender models', async ({ page }) => {
+  test.setTimeout(300_000); // 5 minutes for 40 screenshots
   const errors: string[] = [];
   page.on('console', (msg) => {
     if (msg.type() === 'error') errors.push(msg.text());

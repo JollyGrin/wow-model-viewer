@@ -906,3 +906,57 @@ Blood Elf shows a more dramatic sword angle than Human. This is because differen
 **Impact:** Milestone 2 PASSED. Weapon attachment pipeline is race-neutral and works across all 20 models with zero console errors.
 
 **Reference:** `e2e/milestone2-all-races.spec.ts`, `screenshots/milestone2/*.png`
+
+## [2026-03-01] Equipment Milestone 3 — Chest Texture Compositing on Human Male
+
+**Context:** Implementing chest armor (displayId 3413, Plate_A_01Silver) via texture compositing.
+
+**Finding: Silver plate armor looks nearly skin-colored under warm lighting — this is correct**
+Plate_A_01Silver has RGB ~(156, 152, 148) — a warm silver-beige. Under the scene's warm directional lighting the chest armor IS correctly composited, but visually blends with human male skin. Confirmed by: (1) color-coded UV debug atlas showing front chest = TORSO_UPPER region, (2) green DataTexture test confirming the compositing code path executes, (3) pixel readback from canvas confirming silver pixels replace skin in the TORSO_UPPER region. Not a bug.
+
+**Finding: DataTexture required, not CanvasTexture**
+`THREE.CanvasTexture` and `THREE.DataTexture` have different flipY defaults. After compositing via HTML Canvas 2D, read pixels back with `canvas.getContext('2d').getImageData()` and create a `THREE.DataTexture(pixels, w, h, RGBAFormat)` with `flipY=false`. This matches the same convention used by `loadTexture()` for the base skin. Using `CanvasTexture` directly caused inconsistency with the skin atlas orientation.
+
+**Finding: `loadTexImageData()` already exists in charTexture.ts — no new fetch logic needed**
+`charTexture.ts` exports `loadTexImageData(url)` which fetches a `.tex` file and returns `ImageData`. `composeCharTexture(baseImageData, layers)` composites layers onto a Canvas. Both work correctly for equipment overlays.
+
+**Impact:** Milestone 3 PASSED. Silver plate chest texture correctly composited on human male.
+
+**Reference:** `src/loadModel.ts`, `src/charTexture.ts`, `scripts/convert-item-textures.ts`
+
+## [2026-03-01] Equipment Milestone 3 Bug — Geoset 802 Is Wrong for Plate Chest
+
+**Context:** After seeing a full-length sleeve on the model, investigated whether geoset 802 was correct.
+
+**Finding: GeosetGroup=[0,0,0] in ItemDisplayInfo for displayId 3413 — no geoset override**
+The chest item (Plate_A_01Silver) has `GeosetGroup: [0, 0, 0]` in ItemDisplayInfo. All zeros means NO geometry change — the chest is purely texture-only. We had incorrectly hardcoded `new Map([[8, 802]])` in `loadModel.ts`, enabling geoset 802 (which is a sleeve geometry) when it should never have been enabled for this item.
+
+**Finding: GeosetGroup formula — `meshId = slotGroup * 100 + value + 1`**
+When value=0 → "no override" (don't change the group). Only non-zero values should trigger geoset overrides. Future items with `GeosetGroup[0]=1` for sleeves would enable meshId 802.
+
+**Finding: Geoset 802 is a full-length sleeve on some races**
+The sleeve geometry (geoset 802) is not a "short sleeve plate" shape — it's a full-length arm sleeve that extends to the wrist. Enabling it without an item that requires it causes a visible robe/sleeve artifact. Always check ItemDisplayInfo.GeosetGroup before enabling any geoset overrides.
+
+**Impact:** Removed the hardcoded `new Map([[8, 802]])`. Plate chest now shows bare arm geometry with silver plate texture on the ArmUpper atlas region — correct WoW behavior.
+
+**Reference:** `src/loadModel.ts` (removed groupOverrides for chest), `data/dbc/ItemDisplayInfo.json` displayId 3413
+
+## [2026-03-01] Equipment Milestone 4 — Chest on All 20 Races (Gender-Aware Texture)
+
+**Context:** Extending chest armor to all 20 race/gender combinations with gender-aware texture resolution.
+
+**Finding: `_U` (unisex) variants work for all 20 races — no gender-specific files needed for this item**
+Plate_A_01Silver only has `_U` suffix variants in the MPQ. The gender-aware resolver (try `_M`/`_F` → `_U` → no suffix) always falls through to `_U`, which works correctly for both male and female characters.
+
+**Finding: Skin UV atlas layout is universal across all 20 races**
+The CharRegion UV coordinates (ArmUpper, TorsoUpper, TorsoLower, etc.) are identical for every race and gender. The same chest texture composited on human male works identically on tauren, gnome, goblin, blood elf, etc. No race-specific UV adjustments needed.
+
+**Finding: Gender derived from modelDir slug**
+`modelDir` always ends in `-male` or `-female` (e.g., `/models/human-female`). Checking `modelDir.includes('-female')` reliably identifies female characters and sets the `genderSuffix` to `'F'` or `'M'`.
+
+**Finding: ChestEquipment interface should use base paths, not full URLs**
+Changed `armUpperTex`/`torsoUpperTex`/`torsoLowerTex` (full URLs with gender suffix) to `armUpperBase`/`torsoUpperBase`/`torsoLowerBase` (base paths without suffix or `.tex` extension). The resolver appends `_{suffix}.tex` candidates and tries each. This is the correct abstraction for items that have `_M`, `_F`, and `_U` variants.
+
+**Impact:** Milestone 4 PASSED. All 20 race/gender combinations show correct silver plate chest armor with no console errors.
+
+**Reference:** `src/loadModel.ts` (`genderSuffix`, `resolveEquipTex`), `src/main.ts` (base path fields)
