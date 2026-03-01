@@ -5,12 +5,14 @@
 **Context:** All 20 race/gender models had a large gap at the upper back / base of skull (Z 1.7–1.8) visible from behind. Many approaches had been tried and failed (boundary edge caps, inner spheres, planes, BackSide fill, bone identity, etc.). The gap was systemic across all models.
 
 **Finding:**
+
 - The body mesh (geoset 0) has **zero back-facing triangles** in the Z 1.7–1.8 band (X < -0.04). This is a genuine geometric hole — not a rendering or conversion issue.
 - **Geoset 1501** is the "bare back / no cape" geoset — 20 skin-textured triangles (textureType=1) covering Z 1.582–1.813, exactly the gap region. It was missing from our `DEFAULT_GEOSETS`.
 - WMVx (the reference WoW Model Viewer) enables 1501 by default via the rule: `geoset_id == 0 || (geoset_id > 100 && geoset_id % 100 == 1)`.
 - Group 15 = Cape. 1501 = "cape slot empty" (bare back). 1502+ = various cape lengths. Like 401 (bare hands) and 501 (bare feet), 1501 is body geometry that shows when no equipment is in that slot.
 
 **Root cause analysis method:**
+
 1. Listed ALL 57 submeshes from model.json with spatial bounds and textureType
 2. Identified which geosets have geometry in the gap region (Z 1.3–1.8, back of model)
 3. Determined coordinate system orientation: +X = front (face), -X = back, Y = left/right, Z = height
@@ -23,9 +25,11 @@
 **Key principle: WoW character models are COMPLETE — every body region is covered by some geoset.** When you see a gap, the first thing to check is whether you're missing a geoset, not whether the mesh has holes. The M2 geoset system is designed so that the right combination of active geosets produces a watertight character.
 
 **WMVx default geoset rule (reference for future work):**
+
 ```
 geoset_id == 0 || (geoset_id > 100 && geoset_id % 100 == 1)
 ```
+
 This enables: 0 (body), 101, 201, 301, 401, 501, 601, 701, 801, 901, 1001, 1101, 1201, 1301, 1501, 1801.
 Not all models have all of these IDs — but when present, they should be enabled for a naked character.
 
@@ -36,6 +40,7 @@ Not all models have all of these IDs — but when present, they should be enable
 **Context:** Implemented boundary edge detection on geoset 0 to find and fill the back-of-head gap with a triangle fan cap. Tried solid-color, then textured with UVs + body mesh normals.
 
 **Finding:**
+
 - Body mesh (geoset 0) has 85 separate boundary loops
 - Loop 21 (22 verts, Z 1.530-1.836) is the head gap boundary
 - Solid-color cap: obvious flat rectangle from behind
@@ -44,6 +49,7 @@ Not all models have all of these IDs — but when present, they should be enable
 **Impact:** Boundary edge cap approach does NOT work. Do not retry. The flat triangle fan cannot match the curved body mesh shading, and the boundary vertex UVs map to face atlas regions that look wrong on the back of the head.
 
 **What failed (do not repeat):**
+
 - Solid-color sampled skin cap
 - Textured cap with boundary vertex UVs
 - Both with renderOrder:-1 and DoubleSide
@@ -55,6 +61,7 @@ Not all models have all of these IDs — but when present, they should be enable
 **Context:** Implemented scalp texture compositing to reduce back-of-head gap visibility. Extracted `ScalpLowerHair02_07.blp` and `ScalpUpperHair02_07.blp` from `texture.MPQ` and composited them into the skin atlas at build time.
 
 **Finding:**
+
 - Scalp BLPs are stored at shared race level (`Character\Human\`), NOT in `Male/` subdirectory
 - `texture.MPQ` is at `data/model/texture.MPQ` (not `data/texture.MPQ`) — script paths needed fixing
 - ScalpLower (23KB) maps to FACE_LOWER region (x:0, y:192, 128x64); ScalpUpper (12KB) maps to FACE_UPPER region (x:0, y:160, 128x32)
@@ -832,12 +839,14 @@ This mirrors how WoW handles layered geometry — equipment geosets render on to
 **Conversion verification:** Compared M2 raw vertices (with proper skin remap) against model.bin — **0 mismatches out of 151 hair vertices**. Conversion pipeline is correct.
 
 **Hair coverage:** ALL hairstyles are narrow strips:
+
 - Hair Y span: 0.291 (max of any style: 0.352 for geoset 16)
 - Body head Y span: 0.758
 - Best coverage: 46% — no single hairstyle wraps around the head
 - Hair X (depth) range: -0.104 to 0.201. Body head X: -0.174 to 0.194
 
 **Experiments:**
+
 1. **Enable geoset 1 (scalp)** — only covers Z 1.90-2.02 (tiny cap at crown). No effect on back gap.
 2. **Enable ALL group-0 geosets (0-99)** — reduces gap significantly but creates visual mess (all hairstyles rendered simultaneously as overlapping strips). Still has cracks between overlapping meshes.
 3. **FrontSide rendering + all geosets** — doesn't help because gap is genuine missing geometry, not interior face visibility.

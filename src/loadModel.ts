@@ -18,28 +18,48 @@ interface ModelManifest {
   groups: Array<{ id: number; indexStart: number; indexCount: number; textureType: number }>;
 }
 
-// Geoset visibility for a naked character.
+// Groups to enable for a naked character and which variant to prefer.
 // WoW default: each group gets value=1 → meshId = group*100 + 1.
-// Group 13 (CG_TROUSERS) value=1 → 1301 = "legs" — the thigh geometry.
-const DEFAULT_GEOSETS = new Set([
-  0,     // body mesh
-  5,     // hairstyle
-  101,   // facial 1 default
-  201,   // facial 2 default
-  301,   // facial 3 default
-  401,   // bare hands
-  501,   // bare feet
-  701,   // ears visible
-  1301,  // trousers-as-legs (thigh geometry, Z 0.55–1.10)
-  1501,  // bare back (no cape) — fills upper back/neck gap at Z 1.58–1.81
-]);
+// If the preferred variant doesn't exist, fall back to the lowest available.
+const DESIRED_GROUPS: Array<{ group: number; preferred: number; strict?: boolean }> = [
+  { group: 1, preferred: 1 },   // facial 1 (face for goblins, facial hair for others)
+  { group: 2, preferred: 1 },   // facial 2
+  { group: 3, preferred: 1 },   // facial 3
+  { group: 4, preferred: 1 },   // gloves (bare hands)
+  { group: 5, preferred: 1 },   // boots (bare feet)
+  { group: 7, preferred: 1 },   // ears
+  { group: 13, preferred: 1 },  // trousers/legs (thigh geometry)
+  { group: 15, preferred: 1, strict: true },  // bare back only; never show cape variants
+];
 
-function isGeosetVisible(id: number, enabled: Set<number>): boolean {
-  const group = Math.floor(id / 100);
-  for (const eqId of enabled) {
-    if (Math.floor(eqId / 100) === group && eqId === id) return true;
+function resolveDefaultGeosets(
+  groups: Array<{ id: number }>,
+  hairstyle: number = 5,
+): Set<number> {
+  // Index available geosets by group
+  const byGroup = new Map<number, number[]>();
+  for (const g of groups) {
+    const grp = Math.floor(g.id / 100);
+    if (!byGroup.has(grp)) byGroup.set(grp, []);
+    byGroup.get(grp)!.push(g.id);
   }
-  return false;
+
+  const result = new Set<number>();
+  result.add(0);           // body mesh (always)
+  result.add(hairstyle);   // hairstyle from group 0
+
+  for (const { group, preferred, strict } of DESIRED_GROUPS) {
+    const available = byGroup.get(group);
+    if (!available || available.length === 0) continue;
+    const target = group * 100 + preferred;
+    if (available.includes(target)) {
+      result.add(target);
+    } else if (!strict) {
+      result.add(Math.min(...available));
+    }
+  }
+
+  return result;
 }
 
 async function loadTexture(url: string): Promise<THREE.DataTexture> {
@@ -118,7 +138,7 @@ function buildSkeleton(boneData: BoneInfo[]): { skeleton: THREE.Skeleton; roots:
  */
 export async function loadModel(
   modelDir: string,
-  enabledGeosets: Set<number> = DEFAULT_GEOSETS,
+  enabledGeosets?: Set<number>,
 ): Promise<THREE.Group> {
   const texturesDir = `${modelDir}/textures/`;
 
@@ -129,6 +149,8 @@ export async function loadModel(
 
   const manifest: ModelManifest = await manifestRes.json();
   const binBuffer = await binRes.arrayBuffer();
+
+  const geosets = enabledGeosets ?? resolveDefaultGeosets(manifest.groups);
 
   // Load textures
   let skinTexture: THREE.Texture;
@@ -209,7 +231,7 @@ export async function loadModel(
   const hairIndexList: number[] = [];
 
   for (const g of manifest.groups) {
-    if (!isGeosetVisible(g.id, enabledGeosets)) continue;
+    if (!geosets.has(g.id)) continue;
     const isHair = g.textureType !== undefined && g.textureType >= 0
       ? g.textureType === HAIR_TEX_TYPE
       : HAIR_GEOSETS_FALLBACK.has(g.id);
