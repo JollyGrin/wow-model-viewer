@@ -4,6 +4,27 @@
 
 ---
 
+## Folder Convention
+
+```
+data/                    ← RAW WoW client files. User populates manually. Never script-generated.
+  model/model.MPQ        ← base game archives (copied from TW Data/)
+  model/texture.MPQ
+  patch/patch-2/ … -9/   ← user-extracted patch MPQ contents
+  dbc/*.json             ← pre-converted DBC tables
+
+data/extracted/          ← Script output from MPQ extraction. Intermediate step only.
+  Item/                  ← same internal path structure as the MPQ archives
+  Character/
+
+public/                  ← Final web-ready assets. Script-generated from data/.
+  models/                ← character model.bin + model.json (already done)
+  items/                 ← item model.bin + model.json (to be built)
+  item-textures/         ← .tex files for body armor regions (to be built)
+```
+
+`data/extracted/` is the right home for anything pulled out of `model.MPQ` / `texture.MPQ` by a script. It mirrors the MPQ internal path structure exactly, sits beside the patch directories for easy priority-ordered lookup, and is clearly distinct from the raw user-provided files in `data/model/` and `data/patch/`.
+
 ## Situation Summary
 
 We have two MPQ archives already in the repo (`data/model/model.MPQ` 182MB, `data/model/texture.MPQ` 634MB) plus extracted patch overrides (`data/patch/patch-*`). The stormjs extraction pipeline already works. None of this requires touching the WoW client again.
@@ -44,7 +65,7 @@ All 10 race × 2 gender combos are confirmed present. Suffixes: `HuM HuF DwM DwF
 ---
 
 ### Phase 1 — Extract Base MPQ Assets
-**Goal:** Pull all item models and textures out of the two base MPQs into `data/patch/patch/` (the already-present base patch directory, which currently has 0 item files).
+**Goal:** Pull all item models and textures out of the two base MPQs into `data/extracted/`, preserving the MPQ internal path structure. This is the only step that touches `data/` — everything after this works from `data/extracted/` and `data/patch/`.
 
 **What to extract from `model.MPQ`:**
 ```
@@ -83,7 +104,7 @@ Character\Gnome\*\*.blp
 Character\Troll\*\*.blp
 ```
 
-**Script to write:** Extend `scripts/extract-from-mpq.ts` to do a full bulk extraction using `mpq.search(pattern)` + loop over all results. Output to `data/patch/patch/` to preserve the existing load-order convention (base patch is lowest priority, gets overridden by patch-2 through patch-9).
+**Script to write:** Extend `scripts/extract-from-mpq.ts` to do a full bulk extraction using `mpq.search(pattern)` + loop over all results. Output to `data/extracted/`, mirroring the MPQ internal paths (e.g. `Item\ObjectComponents\Weapon\Axe_1H.m2` → `data/extracted/Item/ObjectComponents/Weapon/Axe_1H.m2`).
 
 **Estimated output:** ~14,600 files, ~800MB raw BLPs + M2s.
 
@@ -147,11 +168,11 @@ public/items/shoulder/{slug}/model.bin
 - Write bin + json
 - Convert BLP texture alongside M2 to `.tex`
 
-**Lookup priority for files (patch override order):**
+**Lookup priority for files (patch override order, highest first):**
 ```
-patch-9 > patch-8 > patch-7 > patch-6 > patch-5 > patch-4 > patch-3 > patch-2 > patch > base MPQ
+data/patch/patch-9/  >  patch-8  >  …  >  patch-2/  >  data/extracted/
 ```
-The base MPQ extraction in Phase 1 goes into `data/patch/patch/`, so the same directory scan works for everything.
+`data/extracted/` is the lowest-priority source (base vanilla). The same path structure (`Item/ObjectComponents/Weapon/`) appears in both, so a single priority-ordered directory scan covers everything. First match wins.
 
 **For helmets specifically:** the M2 filename in ItemDisplayInfo includes the base name only (e.g. `Helm_Plate_Judgement_A_01`). The actual file is `Helm_Plate_Judgement_A_01_HuM.m2`. Generate one converted output per race/gender suffix.
 
@@ -386,7 +407,7 @@ Phase 10 (UI) ← needs Phases 5, 6, 7, 8, 9
 ### Classic WoW Items ✅ achievable with current files
 - [x] `model.MPQ` present (368 weapon M2, 980 head M2, 145 shoulder M2)
 - [x] `texture.MPQ` present (983 weapon BLP, 8,570 body texture BLP)
-- [ ] **Phase 1:** Extract from MPQs into `data/patch/patch/`
+- [ ] **Phase 1:** Extract from MPQs into `data/extracted/`
 
 ### Turtle WoW Custom Items ✅ mostly covered
 - [x] patch-3 through patch-9 extracted (3,544+ item files)
