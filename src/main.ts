@@ -144,9 +144,9 @@ async function switchModel() {
       loadModel(modelDir, {
         weapon: '/items/weapon/sword-2h-claymore-b-02',
         chest: {
-          armUpperTex:   '/item-textures/ArmUpperTexture/Plate_A_01Silver_Sleeve_AU_U.tex',
-          torsoUpperTex: '/item-textures/TorsoUpperTexture/Plate_A_01Silver_Chest_TU_U.tex',
-          torsoLowerTex: '/item-textures/TorsoLowerTexture/Plate_A_01Silver_Chest_TL_U.tex',
+          armUpperBase:   '/item-textures/ArmUpperTexture/Plate_A_01Silver_Sleeve_AU',
+          torsoUpperBase: '/item-textures/TorsoUpperTexture/Plate_A_01Silver_Chest_TU',
+          torsoLowerBase: '/item-textures/TorsoLowerTexture/Plate_A_01Silver_Chest_TL',
         },
       }),
       loadAnimations(modelDir),

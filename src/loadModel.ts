@@ -14,11 +14,14 @@ export interface LoadedModel {
   boneData: BoneInfo[];
 }
 
-/** Equipment texture URLs for body armor compositing. GeosetGroup overrides are item-specific — not all chest items change geometry. */
+/** Equipment texture base paths for body armor compositing. No gender suffix, no .tex extension.
+ *  Resolver tries _{gender}.tex → _U.tex → .tex, using the first that loads.
+ *  Example: '/item-textures/ArmUpperTexture/Plate_A_01Silver_Sleeve_AU'
+ */
 export interface ChestEquipment {
-  armUpperTex?: string;   // URL e.g. /item-textures/ArmUpperTexture/Plate_A_01Silver_Sleeve_AU_U.tex
-  torsoUpperTex?: string; // URL e.g. /item-textures/TorsoUpperTexture/Plate_A_01Silver_Chest_TU_U.tex
-  torsoLowerTex?: string; // URL e.g. /item-textures/TorsoLowerTexture/Plate_A_01Silver_Chest_TL_U.tex
+  armUpperBase?: string;
+  torsoUpperBase?: string;
+  torsoLowerBase?: string;
 }
 
 interface AttachmentPoint {
@@ -242,6 +245,9 @@ export async function loadModel(
 
   const geosets = options?.enabledGeosets ?? resolveDefaultGeosets(manifest.groups, 5);
 
+  // Derive gender suffix from modelDir slug (e.g. '/models/human-female' → 'F')
+  const genderSuffix = modelDir.includes('-female') ? 'F' : 'M';
+
   // Load skin texture — with equipment compositing when chest is provided
   let skinTexture: THREE.Texture;
   try {
@@ -249,16 +255,26 @@ export async function loadModel(
       const baseImageData = await loadTexImageData(`${texturesDir}skin.tex`);
       const layers: Array<{ imageData: ImageData; region: CharRegion; layer: number }> = [];
 
-      async function tryAddLayer(url: string | undefined, region: CharRegion) {
-        if (!url) return;
-        try {
-          layers.push({ imageData: await loadTexImageData(url), region, layer: 20 });
-        } catch { /* missing texture — skip region */ }
+      // Try gender-specific suffix, then universal, then no suffix
+      async function resolveEquipTex(base: string): Promise<ImageData | null> {
+        for (const s of [genderSuffix, 'U', '']) {
+          try {
+            const url = s ? `${base}_${s}.tex` : `${base}.tex`;
+            return await loadTexImageData(url);
+          } catch { /* try next suffix */ }
+        }
+        return null;
       }
 
-      await tryAddLayer(options.chest.armUpperTex, CharRegion.ARM_UPPER);
-      await tryAddLayer(options.chest.torsoUpperTex, CharRegion.TORSO_UPPER);
-      await tryAddLayer(options.chest.torsoLowerTex, CharRegion.TORSO_LOWER);
+      async function tryAddLayer(base: string | undefined, region: CharRegion) {
+        if (!base) return;
+        const imageData = await resolveEquipTex(base);
+        if (imageData) layers.push({ imageData, region, layer: 20 });
+      }
+
+      await tryAddLayer(options.chest.armUpperBase, CharRegion.ARM_UPPER);
+      await tryAddLayer(options.chest.torsoUpperBase, CharRegion.TORSO_UPPER);
+      await tryAddLayer(options.chest.torsoLowerBase, CharRegion.TORSO_LOWER);
 
       const canvas = composeCharTexture(baseImageData, layers);
       // Read composited pixels back and upload as DataTexture (preserves flipY=false convention)
