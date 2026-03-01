@@ -38,6 +38,8 @@ export function getWeaponPath(): string | undefined {
 
 export function getArmorOptions(): BodyArmor | undefined {
   const armor: BodyArmor = {};
+
+  // --- Chest (highest priority for robe/dress flag) ---
   if (selection.chest) {
     armor.armUpperBase   = selection.chest.armUpperBase;
     armor.torsoUpperBase = selection.chest.torsoUpperBase;
@@ -45,23 +47,38 @@ export function getArmorOptions(): BodyArmor | undefined {
     armor.sleeveGeoset   = selection.chest.sleeveGeoset || undefined;
     armor.robeGeoset     = selection.chest.robeGeoset || undefined;
   }
+
+  // --- Legs (robe only applies if chest didn't set one: chest > legs priority) ---
   if (selection.legs) {
     armor.legUpperBase = selection.legs.legUpperBase;
     armor.legLowerBase = selection.legs.legLowerBase;
-    // Legs robeGeoset overrides chest robeGeoset (robe legs + non-robe chest = still 1302)
-    if (selection.legs.robeGeoset) armor.robeGeoset = selection.legs.robeGeoset;
+    if (!armor.robeGeoset && selection.legs.robeGeoset) {
+      armor.robeGeoset = selection.legs.robeGeoset;
+    }
   }
+
+  // Dress flag: when active, boot geoset (501-599) and kneepads (group 9) are hidden
+  const isDress = !!armor.robeGeoset;
+
+  // --- Boots (geoset + legLower suppressed under dress) ---
   if (selection.boots) {
-    armor.footBase    = selection.boots.footBase;
-    armor.legLowerBase = selection.boots.legLowerBase;
-    armor.footGeoset  = selection.boots.geosetValue || undefined;
+    armor.footBase = selection.boots.footBase;
+    if (!isDress) {
+      armor.legLowerBase = selection.boots.legLowerBase;
+      armor.footGeoset   = selection.boots.geosetValue || undefined;
+    }
   }
+
+  // --- Gloves (wrist geoset suppressed under dress) ---
   if (selection.gloves) {
     armor.handBase     = selection.gloves.handBase;
     armor.armLowerBase = selection.gloves.armLowerBase;
     armor.handGeoset   = selection.gloves.geosetValue || undefined;
-    armor.wristGeoset  = selection.gloves.wristGeoset || undefined;
+    if (!isDress) {
+      armor.wristGeoset = selection.gloves.wristGeoset || undefined;
+    }
   }
+
   const hasAny = Object.values(armor).some(v => v);
   return hasAny ? armor : undefined;
 }
