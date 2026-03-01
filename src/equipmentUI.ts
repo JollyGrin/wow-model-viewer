@@ -20,7 +20,7 @@ const QUALITY_COLOR: Record<number, string> = {
 // --- Catalog types ---
 
 interface WeaponEntry  { itemId: number; name: string; quality: number; slug: string; subclass?: string; }
-interface ChestEntry   { itemId?: number; name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
+interface ChestEntry   { itemId?: number; name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; armLowerBase?: string; torsoLowerBase?: string; legUpperBase?: string; legLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
 interface LegsEntry    { itemId?: number; name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
 interface BootsEntry   { itemId?: number; name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
 interface GlovesEntry  { itemId?: number; name: string; quality: number; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
@@ -52,17 +52,26 @@ export function getWeaponPath(): string | undefined {
 export function getArmorOptions(): BodyArmor | undefined {
   const armor: BodyArmor = {};
 
+  // --- Chest (highest priority — robes override leg/arm textures) ---
   if (selection.chest) {
     armor.armUpperBase   = selection.chest.armUpperBase;
     armor.torsoUpperBase = selection.chest.torsoUpperBase;
     armor.torsoLowerBase = selection.chest.torsoLowerBase;
     armor.sleeveGeoset   = selection.chest.sleeveGeoset || undefined;
     armor.robeGeoset     = selection.chest.robeGeoset || undefined;
+
+    // Robes provide leg + arm-lower textures that override legs/gloves
+    if (armor.robeGeoset) {
+      armor.legUpperBase = selection.chest.legUpperBase;
+      armor.legLowerBase = selection.chest.legLowerBase;
+      armor.armLowerBase = selection.chest.armLowerBase;
+    }
   }
 
+  // --- Legs (only applies leg textures if robe didn't provide them) ---
   if (selection.legs) {
-    armor.legUpperBase = selection.legs.legUpperBase;
-    armor.legLowerBase = selection.legs.legLowerBase;
+    if (!armor.legUpperBase) armor.legUpperBase = selection.legs.legUpperBase;
+    if (!armor.legLowerBase) armor.legLowerBase = selection.legs.legLowerBase;
     if (!armor.robeGeoset && selection.legs.robeGeoset) {
       armor.robeGeoset = selection.legs.robeGeoset;
     }
@@ -70,18 +79,20 @@ export function getArmorOptions(): BodyArmor | undefined {
 
   const isDress = !!armor.robeGeoset;
 
+  // --- Boots (geoset + legLower suppressed under dress) ---
   if (selection.boots) {
     armor.footBase = selection.boots.footBase;
     if (!isDress) {
-      armor.legLowerBase = selection.boots.legLowerBase;
-      armor.footGeoset   = selection.boots.geosetValue || undefined;
+      if (!armor.legLowerBase) armor.legLowerBase = selection.boots.legLowerBase;
+      armor.footGeoset = selection.boots.geosetValue || undefined;
     }
   }
 
+  // --- Gloves (armLower only if robe didn't provide it) ---
   if (selection.gloves) {
-    armor.handBase     = selection.gloves.handBase;
-    armor.armLowerBase = selection.gloves.armLowerBase;
-    armor.handGeoset   = selection.gloves.geosetValue || undefined;
+    armor.handBase   = selection.gloves.handBase;
+    armor.handGeoset = selection.gloves.geosetValue || undefined;
+    if (!armor.armLowerBase) armor.armLowerBase = selection.gloves.armLowerBase;
     if (!isDress) {
       armor.wristGeoset = selection.gloves.wristGeoset || undefined;
     }

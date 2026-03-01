@@ -160,7 +160,7 @@ function findWeaponSlug(modelName: string): string | undefined {
 // --- Build catalog entries from items DB ---
 
 interface WeaponEntry { itemId: number; name: string; quality: number; slug: string; subclass?: string; }
-interface ChestEntry  { itemId?: number; name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
+interface ChestEntry  { itemId?: number; name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; armLowerBase?: string; torsoLowerBase?: string; legUpperBase?: string; legLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
 interface LegsEntry   { itemId?: number; name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
 interface BootsEntry  { itemId?: number; name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
 interface GlovesEntry { itemId?: number; name: string; quality: number; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
@@ -211,6 +211,16 @@ function buildChestEntry(idi: IDIRecord, name: string, quality: number, itemId?:
   const gg = idi.GeosetGroup;
   if (gg[0] >= 2 && entry.armUpperBase) entry.sleeveGeoset = gg[0];
   if (gg[2] > 0) entry.robeGeoset = gg[2] + 1;
+
+  // Robes provide leg + arm-lower textures that override equipped legs/gloves
+  if (entry.robeGeoset) {
+    const alName = idi.Texture[1]; // ArmLower
+    const luName = idi.Texture[5]; // LegUpper
+    const llName = idi.Texture[6]; // LegLower
+    if (alName && hasTex(1, alName)) entry.armLowerBase = baseFor('ArmLowerTexture', alName);
+    if (luName && hasTex(5, luName)) entry.legUpperBase = baseFor('LegUpperTexture', luName);
+    if (llName && hasTex(6, llName)) entry.legLowerBase = baseFor('LegLowerTexture', llName);
+  }
 
   return entry;
 }
