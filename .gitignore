@@ -7,9 +7,11 @@ data/**/*.BLP
 data/**/*.dbc
 data/dbc/*
 data/patch/*
+public/item-textures/*
 node_modules
 dist/
 e2e/test-learnings.json
 screenshots/
 test-results/
 playwright-report/
+
