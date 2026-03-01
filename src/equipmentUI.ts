@@ -20,7 +20,7 @@ const QUALITY_COLOR: Record<number, string> = {
 // --- Catalog types ---
 
 interface WeaponEntry   { itemId: number; name: string; quality: number; slug: string; subclass?: string; }
-interface HelmetEntry   { itemId?: number; name: string; quality: number; slug: string; helmetGeosetVisID: [number, number]; }
+interface HelmetEntry   { itemId?: number; name: string; quality: number; slug: string; helmetGeosetVisID: [number, number]; variants: string[]; }
 interface ShoulderEntry { itemId?: number; name: string; quality: number; slug: string; hasRight: boolean; }
 interface ChestEntry    { itemId?: number; name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; armLowerBase?: string; torsoLowerBase?: string; legUpperBase?: string; legLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
 interface LegsEntry     { itemId?: number; name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
@@ -231,6 +231,13 @@ function randomizeSlot(sel: HTMLSelectElement, onChange: () => void) {
   onChange();
 }
 
+/** Read the current race-gender slug from the DOM selects (e.g., "human-male"). */
+function getCurrentModelSlug(): string {
+  const race = (document.getElementById('race-select') as HTMLSelectElement)?.value || 'human';
+  const gender = (document.getElementById('gender-select') as HTMLSelectElement)?.value || 'male';
+  return `${race}-${gender}`;
+}
+
 export function initEquipmentUI(onChange: () => void): void {
   const panel = document.getElementById('equipment-panel');
   if (!panel) return;
@@ -263,11 +270,43 @@ function buildPanel(panel: HTMLElement, onChange: () => void) {
   );
   panel.appendChild(makeRow('Weapon', wCont, wSel, 'weapon', onChange));
 
-  // Head
+  // Head — filtered by current race-gender variants
+  const helmetsForRace = () => catalog!.helmets.filter(h => h.variants.includes(getCurrentModelSlug()));
+  let currentHelmets = helmetsForRace();
   const { container: hCont, select: hSel } = buildFilteredSelect(
-    'equip-head', catalog.helmets, itemDisplayName,
+    'equip-head', currentHelmets, itemDisplayName,
     entry => { selection.helmet = entry; onChange(); },
   );
+  // Re-filter helmet list when race/gender changes
+  const refreshHelmets = () => {
+    currentHelmets = helmetsForRace();
+    selection.helmet = undefined;
+    hSel.innerHTML = '';
+    const noneOpt = document.createElement('option');
+    noneOpt.value = '';
+    noneOpt.textContent = 'None';
+    noneOpt.style.color = '#888';
+    hSel.appendChild(noneOpt);
+    for (let i = 0; i < currentHelmets.length; i++) {
+      const item = currentHelmets[i];
+      const opt = document.createElement('option');
+      opt.value = String(i);
+      opt.textContent = itemDisplayName(item);
+      opt.style.color = QUALITY_COLOR[item.quality] || QUALITY_COLOR[1];
+      hSel.appendChild(opt);
+    }
+    // Rebind change handler to use new array
+    hSel.onchange = () => {
+      if (hSel.value === '') {
+        selection.helmet = undefined;
+      } else {
+        selection.helmet = currentHelmets[parseInt(hSel.value, 10)];
+      }
+      onChange();
+    };
+  };
+  document.getElementById('race-select')?.addEventListener('change', refreshHelmets);
+  document.getElementById('gender-select')?.addEventListener('change', refreshHelmets);
   panel.appendChild(makeRow('Head', hCont, hSel, 'head', onChange));
 
   // Shoulder

@@ -239,7 +239,11 @@ function buildSkeleton(boneData: BoneInfo[]): { skeleton: THREE.Skeleton; roots:
  * Load a static item model (weapon, shoulder, etc.) from a public/items/ directory.
  * Returns a plain THREE.Group (no skeleton needed — item vertices are in bind pose).
  */
-async function loadItemModel(itemDir: string, textureUrl?: string): Promise<THREE.Group> {
+async function loadItemModel(
+  itemDir: string,
+  textureUrl?: string,
+  opts?: { polygonOffset?: boolean },
+): Promise<THREE.Group> {
   interface ItemManifest {
     vertexCount: number;
     indexCount: number;
@@ -283,7 +287,13 @@ async function loadItemModel(itemDir: string, textureUrl?: string): Promise<THRE
   geom.setAttribute('uv',       new THREE.BufferAttribute(uvs, 2));
   geom.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
 
-  const mat = new THREE.MeshLambertMaterial({ map: texture, side: THREE.DoubleSide });
+  const matOptions: THREE.MeshLambertMaterialParameters = { map: texture, side: THREE.DoubleSide };
+  if (opts?.polygonOffset) {
+    matOptions.polygonOffset = true;
+    matOptions.polygonOffsetFactor = -1;
+    matOptions.polygonOffsetUnits = -1;
+  }
+  const mat = new THREE.MeshLambertMaterial(matOptions);
   const group = new THREE.Group();
   group.add(new THREE.Mesh(geom, mat));
   return group;
@@ -559,7 +569,16 @@ export async function loadModel(
       socket.position.set(att.pos[0], att.pos[1], att.pos[2]);
       bone.add(socket);
       try {
-        const helmetGroup = await loadItemModel(helmDir, helmTexUrl);
+        const helmetGroup = await loadItemModel(helmDir, helmTexUrl, { polygonOffset: true });
+        // Helmet dome sits inside the character head mesh, losing depth tests.
+        // Clear depth buffer before rendering the helmet so it draws on top of the body.
+        helmetGroup.renderOrder = 1;
+        helmetGroup.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.renderOrder = 1;
+            child.onBeforeRender = (renderer) => { renderer.clearDepth(); };
+          }
+        });
         socket.add(helmetGroup);
       } catch (err) {
         console.warn(`Failed to load helmet from ${helmDir}:`, err);

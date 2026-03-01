@@ -139,17 +139,23 @@ if (existsSync(weaponDir)) {
   }
 }
 
-// --- Build helmet slug set ---
+// --- Build helmet slug set (with available race-gender variants) ---
 const headDir = resolve(ROOT, 'public/items/head');
 const helmetSlugSet = new Set<string>();
+const helmetVariants = new Map<string, string[]>(); // slug → available race-gender slugs
 if (existsSync(headDir)) {
   for (const d of readdirSync(headDir)) {
-    // A valid helmet has at least one race-gender subdirectory with model.json
     const slugDir = resolve(headDir, d);
     try {
       const subs = readdirSync(slugDir);
-      if (subs.some(s => existsSync(resolve(slugDir, s, 'model.json')))) {
+      const variants: string[] = [];
+      for (const s of subs) {
+        if (s === 'textures') continue;
+        if (existsSync(resolve(slugDir, s, 'model.json'))) variants.push(s);
+      }
+      if (variants.length > 0) {
         helmetSlugSet.add(d);
+        helmetVariants.set(d, variants.sort());
       }
     } catch { /* not a directory */ }
   }
@@ -213,7 +219,7 @@ interface ChestEntry  { itemId?: number; name: string; quality: number; torsoUpp
 interface LegsEntry   { itemId?: number; name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
 interface BootsEntry  { itemId?: number; name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
 interface GlovesEntry { itemId?: number; name: string; quality: number; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
-interface HelmetEntry { itemId?: number; name: string; quality: number; slug: string; helmetGeosetVisID: [number, number]; }
+interface HelmetEntry { itemId?: number; name: string; quality: number; slug: string; helmetGeosetVisID: [number, number]; variants: string[]; }
 interface ShoulderEntry { itemId?: number; name: string; quality: number; slug: string; hasRight: boolean; }
 
 /** Infer geoset value (1-3) from texture stem name as fallback when IDI GeosetGroup is 0. */
@@ -387,7 +393,7 @@ for (const item of items) {
     const slug = findHelmetSlug(idi.ModelName[0]);
     if (slug) {
       const visID = idi.HelmetGeosetVisID ?? [0, 0];
-      helmetItems.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, helmetGeosetVisID: [visID[0], visID[1]] });
+      helmetItems.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, helmetGeosetVisID: [visID[0], visID[1]], variants: helmetVariants.get(slug) ?? [] });
       claimedHelmets.add(slug);
       dbMatched++;
     } else { dbNoTex++; }
@@ -479,7 +485,7 @@ for (const idi of idiRecords) {
   const slug = findHelmetSlug(modelName);
   if (slug && !claimedHelmets.has(slug)) {
     const visID = idi.HelmetGeosetVisID ?? [0, 0];
-    helmetItems.push({ name: slug, quality: 0, slug, helmetGeosetVisID: [visID[0], visID[1]] });
+    helmetItems.push({ name: slug, quality: 0, slug, helmetGeosetVisID: [visID[0], visID[1]], variants: helmetVariants.get(slug) ?? [] });
     claimedHelmets.add(slug);
     unclaimedCount++;
   }
@@ -487,7 +493,7 @@ for (const idi of idiRecords) {
 // Helmets without any IDI match
 for (const slug of helmetSlugSet) {
   if (!claimedHelmets.has(slug)) {
-    helmetItems.push({ name: slug, quality: 0, slug, helmetGeosetVisID: [0, 0] });
+    helmetItems.push({ name: slug, quality: 0, slug, helmetGeosetVisID: [0, 0], variants: helmetVariants.get(slug) ?? [] });
     unclaimedCount++;
   }
 }
