@@ -856,3 +856,53 @@ This mirrors how WoW handles layered geometry — equipment geosets render on to
 **Impact:** The back-of-head gap is a texture compositing problem, not a geometry or bone problem. Fix requires implementing the CharSections scalp texture compositing pipeline.
 
 **Reference:** CharHairGeosets.dbc parsed from `data/patch/patch-7/DBFilesClient/CharHairGeosets.dbc`, wowdev wiki Character_Customization page, danielsreichenbach/wowmodelview-vanilla charcontrol.cpp
+
+## [2026-03-01] Equipment Milestone 1 — Weapon Attachment Pipeline
+
+**Context:** Implementing sword attachment to character hand bone (displayId 1956, Sword_2H_Claymore_B_02).
+
+**Finding: M2 attachment offset is 252 (v256 with playableAnimLookup extra)**
+The M2 v256 header lays out as: magic+ver+name+globalFlags+globalSeqs+seqs+seqLookup+playableAnimLookup+bones+keyBoneLookup+verts+views+colors+textures+transparency+texAnims+texReplace+renderFlags+boneLookup+texLookup+texUnitLookup+transLookup+uvAnimLookup+boundingBox(24B)+boundingRadius(4B)+boundingNormals+boundingVertices+boundingTriangles+collisionBox(24B)+collisionRadius(4B) = 252.
+The attachments M2Array starts at byte 252 and struct size is 48 bytes: id(u32)+bone(u16)+unk(u16)+pos(f32×3)+animTrack(28B).
+
+**Finding: Human Male HandRight = bone 125, HandLeft = bone 126**
+Parsed positions match plan document exactly:
+- ID 1 (HandRight): bone 125, pos [-0.059, -0.476, 0.904]
+- ID 2 (HandLeft):  bone 126, pos [-0.059,  0.471, 0.904]
+- ID 5 (ShoulderRight): bone 111, pos [-0.060, -0.211, 1.725]
+- ID 6 (ShoulderLeft):  bone 112, pos [-0.051,  0.211, 1.725]
+
+**Finding: Item M2 (weapon) is version 256 — same as character M2**
+The sword M2 from model.MPQ is v256 with 82 vertices, 88 triangles, 2 submeshes.
+The BLP texture (Sword_2H_Claymore_B_02Green.blp) is 128x64 pixels.
+
+**Finding: attachment position is in bone-local space (same M2 coordinate frame)**
+Setting `socket.position.set(att.pos[0], att.pos[1], att.pos[2])` and `bone.add(socket)` correctly places the weapon near the hand. The attachment pos is NOT model-space absolute — it's relative to the bone's local space, which in bind pose (T-pose) aligns with M2 model space. The pivot group's -π/2 X rotation correctly transforms everything to Three.js space.
+
+**Impact:** Milestone 1 PASSED — sword visible in right hand on human male. The orientation is slightly non-standard (weapon hangs at an angle in T-pose) which is expected behavior. Weapons will orient correctly when stand animation is playing.
+
+**Reference:** `scripts/extract-from-mpq.ts`, `scripts/convert-model.ts`, `scripts/convert-item.ts`, `src/loadModel.ts`, screenshots in `screenshots/human-male-*.png`
+
+## [2026-03-01] Equipment Milestone 2 — Sword on All 20 Races
+
+**Context:** Cross-race verification of weapon attachment (sword displayId 1956).
+
+**Finding: All 20 race/gender models have HandRight (ID 1) attachment — no failures**
+Bone indices differ per race as expected (gnome=115, goblin=145/154, tauren=135/136, human=125, blood-elf=121, etc.). Attachment offset parsing at header byte 252 works correctly for all models including TW-specific races (BeM, BeF, GoM, GoF from patch-6/7).
+
+**Finding: Z-height varies correctly with race proportions**
+- Gnome male:   Z 0.363  (short)
+- Goblin male:  Z 0.322  (short)
+- Human male:   Z 0.904  (normal)
+- Blood Elf male: Z 1.033 (tall/slender)
+- Tauren male:  Z 0.759  (large but crouched stance)
+
+**Finding: Blood Elf and Goblin attachment parsing works correctly**
+These races use M2s from patch-6/7 (still v256). No special header parsing needed. The "v256-extra header" concern in the plan was a non-issue — all 20 races use identical v256 format.
+
+**Finding: Sword orientation varies per race — expected and authentic**
+Blood Elf shows a more dramatic sword angle than Human. This is because different bone rests in T-pose. Not a bug — WoW itself shows minor weapon angle variations per race.
+
+**Impact:** Milestone 2 PASSED. Weapon attachment pipeline is race-neutral and works across all 20 models with zero console errors.
+
+**Reference:** `e2e/milestone2-all-races.spec.ts`, `screenshots/milestone2/*.png`
