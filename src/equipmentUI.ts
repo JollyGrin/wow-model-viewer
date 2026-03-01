@@ -9,7 +9,7 @@ import type { BodyArmor } from './loadModel';
 interface WeaponEntry  { slug: string; name: string; }
 interface ChestEntry   { name: string; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
 interface LegsEntry    { name: string; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
-interface BootsEntry   { name: string; footBase: string; geosetValue: number; }
+interface BootsEntry   { name: string; footBase: string; legLowerBase?: string; geosetValue: number; }
 interface GlovesEntry  { name: string; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
 
 interface ItemCatalog {
@@ -52,8 +52,9 @@ export function getArmorOptions(): BodyArmor | undefined {
     if (selection.legs.robeGeoset) armor.robeGeoset = selection.legs.robeGeoset;
   }
   if (selection.boots) {
-    armor.footBase   = selection.boots.footBase;
-    armor.footGeoset = selection.boots.geosetValue || undefined;
+    armor.footBase    = selection.boots.footBase;
+    armor.legLowerBase = selection.boots.legLowerBase;
+    armor.footGeoset  = selection.boots.geosetValue || undefined;
   }
   if (selection.gloves) {
     armor.handBase     = selection.gloves.handBase;

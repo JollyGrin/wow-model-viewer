@@ -75,7 +75,7 @@ const weapons = weaponSlugs.map(slug => ({ slug, name: slug }));
 
 interface ChestEntry  { name: string; torsoUpperBase: string; armUpperBase?: string; torsoLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
 interface LegsEntry   { name: string; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
-interface BootsEntry  { name: string; footBase: string; geosetValue: number; }
+interface BootsEntry  { name: string; footBase: string; legLowerBase?: string; geosetValue: number; }
 interface GlovesEntry { name: string; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
 
 /**
@@ -185,19 +185,36 @@ for (const stem of listStems('LegUpperTexture')) {
   legsMap.set(stem, entry);
 }
 
-// --- Boots (enumerate FootTexture directly) ---
+// --- Boots (FootTexture primary; link LegLower by prefix for shin coverage) ---
+
+const FO_SUFFIXES = ['_Boot_FO', '_Sabot_FO', '_FO'];
+const LL_BOOT_SUFFIXES = ['_Boot_LL', '_LL'];
+
+// Build LegLower lookup by boot prefix
+const llBootByPrefix = new Map<string, string>(); // prefix_lower → ll_stem
+for (const stem of listStems('LegLowerTexture')) {
+  const prefix = extractPrefix(stem, LL_BOOT_SUFFIXES);
+  if (prefix) llBootByPrefix.set(prefix.toLowerCase(), stem);
+}
 
 const bootsMap = new Map<string, BootsEntry>();
 for (const stem of listStems('FootTexture')) {
-  if (!bootsMap.has(stem)) {
-    bootsMap.set(stem, { name: stem, footBase: baseFor('FootTexture', stem), geosetValue: inferGeosetValue(stem) });
+  if (bootsMap.has(stem)) continue;
+  const entry: BootsEntry = { name: stem, footBase: baseFor('FootTexture', stem), geosetValue: inferGeosetValue(stem) };
+  const prefix = extractPrefix(stem, FO_SUFFIXES);
+  if (prefix) {
+    const prefixLower = prefix.toLowerCase();
+    // Try _Boot_LL first, then fall back to pant/robe LL (some boots share LL textures)
+    const llStem = llBootByPrefix.get(prefixLower) ?? llByPrefix.get(prefixLower);
+    if (llStem) entry.legLowerBase = baseFor('LegLowerTexture', llStem);
   }
+  bootsMap.set(stem, entry);
 }
 
 // --- Gloves (HandTexture primary; link ArmLower by prefix) ---
 
 const HA_SUFFIXES = ['_Glove_HA', '_Gauntlet_HA', '_HA'];
-const AL_SUFFIXES = ['_Bracer_AL', '_Sleeve_AL'];
+const AL_SUFFIXES = ['_Glove_AL', '_Bracer_AL', '_Sleeve_AL', '_AL'];
 
 // Build ArmLower lookup by prefix
 const alByPrefix = new Map<string, string>(); // prefix_lower → al_stem

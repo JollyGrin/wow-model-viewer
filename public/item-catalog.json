@@ -2166,27 +2166,32 @@
     {
       "name": "Leather_ZulAman_D_01_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_ZulAman_D_01_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_ZulAman_D_01_Boot_LL"
     },
     {
       "name": "Mail_E_02Blue_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_E_02Blue_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_02Blue_Boot_LL"
     },
     {
       "name": "GruntOutfit_Warsong_boot_fo",
       "footBase": "/item-textures/FootTexture/GruntOutfit_Warsong_boot_fo",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_Warsong_boot_ll"
     },
     {
       "name": "Mail_E_02Purple_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_E_02Purple_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_02Purple_Boot_LL"
     },
     {
       "name": "GruntOutfit_Frostwolf_boot_fo",
       "footBase": "/item-textures/FootTexture/GruntOutfit_Frostwolf_boot_fo",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_Frostwolf_boot_ll"
     },
     {
       "name": "socks2_fo",
@@ -2201,277 +2206,332 @@
     {
       "name": "Leather_Blood_B_01Orange_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_Blood_B_01Orange_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_B_01Orange_Boot_LL"
     },
     {
       "name": "Mail_Blood_A_02Red_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_A_02Red_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_A_02Red_Boot_LL"
     },
     {
       "name": "Mail_Blood_A_02Black_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_A_02Black_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_A_02Black_Boot_LL"
     },
     {
       "name": "Mail_Blood_B_01Blue_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Blue_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Blue_Boot_LL"
     },
     {
       "name": "Plate_RaidWarrior_A_01Orange_Boot_FO",
       "footBase": "/item-textures/FootTexture/Plate_RaidWarrior_A_01Orange_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_RaidWarrior_A_01Orange_Boot_LL"
     },
     {
       "name": "Leather_ZulAman_D_01Turquoise_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_ZulAman_D_01Turquoise_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_ZulAman_D_01Turquoise_Boot_LL"
     },
     {
       "name": "Mail_E_01White_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_E_01White_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_01White_Boot_LL"
     },
     {
       "name": "Leather_ZulAman_D_01Green_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_ZulAman_D_01Green_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_ZulAman_D_01Green_Boot_LL"
     },
     {
       "name": "Mail_Zulaman_D_01Purple_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Zulaman_D_01Purple_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01Purple_Boot_LL"
     },
     {
       "name": "GruntOutfit_Regular_boot_fo",
       "footBase": "/item-textures/FootTexture/GruntOutfit_Regular_boot_fo",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_Regular_boot_ll"
     },
     {
       "name": "DK_red_Boot_FO",
       "footBase": "/item-textures/FootTexture/DK_red_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/DK_red_Boot_LL"
     },
     {
       "name": "Defias_green_Boot_FO",
       "footBase": "/item-textures/FootTexture/Defias_green_Boot_FO",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/defias_green_Boot_LL"
     },
     {
       "name": "Leather_ZulAman_D_01Black_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_ZulAman_D_01Black_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_ZulAman_D_01Black_Boot_LL"
     },
     {
       "name": "Leather_Blood_B_01Purple_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_Blood_B_01Purple_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_B_01Purple_Boot_LL"
     },
     {
       "name": "Mail_E_01Black_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_E_01Black_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_01Black_Boot_LL"
     },
     {
       "name": "Plate_ZulAman_D_01Dark_Boot_FO",
       "footBase": "/item-textures/FootTexture/Plate_ZulAman_D_01Dark_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_ZulAman_D_01Dark_Boot_LL"
     },
     {
       "name": "GruntOutfit_ShatteredHand_boot_fo",
       "footBase": "/item-textures/FootTexture/GruntOutfit_ShatteredHand_boot_fo",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_ShatteredHand_boot_ll"
     },
     {
       "name": "Plate_ZulAman_D_01_Boot_FO",
       "footBase": "/item-textures/FootTexture/Plate_ZulAman_D_01_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_ZulAman_D_01_Boot_LL"
     },
     {
       "name": "Mail_E_01Green_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_E_01Green_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_01Green_Boot_LL"
     },
     {
       "name": "Mail_E_01_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_E_01_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_01_Boot_LL"
     },
     {
       "name": "Mail_Zulaman_D_01DarkYellow_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Zulaman_D_01DarkYellow_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01DarkYellow_Boot_LL"
     },
     {
       "name": "Leather_Blood_A_02Red_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_Blood_A_02Red_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_A_02Red_Boot_LL"
     },
     {
       "name": "Leather_Blood_B_01Blue_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_Blood_B_01Blue_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_B_01Blue_Boot_LL"
     },
     {
       "name": "Mail_E_01Red_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_E_01Red_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_01Red_Boot_LL"
     },
     {
       "name": "Dwarf01_Boot_FO",
       "footBase": "/item-textures/FootTexture/Dwarf01_Boot_FO",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/Dwarf01_Boot_LL"
     },
     {
       "name": "GruntOutfit_Dragonmaw_boot_fo",
       "footBase": "/item-textures/FootTexture/GruntOutfit_Dragonmaw_boot_fo",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_Dragonmaw_boot_ll"
     },
     {
       "name": "Mail_F_01_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_F_01_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_F_01_Boot_LL"
     },
     {
       "name": "Blaumeux_Boot_FO",
       "footBase": "/item-textures/FootTexture/Blaumeux_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/Blaumeux_Boot_LL"
     },
     {
       "name": "Leather_Blood_B_01Black_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_Blood_B_01Black_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_B_01Black_Boot_LL"
     },
     {
       "name": "Mail_F_01Red_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_F_01Red_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_F_01Red_Boot_LL"
     },
     {
       "name": "Mail_Blood_A_02Blue_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_A_02Blue_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_A_02Blue_Boot_LL"
     },
     {
       "name": "leather_sexyboots_fo",
       "footBase": "/item-textures/FootTexture/leather_sexyboots_fo",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/leather_sexyboots_ll"
     },
     {
       "name": "Mail_E_02_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_E_02_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_02_Boot_LL"
     },
     {
       "name": "DK_white_Boot_FO",
       "footBase": "/item-textures/FootTexture/DK_white_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/DK_white_Boot_LL"
     },
     {
       "name": "Leather_Blood_A_01Red_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_Blood_A_01Red_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_A_01Red_Boot_LL"
     },
     {
       "name": "GruntOutfit_TwilightHammer_boot_fo",
       "footBase": "/item-textures/FootTexture/GruntOutfit_TwilightHammer_boot_fo",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_TwilightHammer_boot_ll"
     },
     {
       "name": "Mail_Blood_B_01Crimson_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Crimson_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Crimson_Boot_LL"
     },
     {
       "name": "armor_maldraxxuscosmetic_d_01_roguenecromancers_boot_fo",
       "footBase": "/item-textures/FootTexture/armor_maldraxxuscosmetic_d_01_roguenecromancers_boot_fo",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/armor_maldraxxuscosmetic_d_01_roguenecromancers_boot_ll"
     },
     {
       "name": "Mail_Blood_B_01Orange_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Orange_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Orange_Boot_LL"
     },
     {
       "name": "Mail_Blood_B_01Black_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Black_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Black_Boot_LL"
     },
     {
       "name": "Mail_Blood_A_02Purple_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_A_02Purple_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_A_02Purple_Boot_LL"
     },
     {
       "name": "Mail_Blood_01Red_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_01Red_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_01Red_Boot_LL"
     },
     {
       "name": "DK_bluegold_Boot_FO",
       "footBase": "/item-textures/FootTexture/DK_bluegold_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/DK_bluegold_Boot_LL"
     },
     {
       "name": "Mail_Zulaman_D_01_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Zulaman_D_01_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01_Boot_LL"
     },
     {
       "name": "Plate_ZulAman_D_01Light_Boot_FO",
       "footBase": "/item-textures/FootTexture/Plate_ZulAman_D_01Light_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_ZulAman_D_01Light_Boot_LL"
     },
     {
       "name": "Leather_Blood_B_01Red_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_Blood_B_01Red_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_B_01Red_Boot_LL"
     },
     {
       "name": "GruntOutfit_Blackrock_boot_fo",
       "footBase": "/item-textures/FootTexture/GruntOutfit_Blackrock_boot_fo",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/GruntOutfit_Blackrock_boot_ll"
     },
     {
       "name": "pirate_red_Boot_FO",
       "footBase": "/item-textures/FootTexture/pirate_red_Boot_FO",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/pirate_Red_Boot_LL"
     },
     {
       "name": "Mail_Blood_A_02Orange_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_A_02Orange_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_A_02Orange_Boot_LL"
     },
     {
       "name": "evil_Boot_FO",
       "footBase": "/item-textures/FootTexture/evil_Boot_FO",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/evil_Pant_LL"
     },
     {
       "name": "Defias_blue_Boot_FO",
       "footBase": "/item-textures/FootTexture/Defias_blue_Boot_FO",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/defias_blue_Boot_LL"
     },
     {
       "name": "Mail_E_02Gold_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_E_02Gold_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_E_02Gold_Boot_LL"
     },
     {
       "name": "socks_fo",
       "footBase": "/item-textures/FootTexture/socks_fo",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/socks_ll"
     },
     {
       "name": "Dwarf_Boot_FO",
       "footBase": "/item-textures/FootTexture/Dwarf_Boot_FO",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/Dwarf_Boot_LL"
     },
     {
       "name": "Dwarf00_Boot_FO",
       "footBase": "/item-textures/FootTexture/Dwarf00_Boot_FO",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/Dwarf00_Boot_LL"
     },
     {
       "name": "socks1_fo",
@@ -2481,114 +2541,136 @@
     {
       "name": "priest_Boot_FO",
       "footBase": "/item-textures/FootTexture/priest_Boot_FO",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/priest_Pant_LL"
     },
     {
       "name": "Mail_Blood_B_01Purple_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Purple_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Purple_Boot_LL"
     },
     {
       "name": "Mail_F_01Black_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_F_01Black_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_F_01Black_Boot_LL"
     },
     {
       "name": "Mail_Blood_01Green_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_01Green_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_01Green_Boot_LL"
     },
     {
       "name": "Mail_Zulaman_D_01Green_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Zulaman_D_01Green_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Zulaman_D_01Green_Boot_LL"
     },
     {
       "name": "mage_Boot_FO",
       "footBase": "/item-textures/FootTexture/mage_Boot_FO",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/mage_Pant_LL"
     },
     {
       "name": "DK_blue_Boot_FO",
       "footBase": "/item-textures/FootTexture/DK_blue_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/DK_blue_Boot_LL"
     },
     {
       "name": "Mail_Blood_B_01Yellow_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Yellow_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Yellow_Boot_LL"
     },
     {
       "name": "Mail_F_01Green_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_F_01Green_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_F_01Green_Boot_LL"
     },
     {
       "name": "tauren_Boot_FO",
       "footBase": "/item-textures/FootTexture/tauren_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/tauren_Boot_LL"
     },
     {
       "name": "Mail_Blood_B_01Red_Boot_FO",
       "footBase": "/item-textures/FootTexture/Mail_Blood_B_01Red_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Mail_Blood_B_01Red_Boot_LL"
     },
     {
       "name": "Plate_ZulAman_D_01Red_Boot_FO",
       "footBase": "/item-textures/FootTexture/Plate_ZulAman_D_01Red_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_ZulAman_D_01Red_Boot_LL"
     },
     {
       "name": "armor_maldraxxuscosmetic_d_01_frontlinenecromancers_boot_fo",
       "footBase": "/item-textures/FootTexture/armor_maldraxxuscosmetic_d_01_frontlinenecromancers_boot_fo",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/armor_maldraxxuscosmetic_d_01_frontlinenecromancers_boot_ll"
     },
     {
       "name": "Leather_Blood_A_02Black_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_Blood_A_02Black_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_A_02Black_Boot_LL"
     },
     {
       "name": "TaurenChieftain_Grimtotem_Boot_FO",
       "footBase": "/item-textures/FootTexture/TaurenChieftain_Grimtotem_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/TaurenChieftain_Grimtotem_Boot_LL"
     },
     {
       "name": "TaurenChieftain_BlueVersion_Boot_FO",
       "footBase": "/item-textures/FootTexture/TaurenChieftain_BlueVersion_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/TaurenChieftain_Blueversion_Boot_LL"
     },
     {
       "name": "Plate_A_01Black_Boot_FO",
       "footBase": "/item-textures/FootTexture/Plate_A_01Black_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/Plate_A_01Black_Pant_LL"
     },
     {
       "name": "Leather_Blood_C_02_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_Blood_C_02_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_C_02_Robe_LL"
     },
     {
       "name": "DK_green_Boot_FO",
       "footBase": "/item-textures/FootTexture/DK_green_Boot_FO",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "legLowerBase": "/item-textures/LegLowerTexture/DK_green_Boot_LL"
     },
     {
       "name": "Leather_Blood_A_02Green_Boot_FO",
       "footBase": "/item-textures/FootTexture/Leather_Blood_A_02Green_Boot_FO",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "legLowerBase": "/item-textures/LegLowerTexture/Leather_Blood_A_02Green_Boot_LL"
     },
     {
       "name": "pirate_blue_Boot_FO",
       "footBase": "/item-textures/FootTexture/pirate_blue_Boot_FO",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "legLowerBase": "/item-textures/LegLowerTexture/pirate_blue_Boot_LL"
     }
   ],
   "gloves": [
     {
       "name": "troll_Glove_HA",
       "handBase": "/item-textures/HandTexture/troll_Glove_HA",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/troll_Glove_AL"
     },
     {
       "name": "Leather_Blood_B_01Blue_Glove_HA",
@@ -2600,12 +2682,15 @@
     {
       "name": "troll_red_Glove_HA",
       "handBase": "/item-textures/HandTexture/troll_red_Glove_HA",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/troll_red_Glove_AL"
     },
     {
       "name": "Plate_ZulAman_D_01Light_Glove_HA",
       "handBase": "/item-textures/HandTexture/Plate_ZulAman_D_01Light_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/Plate_ZulAman_D_01Light_Glove_AL",
+      "wristGeoset": 3
     },
     {
       "name": "Mail_E_01_Glove_HA",
@@ -2624,7 +2709,9 @@
     {
       "name": "Plate_ZulAman_D_01_Glove_HA",
       "handBase": "/item-textures/HandTexture/Plate_ZulAman_D_01_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/Plate_ZulAman_D_01_Glove_AL",
+      "wristGeoset": 3
     },
     {
       "name": "Mail_E_02Purple_Glove_HA",
@@ -2648,7 +2735,9 @@
     {
       "name": "Leather_ZulAman_D_01Green_Glove_HA",
       "handBase": "/item-textures/HandTexture/Leather_ZulAman_D_01Green_Glove_HA",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_ZulAman_D_01Green_Glove_AL",
+      "wristGeoset": 2
     },
     {
       "name": "Mail_Blood_B_01Orange_Glove_HA",
@@ -2667,7 +2756,7 @@
       "name": "Leather_Blood_B_01Purple_Glove_HA",
       "handBase": "/item-textures/HandTexture/Leather_Blood_B_01Purple_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_B_01Purple_Bracer_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_B_01Purple_Glove_AL",
       "wristGeoset": 2
     },
     {
@@ -2695,14 +2784,14 @@
       "name": "Mail_Blood_B_01Crimson_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_Blood_B_01Crimson_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Crimson_Bracer_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Crimson_Glove_AL",
       "wristGeoset": 3
     },
     {
       "name": "Mail_Zulaman_D_01_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_Zulaman_D_01_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Zulaman_D_01_Bracer_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Zulaman_D_01_Glove_AL",
       "wristGeoset": 3
     },
     {
@@ -2715,7 +2804,8 @@
     {
       "name": "GruntOutfit_Regular_glove_ha",
       "handBase": "/item-textures/HandTexture/GruntOutfit_Regular_glove_ha",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/GruntOutfit_Regular_glove_al"
     },
     {
       "name": "Mail_E_02_Glove_HA",
@@ -2734,22 +2824,28 @@
     {
       "name": "TaurenChieftain_BlueVersion_Glove_HA",
       "handBase": "/item-textures/HandTexture/TaurenChieftain_BlueVersion_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/TaurenChieftain_BlueVersion_AL"
     },
     {
       "name": "defias_blue_Glove_HA",
       "handBase": "/item-textures/HandTexture/defias_blue_Glove_HA",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/defias_blue_Glove_AL"
     },
     {
       "name": "DK_white_Glove_HA",
       "handBase": "/item-textures/HandTexture/DK_white_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/DK_white_Glove_AL",
+      "wristGeoset": 3
     },
     {
       "name": "Leather_ZulAman_D_01Turquoise_Glove_HA",
       "handBase": "/item-textures/HandTexture/Leather_ZulAman_D_01Turquoise_Glove_HA",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_ZulAman_D_01Turquoise_Glove_AL",
+      "wristGeoset": 2
     },
     {
       "name": "Mail_Blood_B_01Black_Glove_HA",
@@ -2761,12 +2857,15 @@
     {
       "name": "Leather_ZulAman_D_01Black_Glove_HA",
       "handBase": "/item-textures/HandTexture/Leather_ZulAman_D_01Black_Glove_HA",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_ZulAman_D_01Black_Glove_AL",
+      "wristGeoset": 2
     },
     {
       "name": "GruntOutfit_Blackrock_glove_ha",
       "handBase": "/item-textures/HandTexture/GruntOutfit_Blackrock_glove_ha",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/GruntOutfit_Blackrock_glove_al"
     },
     {
       "name": "mage_hand",
@@ -2790,19 +2889,22 @@
     {
       "name": "Leather_ZulAman_D_01_Glove_HA",
       "handBase": "/item-textures/HandTexture/Leather_ZulAman_D_01_Glove_HA",
-      "geosetValue": 2
+      "geosetValue": 2,
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_ZulAman_D_01_Glove_AL",
+      "wristGeoset": 2
     },
     {
       "name": "Mail_Blood_A_02Black_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_Blood_A_02Black_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_A_02Black_Bracer_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_A_02Black_Glove_AL",
       "wristGeoset": 3
     },
     {
       "name": "GruntOutfit_ShatteredHand_glove_ha",
       "handBase": "/item-textures/HandTexture/GruntOutfit_ShatteredHand_glove_ha",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/GruntOutfit_ShatteredHand_glove_al"
     },
     {
       "name": "Leather_Blood_C_02_Glove_HA",
@@ -2814,7 +2916,9 @@
     {
       "name": "DK_Red_Glove_HA",
       "handBase": "/item-textures/HandTexture/DK_Red_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/DK_red_Glove_AL",
+      "wristGeoset": 3
     },
     {
       "name": "Mail_Blood_A_02Blue_Glove_HA",
@@ -2833,17 +2937,22 @@
     {
       "name": "DK_Blue_Glove_HA",
       "handBase": "/item-textures/HandTexture/DK_Blue_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/DK_blue_Glove_AL",
+      "wristGeoset": 3
     },
     {
       "name": "DK_Bluegold_Glove_HA",
       "handBase": "/item-textures/HandTexture/DK_Bluegold_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/DK_bluegold_Glove_AL",
+      "wristGeoset": 3
     },
     {
       "name": "GruntOutfit_TwilightHammer_glove_ha",
       "handBase": "/item-textures/HandTexture/GruntOutfit_TwilightHammer_glove_ha",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/GruntOutfit_TwilightHammer_glove_al"
     },
     {
       "name": "priest_glove_HA",
@@ -2854,7 +2963,8 @@
     {
       "name": "defias_green_Glove_HA",
       "handBase": "/item-textures/HandTexture/defias_green_Glove_HA",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/defias_green_Glove_AL"
     },
     {
       "name": "Mail_F_01Green_Glove_HA",
@@ -2867,92 +2977,101 @@
       "name": "Mail_Zulaman_D_01Green_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_Zulaman_D_01Green_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Zulaman_D_01Green_Bracer_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Zulaman_D_01Green_Glove_AL",
       "wristGeoset": 3
     },
     {
       "name": "Plate_ZulAman_D_01Dark_Glove_HA",
       "handBase": "/item-textures/HandTexture/Plate_ZulAman_D_01Dark_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/Plate_ZulAman_D_01Dark_Glove_AL",
+      "wristGeoset": 3
     },
     {
       "name": "GruntOutfit_Warsong_glove_ha",
       "handBase": "/item-textures/HandTexture/GruntOutfit_Warsong_glove_ha",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/GruntOutfit_Warsong_glove_al"
     },
     {
       "name": "Plate_RaidWarrior_A_01Orange_Glove_HA",
       "handBase": "/item-textures/HandTexture/Plate_RaidWarrior_A_01Orange_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/Plate_RaidWarrior_A_01Orange_Glove_AL",
+      "wristGeoset": 3
     },
     {
       "name": "Mail_Blood_01Green_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_Blood_01Green_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_01Green_Bracer_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_01Green_Glove_AL",
       "wristGeoset": 3
     },
     {
       "name": "Mail_Blood_B_01Red_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_Blood_B_01Red_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Red_Sleeve_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Red_Glove_AL",
       "wristGeoset": 3
     },
     {
       "name": "troll_feather_Glove_HA",
       "handBase": "/item-textures/HandTexture/troll_feather_Glove_HA",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/troll_feather_Glove_AL"
     },
     {
       "name": "Mail_Blood_A_02Orange_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_Blood_A_02Orange_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_A_02Orange_Bracer_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_A_02Orange_Glove_AL",
       "wristGeoset": 3
     },
     {
       "name": "Robe_ZulAman_D_01Green_Glove_HA",
       "handBase": "/item-textures/HandTexture/Robe_ZulAman_D_01Green_Glove_HA",
       "geosetValue": 1,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Robe_ZulAman_D_01Green_Sleeve_AL"
+      "armLowerBase": "/item-textures/ArmLowerTexture/Robe_ZulAman_D_01Green_Glove_AL"
     },
     {
       "name": "Plate_D_06_Black_Glove_HA",
       "handBase": "/item-textures/HandTexture/Plate_D_06_Black_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/Plate_D_06_Black_Glove_AL",
+      "wristGeoset": 3
     },
     {
       "name": "Leather_Blood_A_02Green_Glove_HA",
       "handBase": "/item-textures/HandTexture/Leather_Blood_A_02Green_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_A_02Green_Bracer_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_A_02Green_Glove_AL",
       "wristGeoset": 2
     },
     {
       "name": "Mail_Blood_B_01Yellow_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_Blood_B_01Yellow_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Yellow_Bracer_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_B_01Yellow_Glove_AL",
       "wristGeoset": 3
     },
     {
       "name": "Mail_E_01Green_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_E_01Green_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_01Green_Sleeve_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_01Green_Glove_AL",
       "wristGeoset": 3
     },
     {
       "name": "GruntOutfit_Frostwolf_glove_ha",
       "handBase": "/item-textures/HandTexture/GruntOutfit_Frostwolf_glove_ha",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/GruntOutfit_Frostwolf_glove_al"
     },
     {
       "name": "Mail_Blood_01Red_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_Blood_01Red_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_01Red_Bracer_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_Blood_01Red_Glove_AL",
       "wristGeoset": 3
     },
     {
@@ -2973,18 +3092,21 @@
       "name": "Mail_F_01Black_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_F_01Black_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_F_01Black_Sleeve_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_F_01Black_Glove_AL",
       "wristGeoset": 3
     },
     {
       "name": "DK_Green_Glove_HA",
       "handBase": "/item-textures/HandTexture/DK_Green_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/DK_green_Glove_AL",
+      "wristGeoset": 3
     },
     {
       "name": "GruntOutfit_Dragonmaw_glove_ha",
       "handBase": "/item-textures/HandTexture/GruntOutfit_Dragonmaw_glove_ha",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/GruntOutfit_Dragonmaw_glove_al"
     },
     {
       "name": "Leather_Blood_B_01Orange_Glove_HA",
@@ -2996,31 +3118,35 @@
     {
       "name": "Goblin_HA",
       "handBase": "/item-textures/HandTexture/Goblin_HA",
-      "geosetValue": 1
+      "geosetValue": 1,
+      "armLowerBase": "/item-textures/ArmLowerTexture/Goblin_Glove_AL"
     },
     {
       "name": "Mail_E_01Red_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_E_01Red_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_01Red_Sleeve_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_01Red_Glove_AL",
       "wristGeoset": 3
     },
     {
       "name": "Blaumeux_Glove_HA",
       "handBase": "/item-textures/HandTexture/Blaumeux_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/blaumeux_AL"
     },
     {
       "name": "Leather_Blood_B_01Black_Glove_HA",
       "handBase": "/item-textures/HandTexture/Leather_Blood_B_01Black_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_B_01Black_Bracer_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Leather_Blood_B_01Black_Glove_AL",
       "wristGeoset": 2
     },
     {
       "name": "Plate_ZulAman_D_01Red_Glove_HA",
       "handBase": "/item-textures/HandTexture/Plate_ZulAman_D_01Red_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/Plate_ZulAman_D_01Red_Glove_AL",
+      "wristGeoset": 3
     },
     {
       "name": "Leather_Blood_B_01Red_Glove_HA",
@@ -3033,12 +3159,13 @@
       "name": "Robe_ZulAman_D_01Black_Glove_HA",
       "handBase": "/item-textures/HandTexture/Robe_ZulAman_D_01Black_Glove_HA",
       "geosetValue": 1,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Robe_ZulAman_D_01Black_Bracer_AL"
+      "armLowerBase": "/item-textures/ArmLowerTexture/Robe_ZulAman_D_01Black_Glove_AL"
     },
     {
       "name": "tauren_Glove_HA",
       "handBase": "/item-textures/HandTexture/tauren_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/tauren_Glove_AL"
     },
     {
       "name": "Leather_Blood_A_02Black_Glove_HA",
@@ -3056,7 +3183,8 @@
     {
       "name": "TaurenChieftain_Grimtotem_Glove_HA",
       "handBase": "/item-textures/HandTexture/TaurenChieftain_Grimtotem_Glove_HA",
-      "geosetValue": 3
+      "geosetValue": 3,
+      "armLowerBase": "/item-textures/ArmLowerTexture/TaurenChieftain_Grimtotem_AL"
     },
     {
       "name": "Mail_Blood_B_01Blue_Glove_HA",
@@ -3069,7 +3197,7 @@
       "name": "Mail_E_01Black_Glove_HA",
       "handBase": "/item-textures/HandTexture/Mail_E_01Black_Glove_HA",
       "geosetValue": 2,
-      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_01Black_Sleeve_AL",
+      "armLowerBase": "/item-textures/ArmLowerTexture/Mail_E_01Black_Glove_AL",
       "wristGeoset": 3
     }
   ]
