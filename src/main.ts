@@ -141,7 +141,7 @@ async function switchModel() {
 
   try {
     const [loaded, animData] = await Promise.all([
-      loadModel(modelDir),
+      loadModel(modelDir, { weapon: '/items/weapon/sword-2h-claymore-b-02' }),
       loadAnimations(modelDir),
     ])
 

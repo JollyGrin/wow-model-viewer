@@ -26,6 +26,9 @@ FS.mount(FS.filesystems.NODEFS, { root: DATA_DIR }, '/stormjs');
 // We extract skin color 0 (default) for all types.
 
 const TEXTURE_FILES = [
+  // Sword weapon texture (displayId 1956, Milestone 1)
+  'Item\\ObjectComponents\\Weapon\\Sword_2H_Claymore_B_02Green.blp',
+
   // BaseSection 0: Body skin (skin color variants 00-09)
   'Character\\Human\\Male\\HumanMaleSkin00_00.blp',
   'Character\\Human\\Male\\HumanMaleSkin00_01.blp',
@@ -53,6 +56,12 @@ const TEXTURE_FILES = [
   'Character\\Human\\Male\\HumanMaleNakedTorsoSkin00_00.blp',
   'Character\\Human\\Male\\HumanMaleNakedPelvisSkin00_01.blp',
   'Character\\Human\\Male\\HumanMaleNakedTorsoSkin00_01.blp',
+];
+
+// --- Item M2 extraction targets (from model.MPQ) ---
+const ITEM_M2_FILES = [
+  // Sword weapon M2 (displayId 1956, Milestone 1)
+  'Item\\ObjectComponents\\Weapon\\Sword_2H_Claymore_B_02.m2',
 ];
 
 // --- DBC extraction targets ---
@@ -104,9 +113,16 @@ async function main() {
   }
   textureMpq.close();
 
-  // --- Extract DBCs from model.MPQ ---
+  // --- Extract item M2s and DBCs from model.MPQ ---
   console.log('\nOpening model.MPQ...');
   const modelMpq = await MPQ.open('/stormjs/model/model.MPQ', 'r');
+
+  console.log(`\nExtracting ${ITEM_M2_FILES.length} item M2 files:\n`);
+  for (const path of ITEM_M2_FILES) {
+    const ok = extractFile(modelMpq, 'model.MPQ', path, EXTRACT_DIR);
+    if (ok) extracted++;
+    else skipped++;
+  }
 
   console.log(`\nExtracting ${DBC_FILES.length} DBC files:\n`);
   for (const path of DBC_FILES) {

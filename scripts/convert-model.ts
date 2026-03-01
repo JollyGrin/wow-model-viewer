@@ -100,7 +100,18 @@ function parseM2v256(buf: Buffer) {
 
   const nameStr = buf.toString('ascii', name.ofs, name.ofs + name.count).replace(/\0/g, '').trim();
 
-  return { nameStr, vertices, views, bones, globalSequences, animations, textures, textureLookup, buf, view };
+  // Attachments M2Array is at a fixed offset in the header.
+  // Offsets (v256 with playableAnimLookup extra):
+  //   252 = after: magic(4)+ver(4)+name(8)+globalFlags(4)+globalSeqs(8)+anims(8)+
+  //         animLookup(8)+playableAnimLookup(8)+bones(8)+keyBoneLookup(8)+verts(8)+
+  //         views(8)+colors(8)+textures(8)+transparency(8)+texAnims(8)+texReplace(8)+
+  //         renderFlags(8)+boneLookup(8)+textureLookup(8)+texUnitLookup(8)+
+  //         transLookup(8)+uvAnimLookup(8)+boundingBox(24)+boundingRadius(4)+
+  //         boundingNormals(8)+boundingVertices(8)+boundingTriangles(8)+
+  //         collisionBox(24)+collisionRadius(4) = 252
+  const attachmentsArr = arr(252);
+
+  return { nameStr, vertices, views, bones, globalSequences, animations, textures, textureLookup, attachmentsArr, buf, view };
 }
 
 // --- View/Skin Parser ---
@@ -638,6 +649,27 @@ function convertModel(model: CharacterModel) {
     texLookup.push(m2.view.getUint16(m2.textureLookup.ofs + t * 2, true));
   }
 
+  // Parse attachment points from header offset 252
+  // Attachment struct (48 bytes): id(u32) + bone(u16) + unk(u16) + pos(f32×3) + animTrack(28B)
+  const WANTED_ATTACHMENT_IDS = new Set([1, 2, 5, 6, 11]); // HandRight, HandLeft, ShoulderR, ShoulderL, Head
+  const ATTACHMENT_STRUCT_SIZE = 48;
+  interface AttachmentPoint { id: number; bone: number; pos: [number, number, number]; }
+  const attachments: AttachmentPoint[] = [];
+  for (let i = 0; i < m2.attachmentsArr.count; i++) {
+    const ao = m2.attachmentsArr.ofs + i * ATTACHMENT_STRUCT_SIZE;
+    const id = m2.view.getUint32(ao, true);
+    if (!WANTED_ATTACHMENT_IDS.has(id)) continue;
+    const bone = m2.view.getUint16(ao + 4, true);
+    if (bone >= bones.length) continue; // sanity check
+    const pos: [number, number, number] = [
+      m2.view.getFloat32(ao + 8, true),
+      m2.view.getFloat32(ao + 12, true),
+      m2.view.getFloat32(ao + 16, true),
+    ];
+    if (Math.abs(pos[0]) > 10 || Math.abs(pos[1]) > 10 || Math.abs(pos[2]) > 10) continue;
+    attachments.push({ id, bone, pos });
+  }
+
   // Build submesh index → texture type mapping via batch chain:
   // batch.texComboIndex → texLookup[i] → texTypes[j]
   const submeshTexType = new Map<number, number>();
@@ -735,6 +767,7 @@ function convertModel(model: CharacterModel) {
       translation: b.translation,
     })),
     groups,
+    attachments,
   };
   writeFileSync(outJson, JSON.stringify(manifest, null, 2));
 
@@ -745,7 +778,7 @@ function convertModel(model: CharacterModel) {
     process.exit(1);
   }
 
-  return { vertexCount, triangleCount: manifest.triangleCount, groupCount: groups.length, boneCount: bones.length, binSize: binData.byteLength, seqCount: sequences.length, animBinSize };
+  return { vertexCount, triangleCount: manifest.triangleCount, groupCount: groups.length, boneCount: bones.length, attachmentCount: attachments.length, binSize: binData.byteLength, seqCount: sequences.length, animBinSize };
 }
 
 // --- Main ---
@@ -758,7 +791,7 @@ function main() {
 
   for (const model of CHARACTER_MODELS) {
     const result = convertModel(model);
-    console.log(`${model.slug}: ${result.vertexCount} verts, ${result.triangleCount} tris, ${result.groupCount} groups, ${result.boneCount} bones, ${result.seqCount} seqs, ${result.binSize}B model, ${result.animBinSize}B anims`);
+    console.log(`${model.slug}: ${result.vertexCount} verts, ${result.triangleCount} tris, ${result.groupCount} groups, ${result.boneCount} bones, ${result.attachmentCount} attachments, ${result.seqCount} seqs, ${result.binSize}B model, ${result.animBinSize}B anims`);
     totalModels++;
     totalTris += result.triangleCount;
   }

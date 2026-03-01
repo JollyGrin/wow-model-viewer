@@ -86,7 +86,7 @@ describe('loadModel', () => {
 
   it('can equip gloves by swapping geoset variant', async () => {
     const geosets = new Set([0, 5, 101, 201, 301, 402, 502, 701, 903, 1002]);
-    const { group } = await loadModel('/models/test', geosets);
+    const { group } = await loadModel('/models/test', { enabledGeosets: geosets });
     const pivot = group.children[0];
     // Skin mesh: id=0(3) + id=101(3) + id=402(3) + id=903(3) = 12
     const skinMesh = pivot.children[0] as any;
@@ -95,7 +95,7 @@ describe('loadModel', () => {
 
   it('can enable robe geoset', async () => {
     const geosets = new Set([0, 5, 101, 201, 301, 401, 502, 701, 903, 1002, 1301]);
-    const { group } = await loadModel('/models/test', geosets);
+    const { group } = await loadModel('/models/test', { enabledGeosets: geosets });
     const pivot = group.children[0];
     // Skin mesh: id=0(3) + id=101(3) + id=401(3) + id=903(3) + id=1301(3) = 15
     const skinMesh = pivot.children[0] as any;

@@ -13,6 +13,12 @@ export interface LoadedModel {
   boneData: BoneInfo[];
 }
 
+interface AttachmentPoint {
+  id: number;
+  bone: number;
+  pos: [number, number, number];
+}
+
 interface ModelManifest {
   vertexCount: number;
   indexCount: number;
@@ -22,6 +28,7 @@ interface ModelManifest {
   vertexStride: number;
   bones: BoneInfo[];
   groups: Array<{ id: number; indexStart: number; indexCount: number; textureType: number }>;
+  attachments?: AttachmentPoint[];
 }
 
 // Groups to enable for a naked character and which variant to prefer.
@@ -139,12 +146,69 @@ function buildSkeleton(boneData: BoneInfo[]): { skeleton: THREE.Skeleton; roots:
 }
 
 /**
+ * Load a static item model (weapon, shoulder, etc.) from a public/items/ directory.
+ * Returns a plain THREE.Group (no skeleton needed — item vertices are in bind pose).
+ */
+async function loadItemModel(itemDir: string): Promise<THREE.Group> {
+  interface ItemManifest {
+    vertexCount: number;
+    indexCount: number;
+    vertexBufferSize: number;
+    indexBufferSize: number;
+    vertexStride: number;
+  }
+
+  const [manifest, binBuf, texture] = await Promise.all([
+    fetch(`${itemDir}/model.json`).then(r => r.json()) as Promise<ItemManifest>,
+    fetch(`${itemDir}/model.bin`).then(r => r.arrayBuffer()),
+    loadTexture(`${itemDir}/textures/main.tex`),
+  ]);
+
+  const STRIDE = manifest.vertexStride; // 32
+  const STRIDE_F32 = STRIDE / 4;        // 8
+  const vCount = manifest.vertexCount;
+  const rawF32 = new Float32Array(binBuf, 0, manifest.vertexBufferSize / 4);
+
+  const positions = new Float32Array(vCount * 3);
+  const normals   = new Float32Array(vCount * 3);
+  const uvs       = new Float32Array(vCount * 2);
+
+  for (let i = 0; i < vCount; i++) {
+    const f = i * STRIDE_F32;
+    positions[i * 3 + 0] = rawF32[f + 0];
+    positions[i * 3 + 1] = rawF32[f + 1];
+    positions[i * 3 + 2] = rawF32[f + 2];
+    normals[i * 3 + 0]   = rawF32[f + 3];
+    normals[i * 3 + 1]   = rawF32[f + 4];
+    normals[i * 3 + 2]   = rawF32[f + 5];
+    uvs[i * 2 + 0]       = rawF32[f + 6];
+    uvs[i * 2 + 1]       = rawF32[f + 7];
+  }
+
+  const indices = new Uint16Array(binBuf, manifest.vertexBufferSize, manifest.indexCount);
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.setAttribute('normal',   new THREE.BufferAttribute(normals, 3));
+  geom.setAttribute('uv',       new THREE.BufferAttribute(uvs, 2));
+  geom.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
+
+  const mat = new THREE.MeshLambertMaterial({ map: texture, side: THREE.DoubleSide });
+  const group = new THREE.Group();
+  group.add(new THREE.Mesh(geom, mat));
+  return group;
+}
+
+/**
  * Load a character model from a directory.
  * @param modelDir - e.g. '/models/human-male' — loads model.json, model.bin, textures/skin.tex
  */
 export async function loadModel(
   modelDir: string,
-  enabledGeosets?: Set<number>,
+  options?: {
+    enabledGeosets?: Set<number>;
+    weapon?: string; // URL to item dir, e.g. '/items/weapon/sword-2h-claymore-b-02'
+  },
 ): Promise<LoadedModel> {
   const texturesDir = `${modelDir}/textures/`;
 
@@ -156,7 +220,7 @@ export async function loadModel(
   const manifest: ModelManifest = await manifestRes.json();
   const binBuffer = await binRes.arrayBuffer();
 
-  const geosets = enabledGeosets ?? resolveDefaultGeosets(manifest.groups);
+  const geosets = options?.enabledGeosets ?? resolveDefaultGeosets(manifest.groups);
 
   // Load textures
   let skinTexture: THREE.Texture;
@@ -281,6 +345,26 @@ export async function loadModel(
   // Hair SkinnedMesh — shares the same skeleton (bones are in scene graph via skin mesh)
   if (hairIndexList.length > 0) {
     pivot.add(makeSkinnedMesh(hairIndexList, hairMaterial));
+  }
+
+  // Weapon attachment — attach item to HandRight bone (attachment ID 1)
+  if (options?.weapon && manifest.attachments) {
+    const att = manifest.attachments.find(a => a.id === 1); // HandRight
+    if (att && att.bone < skeleton.bones.length) {
+      const bone = skeleton.bones[att.bone];
+      const socket = new THREE.Group();
+      // att.pos is in bone-local M2 space — same coordinate frame as bone pivots
+      socket.position.set(att.pos[0], att.pos[1], att.pos[2]);
+      bone.add(socket);
+      try {
+        const weaponGroup = await loadItemModel(options.weapon);
+        socket.add(weaponGroup);
+      } catch (err) {
+        console.warn(`Failed to load weapon from ${options.weapon}:`, err);
+      }
+    } else if (!att) {
+      console.warn('No HandRight attachment point (ID 1) found in manifest');
+    }
   }
 
   const group = new THREE.Group();
