@@ -1,10 +1,16 @@
 import * as THREE from 'three';
 
-interface BoneInfo {
+export interface BoneInfo {
   parent: number;
   pivot: [number, number, number];
   rotation: [number, number, number, number];
   translation: [number, number, number];
+}
+
+export interface LoadedModel {
+  group: THREE.Group;
+  bones: THREE.Bone[];
+  boneData: BoneInfo[];
 }
 
 interface ModelManifest {
@@ -139,7 +145,7 @@ function buildSkeleton(boneData: BoneInfo[]): { skeleton: THREE.Skeleton; roots:
 export async function loadModel(
   modelDir: string,
   enabledGeosets?: Set<number>,
-): Promise<THREE.Group> {
+): Promise<LoadedModel> {
   const texturesDir = `${modelDir}/textures/`;
 
   const [manifestRes, binRes] = await Promise.all([
@@ -279,5 +285,5 @@ export async function loadModel(
 
   const group = new THREE.Group();
   group.add(pivot);
-  return group;
+  return { group, bones: skeleton.bones, boneData: manifest.bones };
 }

@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { loadModel } from './loadModel'
+import { loadAnimations, AnimationController } from './animation'
 
 const RACES = [
   { label: 'Blood Elf', slug: 'blood-elf' },
@@ -48,6 +49,7 @@ scene.add(fillLight)
 
 const raceSelect = document.getElementById('race-select') as HTMLSelectElement
 const genderSelect = document.getElementById('gender-select') as HTMLSelectElement
+const animSelect = document.getElementById('anim-select') as HTMLSelectElement
 
 for (const race of RACES) {
   const opt = document.createElement('option')
@@ -63,7 +65,9 @@ genderSelect.value = 'male'
 // --- Model management ---
 
 let currentModel: THREE.Group | null = null
+let animController: AnimationController | null = null
 let loading = false
+let lastFrameTime = performance.now()
 
 function getModelSlug(): string {
   return `${raceSelect.value}-${genderSelect.value}`
@@ -104,28 +108,72 @@ function frameCameraOnModel(group: THREE.Group) {
   controls.update()
 }
 
+function populateAnimDropdown(controller: AnimationController) {
+  animSelect.innerHTML = ''
+  const anims = controller.getAnimationList()
+
+  // Group by animId, show only first sub-variation by default
+  const seen = new Set<number>()
+  for (const anim of anims) {
+    if (anim.duration === 0) continue // skip zero-duration sequences
+    if (anim.subAnimId > 0 && seen.has(anim.animId)) continue
+    seen.add(anim.animId)
+
+    const opt = document.createElement('option')
+    opt.value = String(anim.seqIndex)
+    opt.textContent = anim.label
+    animSelect.appendChild(opt)
+  }
+
+  // Default to Stand (animId 0)
+  const standIdx = anims.findIndex(a => a.animId === 0)
+  if (standIdx >= 0) {
+    animSelect.value = String(standIdx)
+  }
+}
+
 async function switchModel() {
   if (loading) return
   loading = true
 
   const slug = getModelSlug()
+  const modelDir = `/models/${slug}`
 
   try {
-    const group = await loadModel(`/models/${slug}`)
+    const [loaded, animData] = await Promise.all([
+      loadModel(modelDir),
+      loadAnimations(modelDir),
+    ])
 
     if (currentModel) {
       disposeModel(currentModel)
     }
 
-    scene.add(group)
-    currentModel = group
-    frameCameraOnModel(group)
+    scene.add(loaded.group)
+    currentModel = loaded.group
+
+    animController = new AnimationController(animData, loaded.boneData, loaded.bones)
+    populateAnimDropdown(animController)
+
+    // Set initial animation to Stand
+    const standIdx = animData.sequences.findIndex(s => s.animId === 0)
+    if (standIdx >= 0) {
+      animController.setSequence(standIdx)
+    }
+
+    frameCameraOnModel(loaded.group)
   } catch (err) {
     console.error(`Failed to load model ${slug}:`, err)
   } finally {
     loading = false
   }
 }
+
+animSelect.addEventListener('change', () => {
+  if (animController) {
+    animController.setSequence(parseInt(animSelect.value, 10))
+  }
+})
 
 raceSelect.addEventListener('change', switchModel)
 genderSelect.addEventListener('change', switchModel)
@@ -134,6 +182,14 @@ genderSelect.addEventListener('change', switchModel)
 switchModel()
 
 function animate() {
+  const now = performance.now()
+  const delta = now - lastFrameTime
+  lastFrameTime = now
+
+  if (animController) {
+    animController.update(delta)
+  }
+
   controls.update()
   renderer.render(scene, camera)
   requestAnimationFrame(animate)

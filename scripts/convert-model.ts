@@ -12,6 +12,7 @@
  * Output per model:
  * - public/models/<slug>/model.bin  (vertex buffer + index buffer)
  * - public/models/<slug>/model.json (manifest with bones + layout info)
+ * - public/models/<slug>/anims.bin  (animation sequences + bone keyframe data)
  *
  * Vertex format (40 bytes per vertex):
  *   position  3×float32  12B  offset 0
@@ -77,8 +78,8 @@ function parseM2v256(buf: Buffer) {
 
   const name = arr(off); off += 8;
   off += 4; // globalFlags
-  off += 8; // globalSequences
-  off += 8; // animations
+  const globalSequences = arr(off); off += 8;
+  const animations = arr(off); off += 8;
   off += 8; // animationLookup
   off += 8; // playableAnimLookup (v256 EXTRA)
   const bones = arr(off); off += 8;
@@ -99,7 +100,7 @@ function parseM2v256(buf: Buffer) {
 
   const nameStr = buf.toString('ascii', name.ofs, name.ofs + name.count).replace(/\0/g, '').trim();
 
-  return { nameStr, vertices, views, bones, textures, textureLookup, buf, view };
+  return { nameStr, vertices, views, bones, globalSequences, animations, textures, textureLookup, buf, view };
 }
 
 // --- View/Skin Parser ---
@@ -256,6 +257,349 @@ function parseBones(view: DataView, bonesArr: M2Arr): BoneData[] {
   return bones;
 }
 
+// --- Sequence Parser ---
+//
+// M2Sequence for v256 = 68 bytes:
+//   animId(u16) + subAnimId(u16) + startTime(u32) + endTime(u32) +
+//   moveSpeed(f32) + flags(u32) + frequency(u16) + pad(u16) +
+//   repeatMin(u32) + repeatMax(u32) + blendTime(u32) +
+//   bounds(M2Bounds=28B) + variationNext(i16) + aliasNext(u16)
+
+const SEQ_SIZE = 68;
+
+interface SequenceData {
+  animId: number;
+  subAnimId: number;
+  startTime: number;
+  endTime: number;
+  flags: number;
+  blendTime: number;
+  frequency: number;
+  variationNext: number;
+  aliasNext: number;
+}
+
+function parseSequences(view: DataView, animsArr: M2Arr): SequenceData[] {
+  const seqs: SequenceData[] = [];
+  for (let i = 0; i < animsArr.count; i++) {
+    const so = animsArr.ofs + i * SEQ_SIZE;
+    seqs.push({
+      animId: view.getUint16(so, true),
+      subAnimId: view.getUint16(so + 2, true),
+      startTime: view.getUint32(so + 4, true),
+      endTime: view.getUint32(so + 8, true),
+      flags: view.getUint32(so + 16, true),
+      blendTime: view.getUint32(so + 32, true),
+      frequency: view.getUint16(so + 20, true),
+      variationNext: view.getInt16(so + 64, true),
+      aliasNext: view.getUint16(so + 66, true),
+    });
+  }
+  return seqs;
+}
+
+// --- Animation Track Extractor ---
+//
+// Extracts per-bone, per-sequence keyframes from the M2's flat timestamp/value arrays.
+// M2 v256 stores bone animations with global timestamps spanning all sequences.
+// The "ranges" array (nSeq+1 entries) maps each sequence to a [startIdx, endIdx] slice
+// of the flat timestamps/values arrays. Timestamps are normalized to local time.
+
+interface BoneTrackMeta {
+  transInterp: number;
+  rotInterp: number;
+  scaleInterp: number;
+  transGlobalSeq: number;
+  rotGlobalSeq: number;
+  scaleGlobalSeq: number;
+}
+
+interface BoneSeqKeyframes {
+  transTimestamps: number[];
+  transValues: number[];    // flat xyz triplets
+  rotTimestamps: number[];
+  rotValues: number[];      // flat xyzw quads
+  scaleTimestamps: number[];
+  scaleValues: number[];    // flat xyz triplets
+  transIsLocal?: boolean;   // timestamps already in local time (global seq)
+  rotIsLocal?: boolean;
+  scaleIsLocal?: boolean;
+}
+
+function parseBoneAnimations(
+  view: DataView,
+  bonesArr: M2Arr,
+  nSeq: number,
+): { trackMeta: BoneTrackMeta[]; perBoneSeq: BoneSeqKeyframes[][] } {
+  function arr(off: number): M2Arr {
+    return { count: view.getUint32(off, true), ofs: view.getUint32(off + 4, true) };
+  }
+
+  const trackMeta: BoneTrackMeta[] = [];
+  const perBoneSeq: BoneSeqKeyframes[][] = [];
+
+  for (let b = 0; b < bonesArr.count; b++) {
+    const bo = bonesArr.ofs + b * BONE_SIZE;
+
+    // Track metadata
+    const transInterp = view.getUint16(bo + 12, true);
+    const transGlobalSeq = view.getInt16(bo + 14, true);
+    const rotInterp = view.getUint16(bo + 40, true);
+    const rotGlobalSeq = view.getInt16(bo + 42, true);
+    const scaleInterp = view.getUint16(bo + 68, true);
+    const scaleGlobalSeq = view.getInt16(bo + 70, true);
+
+    trackMeta.push({ transInterp, rotInterp, scaleInterp, transGlobalSeq, rotGlobalSeq, scaleGlobalSeq });
+
+    // Parse flat arrays for each track
+    const transRanges = arr(bo + 16);
+    const transTs = arr(bo + 24);
+    const transVals = arr(bo + 32);
+
+    const rotRanges = arr(bo + 44);
+    const rotTs = arr(bo + 52);
+    const rotVals = arr(bo + 60);
+
+    const scaleRanges = arr(bo + 72);
+    const scaleTs = arr(bo + 80);
+    const scaleVals = arr(bo + 88);
+
+    const boneSeqs: BoneSeqKeyframes[] = [];
+
+    // Helper to extract keyframes for a range-indexed track
+    function extractRanged(
+      ranges: M2Arr, ts: M2Arr, vals: M2Arr,
+      seqIdx: number, valSize: number, valsPerKf: number,
+      outTs: number[], outVals: number[],
+    ) {
+      if (seqIdx >= ranges.count || ts.count === 0) return;
+      const rangeStart = view.getUint32(ranges.ofs + seqIdx * 8, true);
+      const rangeEnd = view.getUint32(ranges.ofs + seqIdx * 8 + 4, true);
+      if (rangeEnd >= ts.count) return;
+      for (let k = rangeStart; k <= rangeEnd; k++) {
+        outTs.push(view.getUint32(ts.ofs + k * 4, true));
+        const vo = vals.ofs + k * valSize;
+        for (let v = 0; v < valsPerKf; v++) {
+          outVals.push(view.getFloat32(vo + v * 4, true));
+        }
+      }
+    }
+
+    // Helper to extract ALL keyframes from a flat track (for global sequences with no ranges)
+    function extractFlat(
+      ts: M2Arr, vals: M2Arr,
+      valSize: number, valsPerKf: number,
+      outTs: number[], outVals: number[],
+    ) {
+      for (let k = 0; k < ts.count; k++) {
+        outTs.push(view.getUint32(ts.ofs + k * 4, true));
+        const vo = vals.ofs + k * valSize;
+        for (let v = 0; v < valsPerKf; v++) {
+          outVals.push(view.getFloat32(vo + v * 4, true));
+        }
+      }
+    }
+
+    for (let s = 0; s < nSeq; s++) {
+      const kf: BoneSeqKeyframes = {
+        transTimestamps: [], transValues: [],
+        rotTimestamps: [], rotValues: [],
+        scaleTimestamps: [], scaleValues: [],
+      };
+
+      // For global seq tracks with no ranges, store all keyframes at seq 0
+      // (timestamps are already in [0, gsDuration] local time)
+      if (s === 0) {
+        if (transGlobalSeq >= 0 && transRanges.count === 0 && transTs.count > 0) {
+          extractFlat(transTs, transVals, 12, 3, kf.transTimestamps, kf.transValues);
+          kf.transIsLocal = true;
+        }
+        if (rotGlobalSeq >= 0 && rotRanges.count === 0 && rotTs.count > 0) {
+          extractFlat(rotTs, rotVals, 16, 4, kf.rotTimestamps, kf.rotValues);
+          kf.rotIsLocal = true;
+        }
+        if (scaleGlobalSeq >= 0 && scaleRanges.count === 0 && scaleTs.count > 0) {
+          extractFlat(scaleTs, scaleVals, 12, 3, kf.scaleTimestamps, kf.scaleValues);
+          kf.scaleIsLocal = true;
+        }
+      }
+
+      // Normal range-based extraction (for non-global-seq tracks, or global-seq tracks WITH ranges)
+      if (transGlobalSeq < 0 || transRanges.count > 0) {
+        extractRanged(transRanges, transTs, transVals, s, 12, 3, kf.transTimestamps, kf.transValues);
+      }
+      if (rotGlobalSeq < 0 || rotRanges.count > 0) {
+        extractRanged(rotRanges, rotTs, rotVals, s, 16, 4, kf.rotTimestamps, kf.rotValues);
+      }
+      if (scaleGlobalSeq < 0 || scaleRanges.count > 0) {
+        extractRanged(scaleRanges, scaleTs, scaleVals, s, 12, 3, kf.scaleTimestamps, kf.scaleValues);
+      }
+
+      boneSeqs.push(kf);
+    }
+
+    perBoneSeq.push(boneSeqs);
+  }
+
+  return { trackMeta, perBoneSeq };
+}
+
+// --- anims.bin Writer ---
+//
+// Binary format:
+//   Header (28B): magic "ANIM", version u16, boneCount u16, seqCount u16,
+//                 gsCount u16, seqTableOfs u32, gsTableOfs u32,
+//                 boneTableOfs u32, indexOfs u32
+//   SequenceTable (20B each): animId u16, subAnimId u16, duration u32,
+//                 flags u32, blendTime u16, frequency u16,
+//                 variationNext i16, aliasNext i16
+//   GlobalSeqTable (4B each): duration u32
+//   BoneTrackTable (8B each): transInterp u8, rotInterp u8, scaleInterp u8,
+//                 transGlobalSeq i8, rotGlobalSeq i8, scaleGlobalSeq i8, pad u16
+//   BoneSeqIndex (6B each, [bone*nSeq+seq]): transCount u16, rotCount u16, scaleCount u16
+//   KeyframeData (variable): per (bone,seq) in index order:
+//     Translation: [u16 timestamp, f32[3] xyz] × transCount  (14B each)
+//     Rotation:    [u16 timestamp, f32[4] xyzw] × rotCount   (18B each)
+//     Scale:       [u16 timestamp, f32[3] xyz] × scaleCount  (14B each)
+
+function writeAnimsBin(
+  outPath: string,
+  sequences: SequenceData[],
+  globalSeqDurations: number[],
+  trackMeta: BoneTrackMeta[],
+  perBoneSeq: BoneSeqKeyframes[][],
+): number {
+  const nBones = trackMeta.length;
+  const nSeq = sequences.length;
+  const nGs = globalSeqDurations.length;
+
+  const HEADER_SIZE = 28;
+  const SEQ_ENTRY_SIZE = 20;
+  const GS_ENTRY_SIZE = 4;
+  const BONE_ENTRY_SIZE = 8;
+  const INDEX_ENTRY_SIZE = 6;
+  const TRANS_KF_SIZE = 14;  // u16 + 3×f32
+  const ROT_KF_SIZE = 18;    // u16 + 4×f32
+  const SCALE_KF_SIZE = 14;  // u16 + 3×f32
+
+  const seqTableOfs = HEADER_SIZE;
+  const gsTableOfs = seqTableOfs + nSeq * SEQ_ENTRY_SIZE;
+  const boneTableOfs = gsTableOfs + nGs * GS_ENTRY_SIZE;
+  const indexOfs = boneTableOfs + nBones * BONE_ENTRY_SIZE;
+
+  // Calculate keyframe data size
+  let kfDataSize = 0;
+  for (let b = 0; b < nBones; b++) {
+    for (let s = 0; s < nSeq; s++) {
+      const kf = perBoneSeq[b][s];
+      kfDataSize += kf.transTimestamps.length * TRANS_KF_SIZE;
+      kfDataSize += kf.rotTimestamps.length * ROT_KF_SIZE;
+      kfDataSize += kf.scaleTimestamps.length * SCALE_KF_SIZE;
+    }
+  }
+
+  const kfDataOfs = indexOfs + nBones * nSeq * INDEX_ENTRY_SIZE;
+  const totalSize = kfDataOfs + kfDataSize;
+
+  const buf = Buffer.alloc(totalSize);
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+
+  // Header
+  buf.write('ANIM', 0, 'ascii');
+  dv.setUint16(4, 1, true);         // version
+  dv.setUint16(6, nBones, true);
+  dv.setUint16(8, nSeq, true);
+  dv.setUint16(10, nGs, true);
+  dv.setUint32(12, seqTableOfs, true);
+  dv.setUint32(16, gsTableOfs, true);
+  dv.setUint32(20, boneTableOfs, true);
+  dv.setUint32(24, indexOfs, true);
+
+  // Sequence table
+  for (let s = 0; s < nSeq; s++) {
+    const seq = sequences[s];
+    const o = seqTableOfs + s * SEQ_ENTRY_SIZE;
+    const duration = seq.endTime - seq.startTime;
+    dv.setUint16(o, seq.animId, true);
+    dv.setUint16(o + 2, seq.subAnimId, true);
+    dv.setUint32(o + 4, duration, true);
+    dv.setUint32(o + 8, seq.flags, true);
+    dv.setUint16(o + 12, seq.blendTime, true);
+    dv.setUint16(o + 14, seq.frequency, true);
+    dv.setInt16(o + 16, seq.variationNext, true);
+    dv.setInt16(o + 18, seq.aliasNext, true);
+  }
+
+  // Global sequence table
+  for (let g = 0; g < nGs; g++) {
+    dv.setUint32(gsTableOfs + g * GS_ENTRY_SIZE, globalSeqDurations[g], true);
+  }
+
+  // Bone track table
+  for (let b = 0; b < nBones; b++) {
+    const o = boneTableOfs + b * BONE_ENTRY_SIZE;
+    const tm = trackMeta[b];
+    dv.setUint8(o, tm.transInterp);
+    dv.setUint8(o + 1, tm.rotInterp);
+    dv.setUint8(o + 2, tm.scaleInterp);
+    dv.setInt8(o + 3, tm.transGlobalSeq);
+    dv.setInt8(o + 4, tm.rotGlobalSeq);
+    dv.setInt8(o + 5, tm.scaleGlobalSeq);
+    dv.setUint16(o + 6, 0, true); // pad
+  }
+
+  // Bone-seq index + keyframe data
+  let kfOfs = kfDataOfs;
+  for (let b = 0; b < nBones; b++) {
+    for (let s = 0; s < nSeq; s++) {
+      const idxOfs = indexOfs + (b * nSeq + s) * INDEX_ENTRY_SIZE;
+      const kf = perBoneSeq[b][s];
+      const startTime = sequences[s].startTime;
+
+      dv.setUint16(idxOfs, kf.transTimestamps.length, true);
+      dv.setUint16(idxOfs + 2, kf.rotTimestamps.length, true);
+      dv.setUint16(idxOfs + 4, kf.scaleTimestamps.length, true);
+
+      // Translation keyframes
+      const transOffset = kf.transIsLocal ? 0 : startTime;
+      for (let k = 0; k < kf.transTimestamps.length; k++) {
+        const localTs = kf.transTimestamps[k] - transOffset;
+        dv.setUint16(kfOfs, Math.max(0, localTs), true);
+        dv.setFloat32(kfOfs + 2, kf.transValues[k * 3], true);
+        dv.setFloat32(kfOfs + 6, kf.transValues[k * 3 + 1], true);
+        dv.setFloat32(kfOfs + 10, kf.transValues[k * 3 + 2], true);
+        kfOfs += TRANS_KF_SIZE;
+      }
+
+      // Rotation keyframes
+      const rotOffset = kf.rotIsLocal ? 0 : startTime;
+      for (let k = 0; k < kf.rotTimestamps.length; k++) {
+        const localTs = kf.rotTimestamps[k] - rotOffset;
+        dv.setUint16(kfOfs, Math.max(0, localTs), true);
+        dv.setFloat32(kfOfs + 2, kf.rotValues[k * 4], true);
+        dv.setFloat32(kfOfs + 6, kf.rotValues[k * 4 + 1], true);
+        dv.setFloat32(kfOfs + 10, kf.rotValues[k * 4 + 2], true);
+        dv.setFloat32(kfOfs + 14, kf.rotValues[k * 4 + 3], true);
+        kfOfs += ROT_KF_SIZE;
+      }
+
+      // Scale keyframes
+      const scaleOffset = kf.scaleIsLocal ? 0 : startTime;
+      for (let k = 0; k < kf.scaleTimestamps.length; k++) {
+        const localTs = kf.scaleTimestamps[k] - scaleOffset;
+        dv.setUint16(kfOfs, Math.max(0, localTs), true);
+        dv.setFloat32(kfOfs + 2, kf.scaleValues[k * 3], true);
+        dv.setFloat32(kfOfs + 6, kf.scaleValues[k * 3 + 1], true);
+        dv.setFloat32(kfOfs + 10, kf.scaleValues[k * 3 + 2], true);
+        kfOfs += SCALE_KF_SIZE;
+      }
+    }
+  }
+
+  writeFileSync(outPath, buf);
+  return totalSize;
+}
+
 // --- Convert a single model ---
 
 const VERTEX_STRIDE = 40; // bytes per vertex
@@ -265,11 +609,20 @@ function convertModel(model: CharacterModel) {
   const outDir = resolve(ROOT, 'public/models', model.slug);
   const outBin = resolve(outDir, 'model.bin');
   const outJson = resolve(outDir, 'model.json');
+  const outAnims = resolve(outDir, 'anims.bin');
 
   const buf = readFileSync(m2FullPath);
   const m2 = parseM2v256(buf);
   const skin = parseView0(buf, m2.view, m2.views);
   const bones = parseBones(m2.view, m2.bones);
+
+  // Parse animation data
+  const sequences = parseSequences(m2.view, m2.animations);
+  const globalSeqDurations: number[] = [];
+  for (let g = 0; g < m2.globalSequences.count; g++) {
+    globalSeqDurations.push(m2.view.getUint32(m2.globalSequences.ofs + g * 4, true));
+  }
+  const { trackMeta, perBoneSeq } = parseBoneAnimations(m2.view, m2.bones, sequences.length);
 
   // Parse texture table (16 bytes each: type u32, flags u32, filename M2Array 8B)
   const TEX_DEF_SIZE = 16;
@@ -365,6 +718,9 @@ function convertModel(model: CharacterModel) {
   mkdirSync(outDir, { recursive: true });
   writeFileSync(outBin, binData);
 
+  // Write animation data
+  const animBinSize = writeAnimsBin(outAnims, sequences, globalSeqDurations, trackMeta, perBoneSeq);
+
   const manifest = {
     vertexCount,
     indexCount: indexBuffer.length,
@@ -389,7 +745,7 @@ function convertModel(model: CharacterModel) {
     process.exit(1);
   }
 
-  return { vertexCount, triangleCount: manifest.triangleCount, groupCount: groups.length, boneCount: bones.length, binSize: binData.byteLength };
+  return { vertexCount, triangleCount: manifest.triangleCount, groupCount: groups.length, boneCount: bones.length, binSize: binData.byteLength, seqCount: sequences.length, animBinSize };
 }
 
 // --- Main ---
@@ -402,7 +758,7 @@ function main() {
 
   for (const model of CHARACTER_MODELS) {
     const result = convertModel(model);
-    console.log(`${model.slug}: ${result.vertexCount} verts, ${result.triangleCount} tris, ${result.groupCount} groups, ${result.boneCount} bones, ${result.binSize} bytes`);
+    console.log(`${model.slug}: ${result.vertexCount} verts, ${result.triangleCount} tris, ${result.groupCount} groups, ${result.boneCount} bones, ${result.seqCount} seqs, ${result.binSize}B model, ${result.animBinSize}B anims`);
     totalModels++;
     totalTris += result.triangleCount;
   }

@@ -19,7 +19,7 @@ describe('convert-model output', () => {
     expect(manifest.vertexCount).toBeGreaterThan(0);
     expect(manifest.indexCount).toBeGreaterThan(0);
     expect(manifest.triangleCount).toBe(Math.floor(manifest.indexCount / 3));
-    expect(manifest.vertexStride).toBe(32);
+    expect(manifest.vertexStride).toBe(40);
     expect(manifest.groups.length).toBeGreaterThan(5);
   });
 
