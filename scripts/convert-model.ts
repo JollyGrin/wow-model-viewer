@@ -83,7 +83,7 @@ function parseM2v256(buf: Buffer) {
   off += 8; // animationLookup
   off += 8; // playableAnimLookup (v256 EXTRA)
   const bones = arr(off); off += 8;
-  off += 8; // keyBoneLookup
+  const keyBoneLookup = arr(off); off += 8; // keyBoneLookup (int16 array, index 6 = head bone)
   const vertices = arr(off); off += 8;
   const views = arr(off); off += 8;
 
@@ -111,7 +111,7 @@ function parseM2v256(buf: Buffer) {
   //         collisionBox(24)+collisionRadius(4) = 252
   const attachmentsArr = arr(252);
 
-  return { nameStr, vertices, views, bones, globalSequences, animations, textures, textureLookup, attachmentsArr, buf, view };
+  return { nameStr, vertices, views, bones, keyBoneLookup, globalSequences, animations, textures, textureLookup, attachmentsArr, buf, view };
 }
 
 // --- View/Skin Parser ---
@@ -668,6 +668,18 @@ function convertModel(model: CharacterModel) {
     ];
     if (Math.abs(pos[0]) > 10 || Math.abs(pos[1]) > 10 || Math.abs(pos[2]) > 10) continue;
     attachments.push({ id, bone, pos });
+  }
+
+  // Synthesize head attachment (ID 11) if not found in M2 data
+  if (!attachments.find(a => a.id === 11)) {
+    // keyBoneLookup[6] = head bone index (int16 array)
+    if (m2.keyBoneLookup.count > 6) {
+      const headBoneIdx = m2.view.getInt16(m2.keyBoneLookup.ofs + 6 * 2, true);
+      if (headBoneIdx >= 0 && headBoneIdx < bones.length) {
+        const pivot = bones[headBoneIdx].pivot;
+        attachments.push({ id: 11, bone: headBoneIdx, pos: [pivot[0], pivot[1], pivot[2]] });
+      }
+    }
   }
 
   // Build submesh index → texture type mapping via batch chain:

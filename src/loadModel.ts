@@ -37,6 +37,14 @@ export interface BodyArmor {
   wristGeoset?: number;
   /** Robe leg extension (group 13). 2→1302 robe skirt. 0/undefined = default thigh (1301). */
   robeGeoset?: number;
+  /** Helmet model slug, e.g. 'helm-plate-d-02'. Race-gender variant resolved at load time. */
+  helmet?: string;
+  /** HelmetGeosetVisData IDs [male, female] — controls which geosets to hide. */
+  helmetGeosetVisID?: [number, number];
+  /** Shoulder model slug, e.g. 'leather-blood-b-01'. */
+  shoulderSlug?: string;
+  /** Whether the right shoulder model exists. */
+  shoulderHasRight?: boolean;
 }
 
 interface AttachmentPoint {
@@ -75,6 +83,7 @@ function resolveDefaultGeosets(
   groups: Array<{ id: number }>,
   hairstyle: number = 5,
   groupOverrides?: Map<number, number>, // group → meshId (e.g. 8 → 802 for short sleeves)
+  hiddenGroups?: Set<number>, // groups to completely hide (helmet vis)
 ): Set<number> {
   // Index available geosets by group
   const byGroup = new Map<number, number[]>();
@@ -86,7 +95,10 @@ function resolveDefaultGeosets(
 
   const result = new Set<number>();
   result.add(0);           // body mesh (always)
-  result.add(hairstyle);   // hairstyle from group 0
+  // Hair geoset — hide if helmet requires it (group 0 = hair)
+  if (!hiddenGroups?.has(0)) {
+    result.add(hairstyle);
+  }
 
   // Apply overrides first; track which groups are handled so DESIRED_GROUPS skips them
   const handledGroups = new Set<number>();
@@ -102,6 +114,7 @@ function resolveDefaultGeosets(
 
   for (const { group, preferred, strict } of DESIRED_GROUPS) {
     if (handledGroups.has(group)) continue; // override already handled this group
+    if (hiddenGroups?.has(group)) continue; // helmet vis hides this group entirely
     const available = byGroup.get(group);
     if (!available || available.length === 0) continue;
     const target = group * 100 + preferred;
@@ -140,6 +153,43 @@ const HAIR_TEX_TYPE = 6;
 
 // Fallback for legacy model.json without textureType: geoset IDs that use hair texture
 const HAIR_GEOSETS_FALLBACK = new Set([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+
+// --- Race-gender maps for helmet/shoulder loading ---
+
+const RACE_ID_MAP: Record<string, number> = {
+  'human': 1, 'orc': 2, 'dwarf': 3, 'night-elf': 4,
+  'scourge': 5, 'tauren': 6, 'gnome': 7, 'troll': 8,
+  'goblin': 9, 'blood-elf': 10,
+};
+
+// HelmetGeosetVisData field index → geoset group and "hide" value
+// [0]=Hair(group 0)→1(bald), [1]=Facial1(group 1)→101, [2]=Facial2(group 2)→201,
+// [3]=Facial3(group 3)→301, [4]=Ears(group 7)→701
+const HELMET_VIS_GROUPS: Array<{ group: number; hideValue: number }> = [
+  { group: 0, hideValue: 1 },    // Hair → bald (geoset 1)
+  { group: 1, hideValue: 101 },  // Facial1
+  { group: 2, hideValue: 201 },  // Facial2
+  { group: 3, hideValue: 301 },  // Facial3
+  { group: 7, hideValue: 701 },  // Ears
+];
+
+interface HelmetVisRecord {
+  ID: number;
+  HideGeoset: number[];
+}
+
+let helmetVisDataCache: HelmetVisRecord[] | null = null;
+
+async function loadHelmetVisData(): Promise<HelmetVisRecord[]> {
+  if (helmetVisDataCache) return helmetVisDataCache;
+  try {
+    const res = await fetch('/data/HelmetGeosetVisData.json');
+    helmetVisDataCache = await res.json();
+  } catch {
+    helmetVisDataCache = [];
+  }
+  return helmetVisDataCache!;
+}
 
 // --- Skeleton builder ---
 
@@ -189,7 +239,7 @@ function buildSkeleton(boneData: BoneInfo[]): { skeleton: THREE.Skeleton; roots:
  * Load a static item model (weapon, shoulder, etc.) from a public/items/ directory.
  * Returns a plain THREE.Group (no skeleton needed — item vertices are in bind pose).
  */
-async function loadItemModel(itemDir: string): Promise<THREE.Group> {
+async function loadItemModel(itemDir: string, textureUrl?: string): Promise<THREE.Group> {
   interface ItemManifest {
     vertexCount: number;
     indexCount: number;
@@ -201,7 +251,7 @@ async function loadItemModel(itemDir: string): Promise<THREE.Group> {
   const [manifest, binBuf, texture] = await Promise.all([
     fetch(`${itemDir}/model.json`).then(r => r.json()) as Promise<ItemManifest>,
     fetch(`${itemDir}/model.bin`).then(r => r.arrayBuffer()),
-    loadTexture(`${itemDir}/textures/main.tex`),
+    loadTexture(textureUrl ?? `${itemDir}/textures/main.tex`),
   ]);
 
   const STRIDE = manifest.vertexStride; // 32
@@ -269,8 +319,38 @@ export async function loadModel(
   if (options?.armor?.wristGeoset) armorGeoOverrides.set(9, 900 + options.armor.wristGeoset);
   if (options?.armor?.robeGeoset) armorGeoOverrides.set(13, 1300 + options.armor.robeGeoset);
 
+  // Helmet geoset visibility hiding
+  let helmetHiddenGroups: Set<number> | undefined;
+  if (options?.armor?.helmet && options.armor.helmetGeosetVisID) {
+    const modelSlug = modelDir.split('/').pop() || '';
+    const raceSlug = modelSlug.replace(/-(?:male|female)$/, '');
+    const genderIdx = modelSlug.endsWith('-female') ? 1 : 0;
+    const raceId = RACE_ID_MAP[raceSlug];
+    const visID = options.armor.helmetGeosetVisID[genderIdx];
+
+    if (visID && raceId) {
+      const visData = await loadHelmetVisData();
+      const visRecord = visData.find(r => r.ID === visID);
+      if (visRecord) {
+        helmetHiddenGroups = new Set<number>();
+        for (let i = 0; i < HELMET_VIS_GROUPS.length && i < visRecord.HideGeoset.length; i++) {
+          const flag = visRecord.HideGeoset[i];
+          // Interpret as signed int32 bitmask: if bit for this race is set, hide the group
+          if ((flag & (1 << raceId)) !== 0) {
+            helmetHiddenGroups.add(HELMET_VIS_GROUPS[i].group);
+          }
+        }
+        if (helmetHiddenGroups.size === 0) helmetHiddenGroups = undefined;
+      }
+    }
+  }
+
   const geosets = options?.enabledGeosets ??
-    resolveDefaultGeosets(manifest.groups, 5, armorGeoOverrides.size > 0 ? armorGeoOverrides : undefined);
+    resolveDefaultGeosets(
+      manifest.groups, 5,
+      armorGeoOverrides.size > 0 ? armorGeoOverrides : undefined,
+      helmetHiddenGroups,
+    );
 
   // Derive gender suffix from modelDir slug (e.g. '/models/human-female' → 'F')
   const genderSuffix = modelDir.includes('-female') ? 'F' : 'M';
@@ -464,6 +544,64 @@ export async function loadModel(
       }
     } else if (!att) {
       console.warn('No HandRight attachment point (ID 1) found in manifest');
+    }
+  }
+
+  // Helmet attachment — attach to head bone (attachment ID 11)
+  if (options?.armor?.helmet && manifest.attachments) {
+    const modelSlug = modelDir.split('/').pop() || '';
+    const att = manifest.attachments.find(a => a.id === 11); // Head
+    if (att && att.bone < skeleton.bones.length) {
+      const helmDir = `/items/head/${options.armor.helmet}/${modelSlug}`;
+      const helmTexUrl = `/items/head/${options.armor.helmet}/textures/main.tex`;
+      const bone = skeleton.bones[att.bone];
+      const socket = new THREE.Group();
+      socket.position.set(att.pos[0], att.pos[1], att.pos[2]);
+      bone.add(socket);
+      try {
+        const helmetGroup = await loadItemModel(helmDir, helmTexUrl);
+        socket.add(helmetGroup);
+      } catch (err) {
+        console.warn(`Failed to load helmet from ${helmDir}:`, err);
+      }
+    }
+  }
+
+  // Shoulder attachment — L to attachment 6 (ShoulderLeft), R to attachment 5 (ShoulderRight)
+  if (options?.armor?.shoulderSlug && manifest.attachments) {
+    const slugBase = `/items/shoulder/${options.armor.shoulderSlug}`;
+    const shoulderTexUrl = `${slugBase}/textures/main.tex`;
+
+    // Left shoulder (attachment ID 6)
+    const leftAtt = manifest.attachments.find(a => a.id === 6);
+    if (leftAtt && leftAtt.bone < skeleton.bones.length) {
+      const bone = skeleton.bones[leftAtt.bone];
+      const socket = new THREE.Group();
+      socket.position.set(leftAtt.pos[0], leftAtt.pos[1], leftAtt.pos[2]);
+      bone.add(socket);
+      try {
+        const leftGroup = await loadItemModel(`${slugBase}/left`, shoulderTexUrl);
+        socket.add(leftGroup);
+      } catch (err) {
+        console.warn(`Failed to load left shoulder:`, err);
+      }
+    }
+
+    // Right shoulder (attachment ID 5)
+    if (options.armor.shoulderHasRight) {
+      const rightAtt = manifest.attachments.find(a => a.id === 5);
+      if (rightAtt && rightAtt.bone < skeleton.bones.length) {
+        const bone = skeleton.bones[rightAtt.bone];
+        const socket = new THREE.Group();
+        socket.position.set(rightAtt.pos[0], rightAtt.pos[1], rightAtt.pos[2]);
+        bone.add(socket);
+        try {
+          const rightGroup = await loadItemModel(`${slugBase}/right`, shoulderTexUrl);
+          socket.add(rightGroup);
+        } catch (err) {
+          console.warn(`Failed to load right shoulder:`, err);
+        }
+      }
     }
   }
 

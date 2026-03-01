@@ -38,6 +38,8 @@ const LEGS_TYPES = new Set([7]);
 const BOOTS_TYPES = new Set([8]);
 const GLOVES_TYPES = new Set([10]);
 const WEAPON_TYPES = new Set([13, 14, 15, 17, 21, 22, 25, 26]); // 1H, shield, bow, 2H, MH, OH, thrown, ranged
+const HEAD_TYPES = new Set([1]);      // Head slot
+const SHOULDER_TYPES = new Set([3]);  // Shoulder slot
 
 // Weapon subclass names (class=2)
 const WEAPON_SUBCLASS: Record<number, string> = {
@@ -93,7 +95,7 @@ const AL_SUFFIXES = ['_Glove_AL', '_Bracer_AL', '_Sleeve_AL', '_AL'];
 // --- Load data sources ---
 
 interface ItemRecord { itemId: number; name: string; displayId: number; inventoryType: number; quality: number; class: number; subclass: number; }
-interface IDIRecord { ID: number; Texture: string[]; GeosetGroup: number[]; ModelName: string[]; ModelTexture: string[]; }
+interface IDIRecord { ID: number; Texture: string[]; GeosetGroup: number[]; ModelName: string[]; ModelTexture: string[]; HelmetGeosetVisID: number[]; }
 
 // Items DB
 const itemsPath = resolve(ROOT, 'data/external/items.json');
@@ -137,12 +139,59 @@ if (existsSync(weaponDir)) {
   }
 }
 
+// --- Build helmet slug set ---
+const headDir = resolve(ROOT, 'public/items/head');
+const helmetSlugSet = new Set<string>();
+if (existsSync(headDir)) {
+  for (const d of readdirSync(headDir)) {
+    // A valid helmet has at least one race-gender subdirectory with model.json
+    const slugDir = resolve(headDir, d);
+    try {
+      const subs = readdirSync(slugDir);
+      if (subs.some(s => existsSync(resolve(slugDir, s, 'model.json')))) {
+        helmetSlugSet.add(d);
+      }
+    } catch { /* not a directory */ }
+  }
+}
+
+// --- Build shoulder slug set ---
+const shoulderDir = resolve(ROOT, 'public/items/shoulder');
+const shoulderSlugSet = new Map<string, boolean>(); // slug → hasRight
+if (existsSync(shoulderDir)) {
+  for (const d of readdirSync(shoulderDir)) {
+    const leftJson = resolve(shoulderDir, d, 'left', 'model.json');
+    if (existsSync(leftJson)) {
+      const hasRight = existsSync(resolve(shoulderDir, d, 'right', 'model.json'));
+      shoulderSlugSet.set(d, hasRight);
+    }
+  }
+}
+
 // Map IDI ModelName stem (lowercase) → weapon slug
 const modelNameToSlug = new Map<string, string>();
 for (const slug of weaponSlugSet) {
   // Slug format: lowercase, hyphens. ModelName stem: mixed case, underscores.
   // Reverse: slug → possible stem patterns
   modelNameToSlug.set(slug, slug);
+}
+
+function findHelmetSlug(modelName: string): string | undefined {
+  if (!modelName) return undefined;
+  const stem = basename(modelName, extname(modelName)); // e.g., Helm_Plate_D_02
+  const slug = stem.toLowerCase().replace(/_/g, '-');
+  if (helmetSlugSet.has(slug)) return slug;
+  return undefined;
+}
+
+function findShoulderSlug(modelName: string): string | undefined {
+  if (!modelName) return undefined;
+  const stem = basename(modelName, extname(modelName)); // e.g., LShoulder_Plate_D_03
+  // Strip L/RShoulder_ prefix
+  const baseStem = stem.replace(/^[LR]Shoulder_/i, '');
+  const slug = baseStem.toLowerCase().replace(/_/g, '-');
+  if (shoulderSlugSet.has(slug)) return slug;
+  return undefined;
 }
 
 function findWeaponSlug(modelName: string): string | undefined {
@@ -164,6 +213,8 @@ interface ChestEntry  { itemId?: number; name: string; quality: number; torsoUpp
 interface LegsEntry   { itemId?: number; name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
 interface BootsEntry  { itemId?: number; name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
 interface GlovesEntry { itemId?: number; name: string; quality: number; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
+interface HelmetEntry { itemId?: number; name: string; quality: number; slug: string; helmetGeosetVisID: [number, number]; }
+interface ShoulderEntry { itemId?: number; name: string; quality: number; slug: string; hasRight: boolean; }
 
 /** Infer geoset value (1-3) from texture stem name as fallback when IDI GeosetGroup is 0. */
 function inferGeosetValue(stem: string): number {
@@ -309,12 +360,16 @@ function buildGlovesEntry(idi: IDIRecord, name: string, quality: number, itemId?
 // --- Process items from DB ---
 
 const weapons: WeaponEntry[] = [];
+const helmetItems: HelmetEntry[] = [];
+const shoulderItems: ShoulderEntry[] = [];
 const chestItems: ChestEntry[] = [];
 const legsItems: LegsEntry[] = [];
 const bootsItems: BootsEntry[] = [];
 const glovesItems: GlovesEntry[] = [];
 
-// Track which IDI textures have been claimed by DB items
+// Track which items have been claimed by DB items
+const claimedHelmets = new Set<string>();   // helmet slug
+const claimedShoulders = new Set<string>(); // shoulder slug
 const claimedChest = new Set<string>();  // TorsoUpper stem
 const claimedLegs = new Set<string>();   // LegUpper stem
 const claimedBoots = new Set<string>();  // Foot stem
@@ -328,7 +383,22 @@ for (const item of items) {
   const idi = idiByDisplayId.get(item.displayId);
   if (!idi) { dbNoIdi++; continue; }
 
-  if (WEAPON_TYPES.has(item.inventoryType)) {
+  if (HEAD_TYPES.has(item.inventoryType)) {
+    const slug = findHelmetSlug(idi.ModelName[0]);
+    if (slug) {
+      const visID = idi.HelmetGeosetVisID ?? [0, 0];
+      helmetItems.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, helmetGeosetVisID: [visID[0], visID[1]] });
+      claimedHelmets.add(slug);
+      dbMatched++;
+    } else { dbNoTex++; }
+  } else if (SHOULDER_TYPES.has(item.inventoryType)) {
+    const slug = findShoulderSlug(idi.ModelName[0]);
+    if (slug) {
+      shoulderItems.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, hasRight: shoulderSlugSet.get(slug) ?? false });
+      claimedShoulders.add(slug);
+      dbMatched++;
+    } else { dbNoTex++; }
+  } else if (WEAPON_TYPES.has(item.inventoryType)) {
     const slug = findWeaponSlug(idi.ModelName[0]);
     if (slug) {
       const subclass = item.class === 2 ? WEAPON_SUBCLASS[item.subclass] : undefined;
@@ -400,7 +470,48 @@ for (const idi of idiRecords) {
   }
 }
 
-// Also add weapon slugs not claimed by any DB item
+// Also add unclaimed helmet/shoulder/weapon slugs not matched by any DB item
+
+// Helmets: scan IDI for unclaimed slugs
+for (const idi of idiRecords) {
+  const modelName = idi.ModelName?.[0];
+  if (!modelName) continue;
+  const slug = findHelmetSlug(modelName);
+  if (slug && !claimedHelmets.has(slug)) {
+    const visID = idi.HelmetGeosetVisID ?? [0, 0];
+    helmetItems.push({ name: slug, quality: 0, slug, helmetGeosetVisID: [visID[0], visID[1]] });
+    claimedHelmets.add(slug);
+    unclaimedCount++;
+  }
+}
+// Helmets without any IDI match
+for (const slug of helmetSlugSet) {
+  if (!claimedHelmets.has(slug)) {
+    helmetItems.push({ name: slug, quality: 0, slug, helmetGeosetVisID: [0, 0] });
+    unclaimedCount++;
+  }
+}
+
+// Shoulders: scan IDI for unclaimed slugs
+for (const idi of idiRecords) {
+  const modelName = idi.ModelName?.[0];
+  if (!modelName) continue;
+  const slug = findShoulderSlug(modelName);
+  if (slug && !claimedShoulders.has(slug)) {
+    shoulderItems.push({ name: slug, quality: 0, slug, hasRight: shoulderSlugSet.get(slug) ?? false });
+    claimedShoulders.add(slug);
+    unclaimedCount++;
+  }
+}
+// Shoulders without any IDI match
+for (const slug of shoulderSlugSet.keys()) {
+  if (!claimedShoulders.has(slug)) {
+    shoulderItems.push({ name: slug, quality: 0, slug, hasRight: shoulderSlugSet.get(slug) ?? false });
+    unclaimedCount++;
+  }
+}
+
+// Weapons
 const claimedWeaponSlugs = new Set(weapons.map(w => w.slug));
 for (const slug of weaponSlugSet) {
   if (!claimedWeaponSlugs.has(slug)) {
@@ -416,21 +527,25 @@ function sortItems<T extends { quality: number; name: string }>(arr: T[]): T[] {
 }
 
 const catalog = {
-  weapons: sortItems(weapons),
-  chest:   sortItems(chestItems),
-  legs:    sortItems(legsItems),
-  boots:   sortItems(bootsItems),
-  gloves:  sortItems(glovesItems),
+  weapons:   sortItems(weapons),
+  helmets:   sortItems(helmetItems),
+  shoulders: sortItems(shoulderItems),
+  chest:     sortItems(chestItems),
+  legs:      sortItems(legsItems),
+  boots:     sortItems(bootsItems),
+  gloves:    sortItems(glovesItems),
 };
 
 writeFileSync(resolve(ROOT, 'public/item-catalog.json'), JSON.stringify(catalog));
 
 console.log('=== Game Item Catalog ===');
-console.log(`Weapons: ${catalog.weapons.length} (${weapons.filter(w => w.itemId).length} named)`);
-console.log(`Chest:   ${catalog.chest.length} (${chestItems.filter(c => c.itemId).length} named)`);
-console.log(`Legs:    ${catalog.legs.length} (${legsItems.filter(l => l.itemId).length} named)`);
-console.log(`Boots:   ${catalog.boots.length} (${bootsItems.filter(b => b.itemId).length} named)`);
-console.log(`Gloves:  ${catalog.gloves.length} (${glovesItems.filter(g => g.itemId).length} named)`);
+console.log(`Weapons:   ${catalog.weapons.length} (${weapons.filter(w => w.itemId).length} named)`);
+console.log(`Helmets:   ${catalog.helmets.length} (${helmetItems.filter(h => h.itemId).length} named)`);
+console.log(`Shoulders: ${catalog.shoulders.length} (${shoulderItems.filter(s => s.itemId).length} named)`);
+console.log(`Chest:     ${catalog.chest.length} (${chestItems.filter(c => c.itemId).length} named)`);
+console.log(`Legs:      ${catalog.legs.length} (${legsItems.filter(l => l.itemId).length} named)`);
+console.log(`Boots:     ${catalog.boots.length} (${bootsItems.filter(b => b.itemId).length} named)`);
+console.log(`Gloves:    ${catalog.gloves.length} (${glovesItems.filter(g => g.itemId).length} named)`);
 console.log(`\nDB matched: ${dbMatched}, No IDI: ${dbNoIdi}, No textures: ${dbNoTex}`);
 console.log(`Unclaimed (unnamed): ${unclaimedCount}`);
 console.log('\nWritten: public/item-catalog.json');

@@ -960,3 +960,26 @@ Changed `armUpperTex`/`torsoUpperTex`/`torsoLowerTex` (full URLs with gender suf
 **Impact:** Milestone 4 PASSED. All 20 race/gender combinations show correct silver plate chest armor with no console errors.
 
 **Reference:** `src/loadModel.ts` (`genderSuffix`, `resolveEquipTex`), `src/main.ts` (base path fields)
+
+## [2026-03-01] Helmet & Shoulder Equipment Research
+
+**Context:** Investigating helmet and shoulder attachment requirements for equipment rendering.
+
+**Finding: HelmetGeosetVisData bitmask interpretation**
+Each of the 5 `HideGeoset` fields is a **race bitmask** where `(flag & (1 << raceId)) != 0` means "hide that geoset group for this race". Negative values are signed int32 (e.g., -65 = 0xFFFFFFBF = all races except Tauren bit 6). The 5 fields map to geoset groups: [0]=Hair (group 0), [1]=Facial1 (group 1), [2]=Facial2 (group 2), [3]=Facial3 (group 3), [4]=Ears (group 7). 16 unique records in the DBC. ID 285 has all-1022 (hides everything for full enclosing helmets). ID 245 is all-zero (hides nothing).
+
+**Finding: Helmet M2s are race-gender-specific**
+`Helm_Plate_D_02.mdx` in IDI → actual M2s are `Helm_Plate_D_02_HuM.m2`, `Helm_Plate_D_02_HuF.m2`, etc. Suffixes are **case-inconsistent** across patches (HuM, hum, Hum all exist). Must use case-insensitive matching. 2958 helmet M2s, 460 BLPs across patches. Located in `Item/ObjectComponents/Head/`.
+
+**Finding: IDI HelmetGeosetVisID field**
+`HelmetGeosetVisID[0]` = male vis data ID, `[1]` = female vis data ID. References HelmetGeosetVisData.ID. Many helmets have `[0, 0]` which means no geoset hiding (open-face helmets).
+
+**Finding: Shoulder M2s use pre-baked L/R geometry**
+`ModelName[0]` = `LShoulder_Foo.mdx`, `ModelName[1]` = `RShoulder_Foo.mdx`. These are NOT mirrored at runtime — each has its own unique geometry. L attaches to attachment ID 6 (ShoulderLeft), R to attachment ID 5 (ShoulderRight). Some IDI records only have L model (71 records), missing R. 234 shoulder M2s, 325 BLPs across patches. Located in `Item/ObjectComponents/Shoulder/`.
+
+**Finding: Most character models lack attachment ID 11 (Head)**
+Only 5/20 models have it: gnome-male, gnome-female, human-female, troll-male, troll-female. For the other 15, must synthesize from `keyBoneLookup[6]` (head bone) at M2 header offset 60 (v256 with playableAnimLookup extra). The bone's pivot point serves as the attachment position.
+
+**Impact:** Helmet + shoulder support requires: (1) synthetic head attachment for 15 models, (2) race-gender-specific M2 loading for helmets, (3) geoset hiding via bitmask for helmets, (4) paired L/R loading for shoulders.
+
+**Reference:** `data/dbc/HelmetGeosetVisData.json`, `data/dbc/ItemDisplayInfo.json` (HelmetGeosetVisID field), `data/patch/*/Item/ObjectComponents/Head/`, `data/patch/*/Item/ObjectComponents/Shoulder/`

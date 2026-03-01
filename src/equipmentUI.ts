@@ -19,18 +19,22 @@ const QUALITY_COLOR: Record<number, string> = {
 
 // --- Catalog types ---
 
-interface WeaponEntry  { itemId: number; name: string; quality: number; slug: string; subclass?: string; }
-interface ChestEntry   { itemId?: number; name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; armLowerBase?: string; torsoLowerBase?: string; legUpperBase?: string; legLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
-interface LegsEntry    { itemId?: number; name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
-interface BootsEntry   { itemId?: number; name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
-interface GlovesEntry  { itemId?: number; name: string; quality: number; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
+interface WeaponEntry   { itemId: number; name: string; quality: number; slug: string; subclass?: string; }
+interface HelmetEntry   { itemId?: number; name: string; quality: number; slug: string; helmetGeosetVisID: [number, number]; }
+interface ShoulderEntry { itemId?: number; name: string; quality: number; slug: string; hasRight: boolean; }
+interface ChestEntry    { itemId?: number; name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; armLowerBase?: string; torsoLowerBase?: string; legUpperBase?: string; legLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
+interface LegsEntry     { itemId?: number; name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
+interface BootsEntry    { itemId?: number; name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
+interface GlovesEntry   { itemId?: number; name: string; quality: number; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
 
 interface ItemCatalog {
-  weapons: WeaponEntry[];
-  chest:   ChestEntry[];
-  legs:    LegsEntry[];
-  boots:   BootsEntry[];
-  gloves:  GlovesEntry[];
+  weapons:   WeaponEntry[];
+  helmets:   HelmetEntry[];
+  shoulders: ShoulderEntry[];
+  chest:     ChestEntry[];
+  legs:      LegsEntry[];
+  boots:     BootsEntry[];
+  gloves:    GlovesEntry[];
 }
 
 let catalog: ItemCatalog | null = null;
@@ -38,6 +42,8 @@ let catalog: ItemCatalog | null = null;
 // Active selections
 const selection: {
   weapon?: string;
+  helmet?: HelmetEntry;
+  shoulder?: ShoulderEntry;
   chest?: ChestEntry;
   legs?: LegsEntry;
   boots?: BootsEntry;
@@ -51,6 +57,18 @@ export function getWeaponPath(): string | undefined {
 
 export function getArmorOptions(): BodyArmor | undefined {
   const armor: BodyArmor = {};
+
+  // --- Helmet ---
+  if (selection.helmet) {
+    armor.helmet = selection.helmet.slug;
+    armor.helmetGeosetVisID = selection.helmet.helmetGeosetVisID;
+  }
+
+  // --- Shoulders ---
+  if (selection.shoulder) {
+    armor.shoulderSlug = selection.shoulder.slug;
+    armor.shoulderHasRight = selection.shoulder.hasRight;
+  }
 
   // --- Layer 5: Chest ---
   if (selection.chest) {
@@ -245,6 +263,20 @@ function buildPanel(panel: HTMLElement, onChange: () => void) {
   );
   panel.appendChild(makeRow('Weapon', wCont, wSel, 'weapon', onChange));
 
+  // Head
+  const { container: hCont, select: hSel } = buildFilteredSelect(
+    'equip-head', catalog.helmets, itemDisplayName,
+    entry => { selection.helmet = entry; onChange(); },
+  );
+  panel.appendChild(makeRow('Head', hCont, hSel, 'head', onChange));
+
+  // Shoulder
+  const { container: sCont, select: sSel } = buildFilteredSelect(
+    'equip-shoulder', catalog.shoulders, itemDisplayName,
+    entry => { selection.shoulder = entry; onChange(); },
+  );
+  panel.appendChild(makeRow('Shoulder', sCont, sSel, 'shoulder', onChange));
+
   // Chest
   const { container: cCont, select: cSel } = buildFilteredSelect(
     'equip-chest', catalog.chest, itemDisplayName,
@@ -278,7 +310,7 @@ function buildPanel(panel: HTMLElement, onChange: () => void) {
   randomAll.id = 'equip-randomize-all';
   randomAll.textContent = 'Randomize All';
   randomAll.addEventListener('click', () => {
-    for (const s of [wSel, cSel, lSel, bSel, gSel]) {
+    for (const s of [wSel, hSel, sSel, cSel, lSel, bSel, gSel]) {
       randomizeSlot(s, () => {});
     }
     onChange();
