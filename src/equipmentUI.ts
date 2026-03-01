@@ -52,7 +52,7 @@ export function getWeaponPath(): string | undefined {
 export function getArmorOptions(): BodyArmor | undefined {
   const armor: BodyArmor = {};
 
-  // --- Chest (highest priority — robes override leg/arm textures) ---
+  // --- Layer 5: Chest ---
   if (selection.chest) {
     armor.armUpperBase   = selection.chest.armUpperBase;
     armor.torsoUpperBase = selection.chest.torsoUpperBase;
@@ -60,7 +60,7 @@ export function getArmorOptions(): BodyArmor | undefined {
     armor.sleeveGeoset   = selection.chest.sleeveGeoset || undefined;
     armor.robeGeoset     = selection.chest.robeGeoset || undefined;
 
-    // Robes provide leg + arm-lower textures that override legs/gloves
+    // Robes provide leg + arm-lower textures as base
     if (armor.robeGeoset) {
       armor.legUpperBase = selection.chest.legUpperBase;
       armor.legLowerBase = selection.chest.legLowerBase;
@@ -68,31 +68,33 @@ export function getArmorOptions(): BodyArmor | undefined {
     }
   }
 
-  // --- Legs (only applies leg textures if robe didn't provide them) ---
+  // --- Layer 7: Legs (override chest leg textures for non-robe) ---
   if (selection.legs) {
-    if (!armor.legUpperBase) armor.legUpperBase = selection.legs.legUpperBase;
-    if (!armor.legLowerBase) armor.legLowerBase = selection.legs.legLowerBase;
-    if (!armor.robeGeoset && selection.legs.robeGeoset) {
-      armor.robeGeoset = selection.legs.robeGeoset;
+    if (!armor.robeGeoset) {
+      armor.legUpperBase = selection.legs.legUpperBase;
+      if (selection.legs.legLowerBase) armor.legLowerBase = selection.legs.legLowerBase;
+      if (selection.legs.robeGeoset) armor.robeGeoset = selection.legs.robeGeoset;
     }
   }
 
   const isDress = !!armor.robeGeoset;
 
-  // --- Boots (geoset + legLower suppressed under dress) ---
+  // --- Layer 8: Boots (footGeoset always; legLower overrides legs) ---
   if (selection.boots) {
     armor.footBase = selection.boots.footBase;
-    if (!isDress) {
-      if (!armor.legLowerBase) armor.legLowerBase = selection.boots.legLowerBase;
-      armor.footGeoset = selection.boots.geosetValue || undefined;
+    armor.footGeoset = selection.boots.geosetValue || undefined;
+    if (!isDress && selection.boots.legLowerBase) {
+      armor.legLowerBase = selection.boots.legLowerBase;
     }
   }
 
-  // --- Gloves (armLower only if robe didn't provide it) ---
+  // --- Layer 10: Gloves (armLower overrides chest/robe) ---
   if (selection.gloves) {
     armor.handBase   = selection.gloves.handBase;
     armor.handGeoset = selection.gloves.geosetValue || undefined;
-    if (!armor.armLowerBase) armor.armLowerBase = selection.gloves.armLowerBase;
+    if (selection.gloves.armLowerBase) {
+      armor.armLowerBase = selection.gloves.armLowerBase;
+    }
     if (!isDress) {
       armor.wristGeoset = selection.gloves.wristGeoset || undefined;
     }

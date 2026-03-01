@@ -209,7 +209,7 @@ function buildChestEntry(idi: IDIRecord, name: string, quality: number, itemId?:
 
   // Geosets from IDI
   const gg = idi.GeosetGroup;
-  if (gg[0] >= 2 && entry.armUpperBase) entry.sleeveGeoset = gg[0];
+  if (gg[0] > 0) entry.sleeveGeoset = gg[0] + 1;
   if (gg[2] > 0) entry.robeGeoset = gg[2] + 1;
 
   // Robes provide leg + arm-lower textures that override equipped legs/gloves
@@ -250,16 +250,22 @@ function buildBootsEntry(idi: IDIRecord, name: string, quality: number, itemId?:
   if (!foName || !hasTex(7, foName)) return null;
 
   const gg0 = idi.GeosetGroup[0];
-  const geosetValue = gg0 || inferGeosetValue(foName);
+  const geosetValue = gg0 > 0 ? gg0 + 1 : inferGeosetValue(foName);
 
   const entry: BootsEntry = { name, quality, footBase: baseFor('FootTexture', foName), geosetValue };
   if (itemId !== undefined) entry.itemId = itemId;
 
-  const prefix = extractPrefix(foName, FO_SUFFIXES);
-  if (prefix) {
-    const prefixLower = prefix.toLowerCase();
-    const llStem = llBootByPrefix.get(prefixLower) ?? llByPrefix.get(prefixLower);
-    if (llStem) entry.legLowerBase = baseFor('LegLowerTexture', llStem);
+  // LegLower companion: try IDI Texture[6] first, then prefix heuristic
+  const llName = idi.Texture[6];
+  if (llName && hasTex(6, llName)) {
+    entry.legLowerBase = baseFor('LegLowerTexture', llName);
+  } else {
+    const prefix = extractPrefix(foName, FO_SUFFIXES);
+    if (prefix) {
+      const prefixLower = prefix.toLowerCase();
+      const llStem = llBootByPrefix.get(prefixLower) ?? llByPrefix.get(prefixLower);
+      if (llStem) entry.legLowerBase = baseFor('LegLowerTexture', llStem);
+    }
   }
 
   return entry;
@@ -271,18 +277,28 @@ function buildGlovesEntry(idi: IDIRecord, name: string, quality: number, itemId?
   if (!haName || !hasTex(2, haName)) return null;
 
   const gg0 = idi.GeosetGroup[0];
-  const geosetValue = gg0 || inferGeosetValue(haName);
+  const geosetValue = gg0 > 0 ? gg0 + 1 : inferGeosetValue(haName);
 
   const entry: GlovesEntry = { name, quality, handBase: baseFor('HandTexture', haName), geosetValue };
   if (itemId !== undefined) entry.itemId = itemId;
 
-  const prefix = extractPrefix(haName, HA_SUFFIXES);
-  if (prefix) {
-    const alStem = alByPrefix.get(prefix.toLowerCase());
-    if (alStem) entry.armLowerBase = baseFor('ArmLowerTexture', alStem);
+  // ArmLower companion: try IDI Texture[1] first, then prefix heuristic
+  const alName = idi.Texture[1];
+  if (alName && hasTex(1, alName)) {
+    entry.armLowerBase = baseFor('ArmLowerTexture', alName);
+  } else {
+    const prefix = extractPrefix(haName, HA_SUFFIXES);
+    if (prefix) {
+      const alStem = alByPrefix.get(prefix.toLowerCase());
+      if (alStem) entry.armLowerBase = baseFor('ArmLowerTexture', alStem);
+    }
   }
 
-  if (entry.armLowerBase) {
+  // Wrist geoset: prefer IDI GeosetGroup[1], fall back to inference
+  const gg1 = idi.GeosetGroup[1];
+  if (gg1 > 0) {
+    entry.wristGeoset = gg1 + 1;
+  } else if (entry.armLowerBase) {
     const wg = inferWristGeoset(haName);
     if (wg) entry.wristGeoset = wg;
   }
