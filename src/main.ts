@@ -83,16 +83,24 @@ function disposeModel(group: THREE.Group) {
 }
 
 function frameCameraOnModel(group: THREE.Group) {
+  // Force world matrix update so bounding box is accurate
+  group.updateMatrixWorld(true)
+
   const box = new THREE.Box3().setFromObject(group)
   const center = box.getCenter(new THREE.Vector3())
   const size = box.getSize(new THREE.Vector3())
 
-  controls.target.copy(center)
+  // Shift model so its center sits at X=0, Z=0 (keep Y as-is so feet stay on ground)
+  group.position.x = -center.x
+  group.position.z = -center.z
+
+  const targetY = center.y
+  controls.target.set(0, targetY, 0)
 
   // Position camera to fit the model (front view)
   const maxDim = Math.max(size.x, size.y, size.z)
   const dist = maxDim * 1.8
-  camera.position.set(center.x + dist, center.y, center.z)
+  camera.position.set(dist, targetY, 0)
   controls.update()
 }
 
