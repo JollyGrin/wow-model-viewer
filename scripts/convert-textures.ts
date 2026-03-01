@@ -81,7 +81,10 @@ const SKIN_TEXTURES: SkinTextureConfig[] = [
     pelvis:    'data/patch/patch-3/Character/Goblin/male/GoblinMaleNakedPelvisskin00_100.blp',
   }},
   { slug: 'goblin-female',     blpPath: null, fallbackColor: [76, 120, 60, 255] },
-  { slug: 'human-male',        blpPath: 'data/patch/patch-8/Character/Human/Male/HumanMaleSkin00_101.blp' },
+  { slug: 'human-male',        blpPath: 'data/patch/patch-8/Character/Human/Male/HumanMaleSkin00_101.blp', overlays: {
+    faceUpper: 'data/extracted/Character/Human/ScalpUpperHair02_07.blp',
+    faceLower: 'data/extracted/Character/Human/ScalpLowerHair02_07.blp',
+  }},
   { slug: 'human-female',      blpPath: 'data/patch/patch-3/Character/Human/Female/HumanFemaleSkin00_102.blp' },
   { slug: 'night-elf-male',    blpPath: 'data/patch/patch-5/Character/NightElf/Male/NightElfMaleSkin00_09.blp', overlays: {
     faceLower: 'data/patch/patch-5/Character/NightElf/Male/NightElfMaleFaceLower00_09.blp',

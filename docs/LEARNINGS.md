@@ -1,5 +1,24 @@
 # Learnings Journal
 
+## [2026-03-01] Boundary Edge Cap — FAILED
+
+**Context:** Implemented boundary edge detection on geoset 0 to find and fill the back-of-head gap with a triangle fan cap. Tried solid-color, then textured with UVs + body mesh normals.
+
+**Finding:**
+- Body mesh (geoset 0) has 85 separate boundary loops
+- Loop 21 (22 verts, Z 1.530-1.836) is the head gap boundary
+- Solid-color cap: obvious flat rectangle from behind
+- Textured cap (boundary vertex UVs + skin texture + body mesh normals): still visibly wrong — texture seam, UV artifacts from face atlas region, doesn't blend
+
+**Impact:** Boundary edge cap approach does NOT work. Do not retry. The flat triangle fan cannot match the curved body mesh shading, and the boundary vertex UVs map to face atlas regions that look wrong on the back of the head.
+
+**What failed (do not repeat):**
+- Solid-color sampled skin cap
+- Textured cap with boundary vertex UVs
+- Both with renderOrder:-1 and DoubleSide
+
+**Reference:** `screenshots/runs/2026-03-01T03-47-05_textured-boundary-cap/`
+
 ## [2026-02-28] Scalp Texture Compositing — Extraction and Build-Time Overlay
 
 **Context:** Implemented scalp texture compositing to reduce back-of-head gap visibility. Extracted `ScalpLowerHair02_07.blp` and `ScalpUpperHair02_07.blp` from `texture.MPQ` and composited them into the skin atlas at build time.

@@ -31,6 +31,7 @@ const DEFAULT_GEOSETS = new Set([
   501,   // bare feet
   701,   // ears visible
   1301,  // trousers-as-legs (thigh geometry, Z 0.55–1.10)
+  1501,  // bare back (no cape) — fills upper back/neck gap at Z 1.58–1.81
 ]);
 
 function isGeosetVisible(id: number, enabled: Set<number>): boolean {
