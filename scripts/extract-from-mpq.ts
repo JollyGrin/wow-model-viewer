@@ -44,6 +44,10 @@ const TEXTURE_FILES = [
   'Character\\Human\\Male\\HumanMaleFaceLower00_01.blp',
   'Character\\Human\\Male\\HumanMaleFaceUpper00_01.blp',
 
+  // BaseSection 3: Scalp textures (hairstyle 4, color 7 — matching current hair)
+  'Character\\Human\\ScalpLowerHair02_07.blp',
+  'Character\\Human\\ScalpUpperHair02_07.blp',
+
   // BaseSection 4: Underwear (skin color variants)
   'Character\\Human\\Male\\HumanMaleNakedPelvisSkin00_00.blp',
   'Character\\Human\\Male\\HumanMaleNakedTorsoSkin00_00.blp',
@@ -90,7 +94,7 @@ async function main() {
 
   // --- Extract textures from texture.MPQ ---
   console.log('Opening texture.MPQ...');
-  const textureMpq = await MPQ.open('/stormjs/texture.MPQ', 'r');
+  const textureMpq = await MPQ.open('/stormjs/model/texture.MPQ', 'r');
 
   console.log(`\nExtracting ${TEXTURE_FILES.length} texture files:\n`);
   for (const path of TEXTURE_FILES) {
@@ -102,7 +106,7 @@ async function main() {
 
   // --- Extract DBCs from model.MPQ ---
   console.log('\nOpening model.MPQ...');
-  const modelMpq = await MPQ.open('/stormjs/model.MPQ', 'r');
+  const modelMpq = await MPQ.open('/stormjs/model/model.MPQ', 'r');
 
   console.log(`\nExtracting ${DBC_FILES.length} DBC files:\n`);
   for (const path of DBC_FILES) {
@@ -131,7 +135,7 @@ async function main() {
 
   // --- Also try searching texture.MPQ for any face/underwear textures ---
   console.log('\nSearching texture.MPQ for all Human Male textures...');
-  const texMpq2 = await MPQ.open('/stormjs/texture.MPQ', 'r');
+  const texMpq2 = await MPQ.open('/stormjs/model/texture.MPQ', 'r');
   try {
     const humanResults = texMpq2.search('Character\\Human\\Male\\*');
     console.log(`  Found ${humanResults.length} files matching Character\\Human\\Male\\*`);

@@ -1,5 +1,12 @@
+.DS_STORE
 */**/.DS_STORE
-data/*
+data/**/*.zip
+data/**/*.m2
+data/**/*.MPQ
+data/**/*.BLP
+data/**/*.dbc
+data/dbc/*
+data/patch/*
 node_modules
 dist/
 e2e/test-learnings.json

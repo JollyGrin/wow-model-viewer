@@ -2766,362 +2766,434 @@
     {
       "id": 0,
       "indexStart": 0,
-      "indexCount": 1878
+      "indexCount": 1878,
+      "textureType": 1
     },
     {
       "id": 0,
       "indexStart": 1878,
-      "indexCount": 282
+      "indexCount": 282,
+      "textureType": -1
     },
     {
       "id": 202,
       "indexStart": 2160,
-      "indexCount": 156
+      "indexCount": 156,
+      "textureType": -1
     },
     {
       "id": 206,
       "indexStart": 2316,
-      "indexCount": 156
+      "indexCount": 156,
+      "textureType": -1
     },
     {
       "id": 107,
       "indexStart": 2472,
-      "indexCount": 168
+      "indexCount": 168,
+      "textureType": -1
     },
     {
       "id": 208,
       "indexStart": 2640,
-      "indexCount": 156
+      "indexCount": 156,
+      "textureType": -1
     },
     {
       "id": 701,
       "indexStart": 2796,
-      "indexCount": 12
+      "indexCount": 12,
+      "textureType": 1
     },
     {
       "id": 2,
       "indexStart": 2808,
-      "indexCount": 174
+      "indexCount": 174,
+      "textureType": 1
     },
     {
       "id": 3,
       "indexStart": 2982,
-      "indexCount": 198
+      "indexCount": 198,
+      "textureType": 1
     },
     {
       "id": 4,
       "indexStart": 3180,
-      "indexCount": 174
+      "indexCount": 174,
+      "textureType": 1
     },
     {
       "id": 5,
       "indexStart": 3354,
-      "indexCount": 78
+      "indexCount": 78,
+      "textureType": 1
     },
     {
       "id": 1,
       "indexStart": 3432,
-      "indexCount": 18
+      "indexCount": 18,
+      "textureType": 1
     },
     {
       "id": 203,
       "indexStart": 3450,
-      "indexCount": 12
+      "indexCount": 12,
+      "textureType": -1
     },
     {
       "id": 105,
       "indexStart": 3462,
-      "indexCount": 48
+      "indexCount": 48,
+      "textureType": -1
     },
     {
       "id": 204,
       "indexStart": 3510,
-      "indexCount": 24
+      "indexCount": 24,
+      "textureType": -1
     },
     {
       "id": 6,
       "indexStart": 3534,
-      "indexCount": 126
+      "indexCount": 126,
+      "textureType": 1
     },
     {
       "id": 8,
       "indexStart": 3660,
-      "indexCount": 246
+      "indexCount": 246,
+      "textureType": 1
     },
     {
       "id": 9,
       "indexStart": 3906,
-      "indexCount": 234
+      "indexCount": 234,
+      "textureType": 1
     },
     {
       "id": 7,
       "indexStart": 4140,
-      "indexCount": 186
+      "indexCount": 186,
+      "textureType": 1
     },
     {
       "id": 107,
       "indexStart": 4326,
-      "indexCount": 96
+      "indexCount": 96,
+      "textureType": -1
     },
     {
       "id": 702,
       "indexStart": 4422,
-      "indexCount": 60
+      "indexCount": 60,
+      "textureType": 1
     },
     {
       "id": 103,
       "indexStart": 4482,
-      "indexCount": 18
+      "indexCount": 18,
+      "textureType": -1
     },
     {
       "id": 108,
       "indexStart": 4500,
-      "indexCount": 36
+      "indexCount": 36,
+      "textureType": -1
     },
     {
       "id": 102,
       "indexStart": 4536,
-      "indexCount": 36
+      "indexCount": 36,
+      "textureType": -1
     },
     {
       "id": 109,
       "indexStart": 4572,
-      "indexCount": 24
+      "indexCount": 24,
+      "textureType": -1
     },
     {
       "id": 104,
       "indexStart": 4596,
-      "indexCount": 36
+      "indexCount": 36,
+      "textureType": -1
     },
     {
       "id": 108,
       "indexStart": 4632,
-      "indexCount": 72
+      "indexCount": 72,
+      "textureType": -1
     },
     {
       "id": 102,
       "indexStart": 4704,
-      "indexCount": 72
+      "indexCount": 72,
+      "textureType": -1
     },
     {
       "id": 109,
       "indexStart": 4776,
-      "indexCount": 120
+      "indexCount": 120,
+      "textureType": -1
     },
     {
       "id": 104,
       "indexStart": 4896,
-      "indexCount": 72
+      "indexCount": 72,
+      "textureType": -1
     },
     {
       "id": 10,
       "indexStart": 4968,
-      "indexCount": 246
+      "indexCount": 246,
+      "textureType": 1
     },
     {
       "id": 10,
       "indexStart": 5214,
-      "indexCount": 168
+      "indexCount": 168,
+      "textureType": -1
     },
     {
       "id": 11,
       "indexStart": 5382,
-      "indexCount": 246
+      "indexCount": 246,
+      "textureType": 1
     },
     {
       "id": 12,
       "indexStart": 5628,
-      "indexCount": 294
+      "indexCount": 294,
+      "textureType": 1
     },
     {
       "id": 14,
       "indexStart": 5922,
-      "indexCount": 348
+      "indexCount": 348,
+      "textureType": 1
     },
     {
       "id": 202,
       "indexStart": 6270,
-      "indexCount": 72
+      "indexCount": 72,
+      "textureType": -1
     },
     {
       "id": 208,
       "indexStart": 6342,
-      "indexCount": 72
+      "indexCount": 72,
+      "textureType": -1
     },
     {
       "id": 206,
       "indexStart": 6414,
-      "indexCount": 72
+      "indexCount": 72,
+      "textureType": -1
     },
     {
       "id": 802,
       "indexStart": 6486,
-      "indexCount": 288
+      "indexCount": 288,
+      "textureType": 1
     },
     {
       "id": 404,
       "indexStart": 6774,
-      "indexCount": 432
+      "indexCount": 432,
+      "textureType": 1
     },
     {
       "id": 403,
       "indexStart": 7206,
-      "indexCount": 576
+      "indexCount": 576,
+      "textureType": 1
     },
     {
       "id": 402,
       "indexStart": 7782,
-      "indexCount": 348
+      "indexCount": 348,
+      "textureType": 1
     },
     {
       "id": 401,
       "indexStart": 8130,
-      "indexCount": 288
+      "indexCount": 288,
+      "textureType": 1
     },
     {
       "id": 803,
       "indexStart": 8418,
-      "indexCount": 432
+      "indexCount": 432,
+      "textureType": 1
     },
     {
       "id": 1501,
       "indexStart": 8850,
-      "indexCount": 78
+      "indexCount": 78,
+      "textureType": 1
     },
     {
       "id": 1502,
       "indexStart": 8928,
-      "indexCount": 246
+      "indexCount": 246,
+      "textureType": -1
     },
     {
       "id": 1503,
       "indexStart": 9174,
-      "indexCount": 198
+      "indexCount": 198,
+      "textureType": -1
     },
     {
       "id": 1504,
       "indexStart": 9372,
-      "indexCount": 174
+      "indexCount": 174,
+      "textureType": -1
     },
     {
       "id": 1505,
       "indexStart": 9546,
-      "indexCount": 138
+      "indexCount": 138,
+      "textureType": -1
     },
     {
       "id": 1506,
       "indexStart": 9684,
-      "indexCount": 150
+      "indexCount": 150,
+      "textureType": -1
     },
     {
       "id": 1102,
       "indexStart": 9834,
-      "indexCount": 132
+      "indexCount": 132,
+      "textureType": 1
     },
     {
       "id": 1002,
       "indexStart": 9966,
-      "indexCount": 120
+      "indexCount": 120,
+      "textureType": 1
     },
     {
       "id": 1302,
       "indexStart": 10086,
-      "indexCount": 432
+      "indexCount": 432,
+      "textureType": 1
     },
     {
       "id": 1301,
       "indexStart": 10518,
-      "indexCount": 600
+      "indexCount": 600,
+      "textureType": 1
     },
     {
       "id": 903,
       "indexStart": 11118,
-      "indexCount": 144
+      "indexCount": 144,
+      "textureType": 1
     },
     {
       "id": 0,
       "indexStart": 11262,
-      "indexCount": 66
+      "indexCount": 66,
+      "textureType": -1
     },
     {
       "id": 1501,
       "indexStart": 11328,
-      "indexCount": 150
+      "indexCount": 150,
+      "textureType": -1
     },
     {
       "id": 1503,
       "indexStart": 11478,
-      "indexCount": 150
+      "indexCount": 150,
+      "textureType": -1
     },
     {
       "id": 1504,
       "indexStart": 11628,
-      "indexCount": 150
+      "indexCount": 150,
+      "textureType": -1
     },
     {
       "id": 1505,
       "indexStart": 11778,
-      "indexCount": 150
+      "indexCount": 150,
+      "textureType": -1
     },
     {
       "id": 1506,
       "indexStart": 11928,
-      "indexCount": 150
+      "indexCount": 150,
+      "textureType": -1
     },
     {
       "id": 1502,
       "indexStart": 12078,
-      "indexCount": 150
+      "indexCount": 150,
+      "textureType": -1
     },
     {
       "id": 1202,
       "indexStart": 12228,
-      "indexCount": 144
+      "indexCount": 144,
+      "textureType": 1
     },
     {
       "id": 302,
       "indexStart": 12372,
-      "indexCount": 144
+      "indexCount": 144,
+      "textureType": 1
     },
     {
       "id": 303,
       "indexStart": 12516,
-      "indexCount": 168
+      "indexCount": 168,
+      "textureType": 1
     },
     {
       "id": 306,
       "indexStart": 12684,
-      "indexCount": 192
+      "indexCount": 192,
+      "textureType": 1
     },
     {
       "id": 307,
       "indexStart": 12876,
-      "indexCount": 168
+      "indexCount": 168,
+      "textureType": 1
     },
     {
       "id": 309,
       "indexStart": 13044,
-      "indexCount": 144
+      "indexCount": 144,
+      "textureType": 1
     },
     {
       "id": 0,
       "indexStart": 13188,
-      "indexCount": 12
+      "indexCount": 12,
+      "textureType": 1
     },
     {
       "id": 110,
       "indexStart": 13200,
-      "indexCount": 150
+      "indexCount": 150,
+      "textureType": -1
     },
     {
       "id": 111,
       "indexStart": 13350,
-      "indexCount": 354
+      "indexCount": 354,
+      "textureType": -1
     },
     {
       "id": 13,
       "indexStart": 13704,
-      "indexCount": 174
+      "indexCount": 174,
+      "textureType": 1
     }
   ]
 }

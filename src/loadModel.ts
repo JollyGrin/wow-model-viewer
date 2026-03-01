@@ -15,7 +15,7 @@ interface ModelManifest {
   indexBufferSize: number;
   vertexStride: number;
   bones: BoneInfo[];
-  groups: Array<{ id: number; indexStart: number; indexCount: number }>;
+  groups: Array<{ id: number; indexStart: number; indexCount: number; textureType: number }>;
 }
 
 // Geoset visibility for a naked character.
@@ -31,6 +31,7 @@ const DEFAULT_GEOSETS = new Set([
   501,   // bare feet
   701,   // ears visible
   1301,  // trousers-as-legs (thigh geometry, Z 0.55–1.10)
+  1501,  // bare back (no cape) — fills upper back/neck gap at Z 1.58–1.81
 ]);
 
 function isGeosetVisible(id: number, enabled: Set<number>): boolean {
@@ -61,7 +62,11 @@ async function loadTexture(url: string): Promise<THREE.DataTexture> {
   return texture;
 }
 
-const HAIR_GEOSETS = new Set([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+// M2 texture types: 0=Hardcoded, 1=Body/skin, 2=Cape, 6=Hair, 8=Fur
+const HAIR_TEX_TYPE = 6;
+
+// Fallback for legacy model.json without textureType: geoset IDs that use hair texture
+const HAIR_GEOSETS_FALLBACK = new Set([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
 // --- Skeleton builder ---
 
@@ -197,13 +202,18 @@ export async function loadModel(
         side: THREE.DoubleSide,
       });
 
-  // Collect indices: skin (all non-hair geosets) vs hair
+  // Collect indices: skin vs hair, based on per-submesh textureType from M2 batch data.
+  // textureType comes from the M2 batch → textureLookup → textureTable chain.
+  // Fallback for legacy model.json without textureType: use geoset group heuristic.
   const skinIndexList: number[] = [];
   const hairIndexList: number[] = [];
 
   for (const g of manifest.groups) {
     if (!isGeosetVisible(g.id, enabledGeosets)) continue;
-    const target = HAIR_GEOSETS.has(g.id) ? hairIndexList : skinIndexList;
+    const isHair = g.textureType !== undefined && g.textureType >= 0
+      ? g.textureType === HAIR_TEX_TYPE
+      : HAIR_GEOSETS_FALLBACK.has(g.id);
+    const target = isHair ? hairIndexList : skinIndexList;
     for (let i = 0; i < g.indexCount; i++) {
       target.push(fullIndexData[g.indexStart + i]);
     }

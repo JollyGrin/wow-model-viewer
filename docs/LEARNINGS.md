@@ -1,5 +1,71 @@
 # Learnings Journal
 
+## [2026-03-01] Back-of-Head/Neck Gap — SOLVED: Missing Geoset 1501
+
+**Context:** All 20 race/gender models had a large gap at the upper back / base of skull (Z 1.7–1.8) visible from behind. Many approaches had been tried and failed (boundary edge caps, inner spheres, planes, BackSide fill, bone identity, etc.). The gap was systemic across all models.
+
+**Finding:**
+- The body mesh (geoset 0) has **zero back-facing triangles** in the Z 1.7–1.8 band (X < -0.04). This is a genuine geometric hole — not a rendering or conversion issue.
+- **Geoset 1501** is the "bare back / no cape" geoset — 20 skin-textured triangles (textureType=1) covering Z 1.582–1.813, exactly the gap region. It was missing from our `DEFAULT_GEOSETS`.
+- WMVx (the reference WoW Model Viewer) enables 1501 by default via the rule: `geoset_id == 0 || (geoset_id > 100 && geoset_id % 100 == 1)`.
+- Group 15 = Cape. 1501 = "cape slot empty" (bare back). 1502+ = various cape lengths. Like 401 (bare hands) and 501 (bare feet), 1501 is body geometry that shows when no equipment is in that slot.
+
+**Root cause analysis method:**
+1. Listed ALL 57 submeshes from model.json with spatial bounds and textureType
+2. Identified which geosets have geometry in the gap region (Z 1.3–1.8, back of model)
+3. Determined coordinate system orientation: +X = front (face), -X = back, Y = left/right, Z = height
+4. Counted back-facing triangle coverage by Z band for active geosets — found Z 1.7–1.8 had **zero** triangles
+5. Verified geoset 1501 fills exactly that band (+10 tris at Z 1.7–1.8, +6 tris at Z 1.6–1.7)
+6. Cross-referenced with WMVx source code to confirm 1501 should be enabled by default
+
+**Impact:** Adding `1501` to `DEFAULT_GEOSETS` in `src/loadModel.ts` fixes the back gap across all models. No synthetic geometry, no rendering hacks — just enabling a geoset that was always in the M2 data.
+
+**Key principle: WoW character models are COMPLETE — every body region is covered by some geoset.** When you see a gap, the first thing to check is whether you're missing a geoset, not whether the mesh has holes. The M2 geoset system is designed so that the right combination of active geosets produces a watertight character.
+
+**WMVx default geoset rule (reference for future work):**
+```
+geoset_id == 0 || (geoset_id > 100 && geoset_id % 100 == 1)
+```
+This enables: 0 (body), 101, 201, 301, 401, 501, 601, 701, 801, 901, 1001, 1101, 1201, 1301, 1501, 1801.
+Not all models have all of these IDs — but when present, they should be enabled for a naked character.
+
+**Reference:** `src/loadModel.ts:24-35` (DEFAULT_GEOSETS), WMVx `CharacterCustomization.cpp` ModelDefaultsGeosetModifier
+
+## [2026-03-01] Boundary Edge Cap — FAILED
+
+**Context:** Implemented boundary edge detection on geoset 0 to find and fill the back-of-head gap with a triangle fan cap. Tried solid-color, then textured with UVs + body mesh normals.
+
+**Finding:**
+- Body mesh (geoset 0) has 85 separate boundary loops
+- Loop 21 (22 verts, Z 1.530-1.836) is the head gap boundary
+- Solid-color cap: obvious flat rectangle from behind
+- Textured cap (boundary vertex UVs + skin texture + body mesh normals): still visibly wrong — texture seam, UV artifacts from face atlas region, doesn't blend
+
+**Impact:** Boundary edge cap approach does NOT work. Do not retry. The flat triangle fan cannot match the curved body mesh shading, and the boundary vertex UVs map to face atlas regions that look wrong on the back of the head.
+
+**What failed (do not repeat):**
+- Solid-color sampled skin cap
+- Textured cap with boundary vertex UVs
+- Both with renderOrder:-1 and DoubleSide
+
+**Reference:** `screenshots/runs/2026-03-01T03-47-05_textured-boundary-cap/`
+
+## [2026-02-28] Scalp Texture Compositing — Extraction and Build-Time Overlay
+
+**Context:** Implemented scalp texture compositing to reduce back-of-head gap visibility. Extracted `ScalpLowerHair02_07.blp` and `ScalpUpperHair02_07.blp` from `texture.MPQ` and composited them into the skin atlas at build time.
+
+**Finding:**
+- Scalp BLPs are stored at shared race level (`Character\Human\`), NOT in `Male/` subdirectory
+- `texture.MPQ` is at `data/model/texture.MPQ` (not `data/texture.MPQ`) — script paths needed fixing
+- ScalpLower (23KB) maps to FACE_LOWER region (x:0, y:192, 128x64); ScalpUpper (12KB) maps to FACE_UPPER region (x:0, y:160, 128x32)
+- Scalp BLPs have alpha transparency — only scalp-area pixels are opaque, so non-scalp face pixels are untouched during compositing
+- Compositing works correctly: body mesh crown/forehead shows hair-matching brown color
+- The back-of-head **gap** still visible — this is missing **geometry**, not a texture problem. Scalp compositing helps blend the boundary but can't fill a hole where no polygons exist
+
+**Impact:** Scalp compositing is one layer of the WoW client's approach. Full solution likely requires either: (a) geoset 1 (bald cap) scaled up, (b) hair geoset with better coverage, or (c) generated fill geometry at the gap boundary.
+
+**Reference:** `scripts/extract-from-mpq.ts`, `scripts/convert-textures.ts`, `screenshots/runs/2026-02-28T18-04-02_scalp-texture-compositing/`
+
 ## [2026-02-18] M2 Version 256 Header Differences from WotLK
 
 **Context:** Attempting to parse HumanMale.m2 (vanilla 1.12.x, version 256) using `@wowserhq/format`
@@ -26,10 +92,10 @@ These 12 extra bytes shift all subsequent fields, causing the parser to read gar
 **Context:** Parsing embedded view data from M2 v256
 **Finding:** The struct sizes for embedded skin data differ from WotLK:
 
-| Struct | Vanilla (v256) | WotLK (v264+) | Missing Fields |
-|--------|---------------|---------------|----------------|
-| M2SkinSection (submesh) | 32 bytes | 48 bytes | `sortCenterPosition[3]`, `sortRadius` |
-| M2Batch | 24 bytes | 26 bytes | Likely 1 uint16 field |
+| Struct                  | Vanilla (v256) | WotLK (v264+) | Missing Fields                        |
+| ----------------------- | -------------- | ------------- | ------------------------------------- |
+| M2SkinSection (submesh) | 32 bytes       | 48 bytes      | `sortCenterPosition[3]`, `sortRadius` |
+| M2Batch                 | 24 bytes       | 26 bytes      | Likely 1 uint16 field                 |
 
 Confirmed by checking offset gaps between submeshes array and batches array: `0x1c40e9 - 0x1c39e9 = 1792 = 56 × 32`.
 
@@ -48,6 +114,7 @@ Confirmed by checking offset gaps between submeshes array and batches array: `0x
 
 **Context:** Successfully converted HumanMale.m2 to web format
 **Finding:**
+
 - **3159 vertices**, **3773 triangles** (highest LOD, View 0)
 - **56 geoset groups** (19 of which are empty placeholders with id=65535)
 - **4 LOD levels** (views)
@@ -63,18 +130,19 @@ Confirmed by checking offset gaps between submeshes array and batches array: `0x
 **Context:** Rendering HumanMale.m2 untextured with geoset filtering. Multiple iterations showed missing body parts.
 **Finding:** The body mesh (geoset 0) has **intentional holes** designed to be filled by equipment geosets. Z-binned triangle analysis reveals:
 
-| Z Range (height) | Body (id=0) | What Fills It |
-|-------------------|-------------|---------------|
-| 0.00–0.20 | 102 tris (feet) | — |
-| 0.20–0.60 | **0 tris** (HOLE) | Boots geoset (501=bare feet, covers Z 0.13–0.61) |
-| 0.60–0.70 | **0 tris** (HOLE) | **Nothing bare** — only equipment: kneepads 903, robe 1301, high boots 503/504 |
-| 0.70–0.90 | 114 tris (waist/hips) | — |
-| 0.90–1.10 | 54 tris (lower torso) | Undershirt 1002 (Z 0.93–1.11), Pants 1102 (Z 0.81–1.11) |
-| 1.10–1.30 | 34 tris (sparse upper back) | Sleeves 802/803 cover arms, NOT the back |
-| 1.30–1.70 | 178 tris (torso/shoulders) | — |
-| 1.70–2.00 | 142 tris (head/face) | Hairstyles (1–13), Facial (101/201/301), Ears (701) |
+| Z Range (height) | Body (id=0)                 | What Fills It                                                                  |
+| ---------------- | --------------------------- | ------------------------------------------------------------------------------ |
+| 0.00–0.20        | 102 tris (feet)             | —                                                                              |
+| 0.20–0.60        | **0 tris** (HOLE)           | Boots geoset (501=bare feet, covers Z 0.13–0.61)                               |
+| 0.60–0.70        | **0 tris** (HOLE)           | **Nothing bare** — only equipment: kneepads 903, robe 1301, high boots 503/504 |
+| 0.70–0.90        | 114 tris (waist/hips)       | —                                                                              |
+| 0.90–1.10        | 54 tris (lower torso)       | Undershirt 1002 (Z 0.93–1.11), Pants 1102 (Z 0.81–1.11)                        |
+| 1.10–1.30        | 34 tris (sparse upper back) | Sleeves 802/803 cover arms, NOT the back                                       |
+| 1.30–1.70        | 178 tris (torso/shoulders)  | —                                                                              |
+| 1.70–2.00        | 142 tris (head/face)        | Hairstyles (1–13), Facial (101/201/301), Ears (701)                            |
 
 Key gaps in "naked" configuration:
+
 1. **Knee gap (Z 0.60–0.70)**: No bare geoset exists. Boots 501 stops at Z 0.61, body starts at Z 0.70. The game hides this with shared boundary vertices + skin texture continuity.
 2. **Scalp**: Body has only 20 tris at Z 1.90–2.00. Hairstyle geoset 1 (44 tris, Z 1.90–2.02) provides the bald scalp cap. Geoset 0 is the body, NOT "bald hairstyle."
 3. **Upper back (Z 1.10–1.30)**: Only 34 sparse body tris. No bare geoset fills it. Hidden by textures in-game.
@@ -83,6 +151,7 @@ Key gaps in "naked" configuration:
 **Impact:** For untextured rendering, the "naked" character will always have visible seams at knees and sparse back. Bridging the knee gap requires adding kneepads (903, Z 0.49–0.73, 32 tris). The bald scalp requires hairstyle 1 (id=1), NOT relying on body (id=0) alone.
 
 Default geosets for minimal naked character:
+
 ```
 0     — body mesh (torso, waist, head, feet)
 1     — bald scalp cap
@@ -103,6 +172,7 @@ Default geosets for minimal naked character:
 
 **Context:** Adding texture mapping to the human male model
 **Finding:** M2 vertex format (48 bytes) includes UV coordinates at offset 32:
+
 - Position: 3 floats (12B) at offset 0
 - BoneWeights: 4 uint8 (4B) at offset 12
 - BoneIndices: 4 uint8 (4B) at offset 16
@@ -142,11 +212,13 @@ Model bounding box (WoW coords): X [-0.49, 0.49], Y [-0.62, 0.62], Z [0, 2.03]
 
 **Context:** Parsing M2 texture entries for the human male model
 **Finding:** The M2 file has 3 texture slots, all runtime-resolved (no hardcoded filenames):
+
 - Texture 0: type=1 (Character Skin) — body base from CharSections.dbc
 - Texture 1: type=6 (Character Hair) — hair from CharSections.dbc
 - Texture 2: type=2 (Cape) — from equipment data
 
 The standard WoW character skin is a COMPOSITE of multiple layers:
+
 - BaseSection 0: Body skin base (e.g., `HumanMaleSkin00_00.blp`)
 - BaseSection 1: Face (lower + upper textures overlaid on face region)
 - BaseSection 4: Underwear (overlaid on pelvis region)
@@ -162,6 +234,7 @@ These are composited into a single 256×256 atlas at runtime. Our patch data onl
 **Finding:** The underwear/undershirt geosets are floating geometry bands that visually stick out from the body mesh, creating a "skirt" appearance. This is NOT a rendering bug — it's the actual geometry.
 
 In the WoW client, this is invisible because:
+
 1. The composite skin texture paints matching skin color across body→geoset boundaries
 2. The underwear region has specific painted underwear detail that blends with the surrounding geoset geometry
 3. Without these geosets, the body has large holes at hips (Z 0.70-1.10) and knees (Z 0.49-0.73)
@@ -185,6 +258,7 @@ However, the model has inconsistent winding — some upper back triangles appear
 
 **Context:** Comparing MeshBasicMaterial, MeshLambertMaterial, and MeshStandardMaterial
 **Finding:**
+
 - **MeshBasicMaterial**: Unlit, no muscle definition visible. Hides geometry issues but looks flat.
 - **MeshStandardMaterial**: PBR rendering creates harsh shadows that emphasize geometry seams and the skirt effect.
 - **MeshLambertMaterial**: Simple diffuse shading closest to WoW's own rendering. Shows muscle definition through normals without harsh PBR artifacts.
@@ -199,12 +273,14 @@ Best lighting setup: High ambient (0.8) + front directional (0.5 from character 
 **Context:** Geosets 1002 (undershirt) and 1102 (pants) create floating band geometry that looks like a skirt. Tried multiple vertex manipulation approaches to make them hug the body.
 
 **Finding:** Four approaches tested:
+
 1. **Nearest-body-vertex lerp (LERP=0.85)** — Original approach. Clothing vertices lerped toward nearest body vertex. V-shaped skirt flaps remained because lerp doesn't account for directionality.
 2. **Centroid shrink (SHRINK=0.92)** — Shrink XY toward body centroid at each height. Eliminated skirt but inner-thigh vertices collapsed past each other, creating dark gaps between legs.
 3. **Selective nearest-vertex lerp (only protruding vertices)** — Only moved vertices beyond 95% of body max radius. Partially reduced skirt but left rectangular band protruding at sides.
-4. **Centroid shrink with radius clamping (SHRINK=0.55, minR=bodyMinR*0.85)** — Best result. Moderate shrink toward centroid with a minimum radius floor prevents inner geometry collapse. Band is tight-fitting like shorts instead of floating skirt.
+4. **Centroid shrink with radius clamping (SHRINK=0.55, minR=bodyMinR\*0.85)** — Best result. Moderate shrink toward centroid with a minimum radius floor prevents inner geometry collapse. Band is tight-fitting like shorts instead of floating skirt.
 
 None of these approaches fully eliminate the band — the remaining visibility is because:
+
 - The clothing geometry is designed to be painted with matching skin texture via runtime compositing
 - Without proper underwear texture compositing, the shading difference at geoset boundaries creates visible edges
 - The body mesh has intentional holes that REQUIRE these geosets, so they can't be removed
@@ -218,12 +294,12 @@ None of these approaches fully eliminate the band — the remaining visibility i
 
 **Finding:** Tested 4 candidate skins:
 
-| BLP File | Tone | Underwear | Pixel Sample (RGBA) | Match Quality |
-|----------|------|-----------|---------------------|---------------|
-| `HumanMale_Magic.blp` (patch-3) | Warm golden/peach | Dark (matches skin) | R=137 G=116 B=93 | **Best** — closest warm tone |
-| `HumanMale_Pirate.blp` (patch-3) | Warm tan/brown + tattoos | Very dark/black | R=127 G=98 B=75 | Too brown, has forearm tattoos |
-| `HumanMaleSkin00_101.blp` (patch-8) | Pale/cool gray-pink | Purple | R=57 G=47 B=70 | Too pale, purple underwear |
-| `HumanMaleSkin00_102.blp` (patch-3) | Gray/marble/stone | Dark | R=128 G=130 B=131 | Way too gray |
+| BLP File                            | Tone                     | Underwear           | Pixel Sample (RGBA) | Match Quality                  |
+| ----------------------------------- | ------------------------ | ------------------- | ------------------- | ------------------------------ |
+| `HumanMale_Magic.blp` (patch-3)     | Warm golden/peach        | Dark (matches skin) | R=137 G=116 B=93    | **Best** — closest warm tone   |
+| `HumanMale_Pirate.blp` (patch-3)    | Warm tan/brown + tattoos | Very dark/black     | R=127 G=98 B=75     | Too brown, has forearm tattoos |
+| `HumanMaleSkin00_101.blp` (patch-8) | Pale/cool gray-pink      | Purple              | R=57 G=47 B=70      | Too pale, purple underwear     |
+| `HumanMaleSkin00_102.blp` (patch-3) | Gray/marble/stone        | Dark                | R=128 G=130 B=131   | Way too gray                   |
 
 Skipped `103NecroBlue`, `104WizardFel`, `105WizardArcane` — names indicate fantasy colors (blue/green/arcane) incompatible with reference's natural skin tone.
 
@@ -238,14 +314,15 @@ The reference's golden shorts are composited from base CharSections skin + under
 
 **Finding:** Both geosets add visible sleeve flap geometry that extends beyond the body silhouette:
 
-| Geoset | Tris | Max |Y| (lateral) | Body Max |Y| at same Z | Visual Result |
-|--------|------|-------------------|------------------------|---------------|
-| 802 | 24 | 0.619 | 0.535 | Small flared sleeves at elbows |
-| 803 | 72 | 0.569 | 0.535 | Larger sleeve tubes on forearms |
+| Geoset | Tris | Max   | Y     | (lateral)                       | Body Max | Y   | at same Z | Visual Result |
+| ------ | ---- | ----- | ----- | ------------------------------- | -------- | --- | --------- | ------------- |
+| 802    | 24   | 0.619 | 0.535 | Small flared sleeves at elbows  |
+| 803    | 72   | 0.569 | 0.535 | Larger sleeve tubes on forearms |
 
 Both geosets are mostly back-facing (802: 24/28 verts on back, 803: 44/56), which explains why they were candidates — they DO cover the back shoulder region. However, they also extend outward past the arm boundary, creating visible sleeve flaps in both front and back views.
 
 The body mesh (geoset 0) has sparse but present coverage in the upper back:
+
 - Z [1.00, 1.30]: 2-3 back-facing triangles per 0.05 Z-bin
 - No actual see-through holes — just low-poly flat shading
 - The "gap" appearance is a shading artifact from sparse geometry, not missing faces
@@ -260,6 +337,7 @@ The reference screenshot looks smooth because the WoW client has full composited
 **Context:** Adding hair to the human male model. Needed to determine which geoset ID corresponds to which hairstyle, and which texture to use.
 
 **Finding:** M2 batch data reveals texture-to-submesh mappings via `texLookup`:
+
 - texLookup=0 → skin texture (M2 texture type 1, CharacterSkin)
 - texLookup=1 → hair texture (M2 texture type 6, CharacterHair)
 - texLookup=2 → cape texture (M2 texture type 2, Cape)
@@ -279,11 +357,11 @@ Geoset 5 (hairstyle 4) has 148 triangles across 2 submeshes (348 + 96 indices). 
 
 **Finding:** The original lighting (ambient 0.8 + directional 0.5 + fill 0.3) had too much ambient light, which floods shadow areas and reduces contrast. Lowering ambient to 0.55 and increasing the front directional to 0.75 produced significantly better muscle definition. Adding warm tints (0xfff5e6 ambient, 0xfff0dd front, 0xffe8d0 fill) better matches the reference's golden skin tone.
 
-| Light | Before | After |
-|-------|--------|-------|
-| Ambient | 0xffffff @ 0.8 | 0xfff5e6 @ 0.55 |
+| Light             | Before         | After           |
+| ----------------- | -------------- | --------------- |
+| Ambient           | 0xffffff @ 0.8 | 0xfff5e6 @ 0.55 |
 | Front directional | 0xffffff @ 0.5 | 0xfff0dd @ 0.75 |
-| Fill directional | 0xffffff @ 0.3 | 0xffe8d0 @ 0.35 |
+| Fill directional  | 0xffffff @ 0.3 | 0xffe8d0 @ 0.35 |
 
 The key insight: for low-poly models where muscle definition comes from vertex normals, directional light creates the shadows that reveal surface detail. Ambient light fills those shadows and flattens the appearance.
 
@@ -294,6 +372,7 @@ The key insight: for low-poly models where muscle definition comes from vertex n
 
 **Context:** Fixing the upper leg area — 55% radial shrink created massive black gaps, removing shrink created a visible waist "skirt" where clothing geosets (1102, 1002) extended beyond the body silhouette.
 **Finding:** Multiple approaches failed:
+
 1. Uniform shrink (0.10) — skirt still visible, barely affected
 2. Boundary clamp (snap vertices beyond body maxR) — skirt unaffected because at waist height, body maxR (torso width) is larger than clothing radius
 3. Face-level culling with scalar maxR — damaged kneepads (903) without fixing waist
@@ -310,6 +389,7 @@ The key insight: the skirt isn't about radial distance from centroid or even dir
 **Context:** After multiple iterations of vertex snapping, clamping, angular projection, and stretch culling — all creating hip wings, crotch gaps, or shelf artifacts — researched how the actual WoW client and open-source viewers (WoWModelViewer, wowserhq/scene, zamimg/Wowhead) handle character geosets.
 
 **Finding:** WoW's rendering engine does ZERO vertex manipulation at runtime. No snapping, no shrinking, no clamping. The system works purely through:
+
 1. Geoset visibility toggling (show/hide submeshes)
 2. Standard depth testing (resolves overlaps naturally)
 3. Shared boundary vertices (stitched mesh — geosets share exact vertex positions at boundaries)
@@ -319,10 +399,10 @@ Our vertex snapping was **causing** the problems, not fixing them. The snapping 
 
 The critical formula for default geosets: `enabled_meshId = groupBase + geosetGroupValue + 1`, with `geosetGroupValue=1` for all groups by default (from GeosRenderPrep).
 
-| Group | Wrong Default | Correct Default | Difference |
-|-------|---------------|-----------------|------------|
-| 5 (boots) | 501 (86 tris) | 502 (142 tris) | Nearly double the leg geometry |
-| 9 (kneepads) | 903 (Z 0.49-0.73) | 902 (Z 0.34-0.61) | Much more thigh coverage |
+| Group        | Wrong Default     | Correct Default   | Difference                     |
+| ------------ | ----------------- | ----------------- | ------------------------------ |
+| 5 (boots)    | 501 (86 tris)     | 502 (142 tris)    | Nearly double the leg geometry |
+| 9 (kneepads) | 903 (Z 0.49-0.73) | 902 (Z 0.34-0.61) | Much more thigh coverage       |
 
 Using 902+903 together bridges the full gap from Z 0.34 to Z 0.73.
 
@@ -338,6 +418,7 @@ Geoset 1102 (default pants) was analyzed in detail: ALL 24 triangles are outward
 **Finding:** The body mesh has ZERO vertices from Z 0.20 to Z 0.70 — the entire thigh region is empty by design. WoW fills this with equipment geosets + texture compositing. For a naked character, only geoset 501 (bare feet, Z 0.13–0.61) provides lower leg geometry. The gap is 0.11 units vertically but also requires massive lateral expansion: legs are at |Y| ~0.17 while the body waist is at |Y| ~0.49.
 
 **Solution:** Generated thigh bridge geometry (same approach as neck patch):
+
 - 6 vertices per ring, 5 rings per leg (ease-out interpolation for natural taper)
 - Bottom ring: exact 501 top boundary positions (6 unique vertices per leg)
 - Top ring: outer vertices at Z=0.80, |Y|~0.48 (inside body mesh hip ring); inner vertices at Z=0.84 (fills pelvis shadow zone)
@@ -346,6 +427,7 @@ Geoset 1102 (default pants) was analyzed in detail: ALL 24 triangles are outward
 - Uses computeVertexNormals() for smooth shading
 
 **Key dimensions from boundary analysis:**
+
 - 501 top boundary: 14 vertices (7 per leg), Z 0.549–0.614, centered at Y ≈ ±0.172
 - Body waist boundary: 94 vertices at Z 0.70–0.85, all at |Y| ≈ 0.48–0.55
 - No shared vertices between body(0) and 501 — separate meshes
@@ -381,14 +463,14 @@ Geoset 1102 (default pants) was analyzed in detail: ALL 24 triangles are outward
 
 **Finding:** Every widening approach creates visible artifacts because of a fundamental geometric trade-off:
 
-| # | Approach | Result | Why It Failed |
-|---|----------|--------|---------------|
-| 1 | Y-clamping body mesh + wide bridge (|Y|=0.48) + bridge in front (polygonOffset -1) | Massive hexagonal band | Y-clamping narrowed body to |Y|=0.39, bridge extended 0.09 beyond |
-| 2 | Swap polygonOffset: body in front (-1), bridge behind (+1) | Same hexagonal band | Bridge sticks out above lip zone (Z > 0.84) where body is narrower than bridge |
-| 3 | Narrow bridge (|Y|=0.38), no clamping | Wide black gap under lip | Bridge too narrow — gap from |Y|=0.38 to lip at |Y|=0.54 |
-| 4 | 3-keyframe: narrow mid (|Y|=0.30), wide top (|Y|=0.50) | Horizontal bar at mid ring | Mid ring 0.03 wider than legs = 11px visible edge |
-| 5 | Step easing (zero widening until t=0.8), top at |Y|=0.44 | Thin line from panel disc | Front/back panel fan triangles form disc at Z=0.76, visible edge-on |
-| 6 | **Constant-width tubes to Z=0.85, no widening, no panels** | **Best result** | No artifacts from bridge. Lip still visible (inherent to mesh) |
+| #   | Approach                                                   | Result              | Why It Failed                                                                  |
+| --- | ---------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------ | ------------------------- | ------------------------------------------------------------------- | -------------------------- | ------------------------------------------------- | --- | ----- |
+| 1   | Y-clamping body mesh + wide bridge (                       | Y                   | =0.48) + bridge in front (polygonOffset -1)                                    | Massive hexagonal band    | Y-clamping narrowed body to                                         | Y                          | =0.39, bridge extended 0.09 beyond                |
+| 2   | Swap polygonOffset: body in front (-1), bridge behind (+1) | Same hexagonal band | Bridge sticks out above lip zone (Z > 0.84) where body is narrower than bridge |
+| 3   | Narrow bridge (                                            | Y                   | =0.38), no clamping                                                            | Wide black gap under lip  | Bridge too narrow — gap from                                        | Y                          | =0.38 to lip at                                   | Y   | =0.54 |
+| 4   | 3-keyframe: narrow mid (                                   | Y                   | =0.30), wide top (                                                             | Y                         | =0.50)                                                              | Horizontal bar at mid ring | Mid ring 0.03 wider than legs = 11px visible edge |
+| 5   | Step easing (zero widening until t=0.8), top at            | Y                   | =0.44                                                                          | Thin line from panel disc | Front/back panel fan triangles form disc at Z=0.76, visible edge-on |
+| 6   | **Constant-width tubes to Z=0.85, no widening, no panels** | **Best result**     | No artifacts from bridge. Lip still visible (inherent to mesh)                 |
 
 **Key insights:**
 
@@ -432,17 +514,17 @@ Scannable tables per problem area. Add a new table once a problem accumulates 2+
 
 ### Leg Geometry
 
-| # | Approach | Outcome | Key Insight |
-|---|----------|---------|-------------|
-| 1 | 55% centroid shrink | FAILED | Inner vertices collapsed past each other, black gaps between legs |
-| 2 | Nearest-body-vertex lerp (0.85) | FAILED | V-shaped skirt flaps remained, lerp doesn't account for directionality |
-| 3 | Selective nearest-vertex lerp (protruding only) | PARTIAL | Reduced skirt but left rectangular band at sides |
-| 4 | Centroid shrink + radius clamp (0.55, minR=0.85*bodyMinR) | PARTIAL | Best vertex manipulation result, but still visible band |
-| 5 | Normal-based vertex snapping (dot > 0) | PARTIAL | Eliminated skirt but created hip wings from triangle distortion |
-| 6 | Stretch ratio triangle culling (3x) on top of snapping | PARTIAL | Reduced wings but crotch gap remained |
-| 7 | Angular-aware vertex projection (atan2) | FAILED | Created wide horizontal shelf — body wider than geoset at waist |
-| 8 | X-direction clamping | FAILED | Still visible skirt + gap |
-| 9 | Remove ALL vertex manipulation + correct geoset defaults | SUCCESS | WoW does NO vertex manipulation at runtime |
+| #   | Approach                                                   | Outcome | Key Insight                                                            |
+| --- | ---------------------------------------------------------- | ------- | ---------------------------------------------------------------------- |
+| 1   | 55% centroid shrink                                        | FAILED  | Inner vertices collapsed past each other, black gaps between legs      |
+| 2   | Nearest-body-vertex lerp (0.85)                            | FAILED  | V-shaped skirt flaps remained, lerp doesn't account for directionality |
+| 3   | Selective nearest-vertex lerp (protruding only)            | PARTIAL | Reduced skirt but left rectangular band at sides                       |
+| 4   | Centroid shrink + radius clamp (0.55, minR=0.85\*bodyMinR) | PARTIAL | Best vertex manipulation result, but still visible band                |
+| 5   | Normal-based vertex snapping (dot > 0)                     | PARTIAL | Eliminated skirt but created hip wings from triangle distortion        |
+| 6   | Stretch ratio triangle culling (3x) on top of snapping     | PARTIAL | Reduced wings but crotch gap remained                                  |
+| 7   | Angular-aware vertex projection (atan2)                    | FAILED  | Created wide horizontal shelf — body wider than geoset at waist        |
+| 8   | X-direction clamping                                       | FAILED  | Still visible skirt + gap                                              |
+| 9   | Remove ALL vertex manipulation + correct geoset defaults   | SUCCESS | WoW does NO vertex manipulation at runtime                             |
 
 | 10 | Correct geosets (502+902+903) but no vertex manipulation | PARTIAL | No wings/gaps, but 502=boots, 902/903=kneepads look like armor |
 | 11 | Switch to 501 (bare feet) + thigh bridge geometry | SUCCESS | Generate fill geometry like neck patch; 5-ring tube per leg with crotch bridge |
@@ -461,26 +543,27 @@ Scannable tables per problem area. Add a new table once a problem accumulates 2+
 
 **Finding:** No vanilla WoW M2 has body mesh thigh geometry. Verified across ALL 4 patches:
 
-| Patch | Body mesh (geoset 0) verts in thigh zone Z 0.20–0.72 | Total verts |
-|-------|-------------------------------------------------------|-------------|
-| patch-3 | **0** | 3,159 |
-| patch-6 | **0** | 4,675 |
-| patch-7 | **0** | 4,675 |
-| patch/  | **0** | 3,159 |
+| Patch   | Body mesh (geoset 0) verts in thigh zone Z 0.20–0.72 | Total verts |
+| ------- | ---------------------------------------------------- | ----------- |
+| patch-3 | **0**                                                | 3,159       |
+| patch-6 | **0**                                                | 4,675       |
+| patch-7 | **0**                                                | 4,675       |
+| patch/  | **0**                                                | 3,159       |
 
 The extra 1,516 vertices in patch-6/7 are Turtle WoW custom hairstyles (geosets 14–18, all Z > 1.35 = head area) and doubled equipment geosets — NOT thigh geometry.
 
 Geoset 903 already reaches Z 0.7275, overlapping the body mesh (Z 0.72) by 0.0075 units. Combined with 502 (Z 0.125–0.614), this gives continuous M2 geometry coverage from feet to waist:
 
-| Geometry | Z range | Overlap |
-|----------|---------|---------|
-| 502 (legs) | 0.125 → 0.614 | — |
+| Geometry         | Z range       | Overlap                   |
+| ---------------- | ------------- | ------------------------- |
+| 502 (legs)       | 0.125 → 0.614 | —                         |
 | 903 (upper legs) | 0.492 → 0.728 | overlaps 502 at 0.49–0.61 |
-| Body mesh | 0.720 → 1.964 | overlaps 903 at 0.72–0.73 |
+| Body mesh        | 0.720 → 1.964 | overlaps 903 at 0.72–0.73 |
 
 Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hairstyle options (geosets 14–18). Removed ~90 lines of synthetic thigh bridge code.
 
 **Process failures identified:**
+
 1. Never established ground truth (what a naked character SHOULD look like)
 2. Assumed patch-3 was incomplete without comparing — all patches have the same gap
 3. Built bridge before understanding WHY the gap exists
@@ -492,11 +575,11 @@ Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hair
 
 ### Upper Back Hole
 
-| # | Approach | Outcome | Key Insight |
-|---|----------|---------|-------------|
-| 1 | Move 1002 from clothing to body layer | REVERTED | Undershirt flared out at waist without shrink, hole not fixed |
-| 2 | DoubleSide on 1002 + selective unshrink | FAILED | Hole is NOT caused by culling or shrinking |
-| 3 | Patch mesh (12-triangle fan from boundary loop centroid) | SUCCESS | Hole is intentional in the M2, designed for hair/armor coverage |
+| #   | Approach                                                 | Outcome  | Key Insight                                                     |
+| --- | -------------------------------------------------------- | -------- | --------------------------------------------------------------- |
+| 1   | Move 1002 from clothing to body layer                    | REVERTED | Undershirt flared out at waist without shrink, hole not fixed   |
+| 2   | DoubleSide on 1002 + selective unshrink                  | FAILED   | Hole is NOT caused by culling or shrinking                      |
+| 3   | Patch mesh (12-triangle fan from boundary loop centroid) | SUCCESS  | Hole is intentional in the M2, designed for hair/armor coverage |
 
 **Conclusion:** Intentional holes in the body mesh should be filled with generated patch geometry, not by repurposing equipment geosets.
 
@@ -506,16 +589,17 @@ Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hair
 
 **Finding:** Built a tapered thigh bridge with 6 approaches tested:
 
-| # | Approach | Result | Key Insight |
-|---|----------|--------|-------------|
-| 18 | Tapered bridge, ease-out, topCenterY=-0.45, crotch at top ring | Golden color, visible bar | UVs mapped to underwear region; crotch bridge at wide top ring visible |
-| 19 | Fix UVs (v=0.63-0.69), reduce shift to -0.38, crotch at ring 1 | Skin-colored, bar still visible | Crotch bridge at ring 1 creates horizontal bar; top ring too conservative |
-| 20 | Remove crotch bridge entirely | Clean thighs, inner gap acceptable | No horizontal bars; inner thigh gap (|Y| ±0.10) less objectionable than bars |
-| 21 | Add crotch panel (rings 0-2 inner vertices connected) | Multiple horizontal bars | Vertical connection triangles appear edge-on as 3 horizontal lines — WORSE |
-| 22 | Ease-in (t^2) interpolation | Horn/tusk shapes | Concentrated widening at top creates dramatic outer-hip curves |
-| **23** | **Ease-out (1-(1-t)^2), topCenterY=-0.40, no crotch bridge** | **BEST** | Natural taper; most widening hidden inside body mesh; skin UVs match |
+| #      | Approach                                                       | Result                             | Key Insight                                                                |
+| ------ | -------------------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------- | --- | ----------------------------------- |
+| 18     | Tapered bridge, ease-out, topCenterY=-0.45, crotch at top ring | Golden color, visible bar          | UVs mapped to underwear region; crotch bridge at wide top ring visible     |
+| 19     | Fix UVs (v=0.63-0.69), reduce shift to -0.38, crotch at ring 1 | Skin-colored, bar still visible    | Crotch bridge at ring 1 creates horizontal bar; top ring too conservative  |
+| 20     | Remove crotch bridge entirely                                  | Clean thighs, inner gap acceptable | No horizontal bars; inner thigh gap (                                      | Y   | ±0.10) less objectionable than bars |
+| 21     | Add crotch panel (rings 0-2 inner vertices connected)          | Multiple horizontal bars           | Vertical connection triangles appear edge-on as 3 horizontal lines — WORSE |
+| 22     | Ease-in (t^2) interpolation                                    | Horn/tusk shapes                   | Concentrated widening at top creates dramatic outer-hip curves             |
+| **23** | **Ease-out (1-(1-t)^2), topCenterY=-0.40, no crotch bridge**   | **BEST**                           | Natural taper; most widening hidden inside body mesh; skin UVs match       |
 
 **Final bridge design:**
+
 - Bottom ring: matches 502 top boundary (Z ~0.55-0.61, centered |Y| ~0.18)
 - Top ring: center shifted to |Y| ~0.40, Z=0.85 (inside body mesh)
 - 5 rings, 6 verts each, ease-out lateral shift, linear Z
@@ -524,6 +608,7 @@ Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hair
 - UVs map to v=0.63-0.69 (skin-colored thigh region, NOT underwear at v=0.38-0.50)
 
 **Remaining artifacts:**
+
 1. Body mesh lip/shelf at Z 0.72-0.84 — downward-facing triangles wider than bridge top
 2. Inner thigh gap — no crotch geometry (every approach creates visible horizontal bars)
 3. These are geometric limits requiring texture compositing to fully eliminate
@@ -533,17 +618,17 @@ Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hair
 
 ### Thigh Bridge Approaches (Updated)
 
-| # | Approach | Outcome | Key Insight |
-|---|----------|---------|-------------|
-| 17 | Constant-width tubes to Z=0.85 | BEST (old) | No bridge artifacts, body lip remains |
-| 18 | Tapered, ease-out, crotch at top | FAILED | UVs wrong + crotch bar visible + extends past body |
-| 19 | Tapered, ease-out, crotch at ring 1, fixed UVs | PARTIAL | Still visible crotch bar |
-| 20 | Tapered, ease-out, no crotch | GOOD | Clean but inner thigh gap |
-| 21 | Tapered + crotch panel (rings 0-2) | FAILED | Multiple horizontal bars from edge-on triangles |
-| 22 | Tapered, ease-in (t^2) | FAILED | Horn shapes from concentrated lateral shift |
-| **23** | **Tapered, ease-out, no crotch, shift=0.40** | **BEST (old)** | Natural taper, skin UVs, no bars |
-| 24 | Lip tri culling + exact body boundary top ring | FAILED | All 6 top ring verts at |Y| ~0.49-0.50 (flat band, not tube) |
-| **25** | **Full-tube bridge with inner thigh vertices, extended above lip** | **BEST** | See below |
+| #      | Approach                                                           | Outcome        | Key Insight                                        |
+| ------ | ------------------------------------------------------------------ | -------------- | -------------------------------------------------- | --- | -------------------------------- |
+| 17     | Constant-width tubes to Z=0.85                                     | BEST (old)     | No bridge artifacts, body lip remains              |
+| 18     | Tapered, ease-out, crotch at top                                   | FAILED         | UVs wrong + crotch bar visible + extends past body |
+| 19     | Tapered, ease-out, crotch at ring 1, fixed UVs                     | PARTIAL        | Still visible crotch bar                           |
+| 20     | Tapered, ease-out, no crotch                                       | GOOD           | Clean but inner thigh gap                          |
+| 21     | Tapered + crotch panel (rings 0-2)                                 | FAILED         | Multiple horizontal bars from edge-on triangles    |
+| 22     | Tapered, ease-in (t^2)                                             | FAILED         | Horn shapes from concentrated lateral shift        |
+| **23** | **Tapered, ease-out, no crotch, shift=0.40**                       | **BEST (old)** | Natural taper, skin UVs, no bars                   |
+| 24     | Lip tri culling + exact body boundary top ring                     | FAILED         | All 6 top ring verts at                            | Y   | ~0.49-0.50 (flat band, not tube) |
+| **25** | **Full-tube bridge with inner thigh vertices, extended above lip** | **BEST**       | See below                                          |
 
 ## [2026-02-26] Full-Tube Thigh Bridge (Approach 25) — Best Result
 
@@ -558,6 +643,7 @@ Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hair
 3. **Lip culling is unnecessary**: The body mesh lip isn't a separate "shelf" to remove — it's the edge of the body barrel. Removing triangles creates ragged holes worse than the seam. The bridge fills behind the body mesh, making the lip invisible from most angles.
 
 **Final bridge design (Approach 25):**
+
 - 6 verts/ring, 8 rings, Z 0.55 to 0.84
 - Top ring: 3 outer at body mesh Z~0.83 (|Y| 0.54), 3 inner invented (|Y| 0.10-0.20)
 - Bottom ring: 502 top boundary vertices (Z 0.55-0.61, |Y| 0.10-0.27)
@@ -569,6 +655,7 @@ Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hair
 **Remaining seam:** A horizontal band is visible at the body-to-bridge transition. This is the body mesh edge (silhouette of the hip barrel) and cannot be eliminated without vertex stitching. Would require modifying the M2 vertex buffer to share boundary vertices between geosets.
 
 **What DOESN'T work for the seam:**
+
 - Lip triangle culling (downward-facing only): Misses outward-facing edge triangles
 - Aggressive culling (centroid-based): Spanning triangles form the edge; removing them creates holes
 - PolygonOffset removal: No visual change (surfaces aren't close enough to Z-fight)
@@ -582,15 +669,15 @@ Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hair
 
 **Approach evolution (this session):**
 
-| # | Approach | Outcome | Key Insight |
-|---|----------|---------|-------------|
-| 30a | Thigh frustum (large elliptical tubes) | FAILED | Massive balloon shapes attached to legs |
-| 30b | Thigh frustum (thin at top) | FAILED | Flat panels/wings extending from hips |
-| **31** | **903 Y-stretch (1.75x smoothstep) + 902 + body pull-down** | **GOOD** | Real geometry fills thighs; thin seam remains |
-| 32a | 903 Z-push (0.06-0.12) + aggressive body pull (0.15) | MARGINAL | More overlap but still visible seam; body shelf artifact |
-| 32b | Stitch triangles (body ring → 903 ring, zipper merge) | FAILED | Close rings → invisible slivers; far rings → massive panels |
-| 32c | No body mods, just 903 Y-stretch | SAME AS 31 | Body pull-down doesn't affect gap (it's a shape mismatch) |
-| **33** | **903 Y-stretch + body pull + crotch patch** | **BEST** | Crotch patch fills the inner thigh hole |
+| #      | Approach                                                    | Outcome    | Key Insight                                                 |
+| ------ | ----------------------------------------------------------- | ---------- | ----------------------------------------------------------- |
+| 30a    | Thigh frustum (large elliptical tubes)                      | FAILED     | Massive balloon shapes attached to legs                     |
+| 30b    | Thigh frustum (thin at top)                                 | FAILED     | Flat panels/wings extending from hips                       |
+| **31** | **903 Y-stretch (1.75x smoothstep) + 902 + body pull-down** | **GOOD**   | Real geometry fills thighs; thin seam remains               |
+| 32a    | 903 Z-push (0.06-0.12) + aggressive body pull (0.15)        | MARGINAL   | More overlap but still visible seam; body shelf artifact    |
+| 32b    | Stitch triangles (body ring → 903 ring, zipper merge)       | FAILED     | Close rings → invisible slivers; far rings → massive panels |
+| 32c    | No body mods, just 903 Y-stretch                            | SAME AS 31 | Body pull-down doesn't affect gap (it's a shape mismatch)   |
+| **33** | **903 Y-stretch + body pull + crotch patch**                | **BEST**   | Crotch patch fills the inner thigh hole                     |
 
 **Key findings:**
 
@@ -605,6 +692,7 @@ Switched to patch-6 M2 for smoother 903 (64 tris vs 32 in patch-3) and more hair
 5. **Crotch patch works like neck patch**: A simple flat patch (6 vertices, 4 triangles) positioned at X=-0.02 behind the gap between legs fills the dark crotch hole. The patch is occluded by leg geometry from most angles and only visible through the actual gap. Normal pointing forward-upward (0.7, 0, 0.71) provides reasonable lighting match.
 
 **Current implementation (loadModel.ts):**
+
 - DEFAULT_GEOSETS: includes 902 and 903
 - 903 Y-stretch: smoothstep blend, 1.75× at top (Z 0.73), 1.0× at bottom (Z 0.49)
 - Body barrel bottom ring: Z pull-down 0.08, Y narrow 0.92 (Z 0.72-0.80, |Y| > 0.40)
@@ -639,11 +727,13 @@ The geoset ID formula: `meshId = groupBase + value + 1`. For CG_TROUSERS (group 
 The overlap zones (501↔1301 at Z 0.55–0.61, 1301↔body at Z 0.72–1.10) are handled by the WoW engine via depth testing — no vertex manipulation needed.
 
 **Correct DEFAULT_GEOSETS for naked character:**
+
 ```
 0, 5, 101, 201, 301, 401, 501, 701, 1002, 1301
 ```
 
 **What NOT to do (all 33 approaches that failed before finding 1301):**
+
 - Do NOT hack vertices (Y-stretch, body pull-down, crotch patches)
 - Do NOT build synthetic bridge geometry (frustums, tube bridges, stitch triangles)
 - Do NOT try texture-only solutions for geometry gaps
@@ -659,6 +749,7 @@ The overlap zones (501↔1301 at Z 0.55–0.61, 1301↔body at Z 0.72–1.10) ar
 **Context:** After enabling geoset 1301, the body mesh (geoset 0) bottom lip extends slightly beyond geoset 1301 at the waist, creating a visible "skirt" effect due to Z-fighting between overlapping geosets.
 
 **Finding:** Splitting the mesh into separate SkinnedMesh objects with different polygon offset settings fixes Z-fighting at overlap zones:
+
 - **Body mesh (geoset 0):** `polygonOffset: true, factor: 1, units: 1` — pushed slightly back in depth buffer
 - **Overlay geosets (1301, 1002, etc.):** No polygon offset — render at true depth, winning depth test in overlap zones
 - **Hair geosets:** Separate mesh with own texture
@@ -673,6 +764,7 @@ This mirrors how WoW handles layered geometry — equipment geosets render on to
 **Context:** All 20 character models have a boundary loop (13-38 verts) at the neck where the head attaches to the body. Visible as a black gap from behind/side. Attempted to fill this with generated geometry.
 
 **Approaches tried (all failed):**
+
 1. **Triangle fan from centroid with inward offset** — center vertex pulled 0.03 along negative avg normal. Creates visible concave pinch from side view. The neck looks artificially narrowed/collapsed.
 2. **Triangle fan from centroid at flat position (no offset)** — polygonOffset on material to avoid z-fighting. Still produces a pinched neck appearance from side view. The fundamental issue is the boundary loop itself is narrow/constricted — a flat cap across it just makes the constriction visible as a flat surface.
 3. **Triangle fan with Y<0 filter (back-half only)** — only catches half the boundary loop, creating broken partial fan that clips into the chest.
@@ -681,6 +773,7 @@ This mirrors how WoW handles layered geometry — equipment geosets render on to
 **Root cause:** The neck boundary loop is NOT a simple hole that can be capped. It's a 3D ring wrapping around the neck interior at varying depths (Z 1.53–1.84 for human male). The body mesh genuinely lacks geometry in this region — the neck is designed to be hidden by head geometry + hair geosets + scalp textures in the WoW client. Any flat/concave cap across this non-planar ring creates artifacts from side angles.
 
 **What WoW actually does (from research):**
+
 - Hair geosets physically cover the neck hole for most hairstyles
 - `CharHairGeosets.dbc` has `ShowScalp` field per hairstyle
 - When ShowScalp=true, scalp textures from CharSections type=3 (TextureName[1]=scalp lower, TextureName[2]=scalp upper) are composited onto CR_FACE_UPPER/CR_FACE_LOWER texture regions
@@ -690,3 +783,67 @@ This mirrors how WoW handles layered geometry — equipment geosets render on to
 
 **Impact:** The neck gap requires scalp texture compositing (needs CharHairGeosets.dbc + scalp BLP textures from patch files) or simply accepting the gap as a known limitation. Generated geometry approaches should not be attempted again.
 **Reference:** `scripts/find-all-holes.mjs`, `scripts/find-neck-holes.mjs`, screenshots archived in `screenshots/runs/2026-02-28T*`
+
+## [2026-02-28] Back-of-Head Gap — All Rendering Fixes Failed
+
+**Context:** Large gap at the back of the head/neck visible on ALL 20 character models. Investigated whether the issue is in the conversion pipeline or the rendering interpretation.
+
+**Diagnostics run:**
+
+- `scripts/diagnose-back.ts` — Raw M2 submesh data matches converted output exactly. All submeshes accounted for.
+- `scripts/check-remap.ts` — Vertex remap is identity. 0 position errors in first 20 verts. Triangle indices match raw data.
+- `scripts/check-back-geometry.ts` — Back geometry IS present in the data: 137 upper-back verts, 203 back-upper triangles for human male. Symmetric front/back distribution.
+- `scripts/check-bone-transforms.ts` — 50/138 bones have non-identity transforms but boneInverse is identity.
+- `scripts/find-holes.ts` — Body mesh (geoset 0) has 180 boundary edges in head/neck region (Z>1.2). The mesh is intentionally open at the back of the head.
+- `scripts/diagnose-head-gap.ts` — All Z-slices have back vertex coverage. The vertices exist but don't form a closed surface at the back of the head.
+
+**Key finding:** The body mesh has a large opening at the back of the head with boundary edges at Z 1.27–1.58, Y -0.20 to -0.40. No enabled geoset covers this region. Hair geoset 5 only extends Y -0.15 to 0.15 (too narrow). Geoset 1 (bald head) only covers Z 1.90–2.02 (too high).
+
+**Rendering fixes attempted — ALL FAILED:**
+
+1. **Bone identity fix** — Set all bone matrices to identity. No effect on gap.
+2. **FrontSide skin + BackSide fill mesh** — Renders interior faces through gaps with skin texture. Fills the hole visually in SwiftShader screenshots BUT user reports gap still present in actual browser.
+3. **Inner sphere** — Skin-colored sphere inside head. Extends beyond head silhouette, UV seam artifacts, visible through facial features.
+4. **Flat plane disc** — Positioned at back opening. Gap is 3D curved, flat disc doesn't cover it.
+5. **Solid-color BackSide fill** — Color mismatch with textured skin, still gap visible.
+
+**Impact:** The problem is NOT solvable with rendering tricks alone. The fundamental issue is that the M2 body mesh lacks geometry at the back of the head by design. Next investigation should:
+
+1. Compare our converted output against a known-good viewer (wow.export, WoW Model Viewer) to verify whether the pipeline is correct
+2. Check if there's additional geometry in the M2 that our converter is not extracting (e.g., a second skin view, additional submeshes, or a different vertex/index interpretation)
+3. Investigate whether the WoW client uses additional geosets or texture-based approaches we're not implementing
+
+**Reference:** `scripts/find-holes.ts`, `scripts/diagnose-head-gap.ts`, `scripts/check-bone-transforms.ts`
+
+## [2026-02-28] Back-of-Head Gap — Bone Transform & Geoset Investigation
+
+**Context:** Investigated whether bone transforms or missing geosets cause the back-of-head gap.
+
+**Research findings (from wowdev wiki, vanilla WoW model viewer source, WoWee, whoa):**
+
+- `CharHairGeosets.dbc` maps (race, gender, variation) → geosetId + `Showscalp` flag
+- Human Male variation 4 → geoset 5, **Showscalp=0** (hair should fully cover head)
+- Geoset 1 = bald scalp cap, shown only when `Showscalp=1` or character is bald
+- Vanilla WoW model viewer (danielsreichenbach) code: `if (id == 1) model->showGeosets[j] = bald;`
+- WoWee enables ALL group-0 geosets (0-99) simultaneously
+
+**Bone analysis:** All 5 hair bones (4, 9, 10, 11, 16) have **identity rotation and zero translation**. Bones are NOT transforming hair. Hair vertices are in bind pose — the narrow shape is genuine.
+
+**Conversion verification:** Compared M2 raw vertices (with proper skin remap) against model.bin — **0 mismatches out of 151 hair vertices**. Conversion pipeline is correct.
+
+**Hair coverage:** ALL hairstyles are narrow strips:
+- Hair Y span: 0.291 (max of any style: 0.352 for geoset 16)
+- Body head Y span: 0.758
+- Best coverage: 46% — no single hairstyle wraps around the head
+- Hair X (depth) range: -0.104 to 0.201. Body head X: -0.174 to 0.194
+
+**Experiments:**
+1. **Enable geoset 1 (scalp)** — only covers Z 1.90-2.02 (tiny cap at crown). No effect on back gap.
+2. **Enable ALL group-0 geosets (0-99)** — reduces gap significantly but creates visual mess (all hairstyles rendered simultaneously as overlapping strips). Still has cracks between overlapping meshes.
+3. **FrontSide rendering + all geosets** — doesn't help because gap is genuine missing geometry, not interior face visibility.
+
+**Conclusion:** The M2 character mesh is designed with an open back-of-head. In the WoW client, this is hidden by scalp texture compositing onto the body texture (CharSections). The hair sits as a decorative strip on top. No combination of geoset toggling or bone transforms can close the gap — it requires texture compositing (compositing scalp BLP textures into the skin texture at the CharSections face/scalp UV regions).
+
+**Impact:** The back-of-head gap is a texture compositing problem, not a geometry or bone problem. Fix requires implementing the CharSections scalp texture compositing pipeline.
+
+**Reference:** CharHairGeosets.dbc parsed from `data/patch/patch-7/DBFilesClient/CharHairGeosets.dbc`, wowdev wiki Character_Customization page, danielsreichenbach/wowmodelview-vanilla charcontrol.cpp

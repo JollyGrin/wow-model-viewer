@@ -86,9 +86,20 @@ function parseM2v256(buf: Buffer) {
   const vertices = arr(off); off += 8;
   const views = arr(off); off += 8;
 
+  // Continue parsing header for texture data
+  // off is currently at 0x54 (after views)
+  off += 8; // colors
+  const textures = arr(off); off += 8; // textures (16 bytes each: type u32, flags u32, filename M2Array)
+  off += 8; // transparency
+  off += 8; // texAnims
+  off += 8; // texReplace
+  off += 8; // renderFlags
+  off += 8; // boneLookup
+  const textureLookup = arr(off); off += 8; // textureLookup (uint16 array)
+
   const nameStr = buf.toString('ascii', name.ofs, name.ofs + name.count).replace(/\0/g, '').trim();
 
-  return { nameStr, vertices, views, bones, buf, view };
+  return { nameStr, vertices, views, bones, textures, textureLookup, buf, view };
 }
 
 // --- View/Skin Parser ---
@@ -101,6 +112,11 @@ interface Submesh {
   indexCount: number;
 }
 
+interface Batch {
+  skinSectionIndex: number;
+  texComboIndex: number;
+}
+
 function parseView0(_buf: Buffer, view: DataView, viewsArr: M2Arr) {
   function arr(off: number): M2Arr {
     return { count: view.getUint32(off, true), ofs: view.getUint32(off + 4, true) };
@@ -111,6 +127,7 @@ function parseView0(_buf: Buffer, view: DataView, viewsArr: M2Arr) {
   const vertexIndices = arr(viewOfs);      // maps skin vertex idx -> model vertex idx
   const triangleIndices = arr(viewOfs + 8); // triangle index list
   const submeshesArr = arr(viewOfs + 24);   // submesh definitions (skip properties at +16)
+  const batchesArr = arr(viewOfs + 32);     // batch/texture unit definitions
 
   // Read vertex remap (uint16)
   const remap = new Uint16Array(vertexIndices.count);
@@ -138,7 +155,19 @@ function parseView0(_buf: Buffer, view: DataView, viewsArr: M2Arr) {
     });
   }
 
-  return { remap, rawTriangles, submeshes };
+  // Parse batches (24 bytes each for v256)
+  // Batch maps submesh → texture via texComboIndex
+  const batches: Batch[] = [];
+  const BATCH_SIZE = 24;
+  for (let b = 0; b < batchesArr.count; b++) {
+    const bo = batchesArr.ofs + b * BATCH_SIZE;
+    batches.push({
+      skinSectionIndex: view.getUint16(bo + 4, true),
+      texComboIndex: view.getUint16(bo + 16, true),
+    });
+  }
+
+  return { remap, rawTriangles, submeshes, batches };
 }
 
 // --- Bone Parser ---
@@ -242,6 +271,35 @@ function convertModel(model: CharacterModel) {
   const skin = parseView0(buf, m2.view, m2.views);
   const bones = parseBones(m2.view, m2.bones);
 
+  // Parse texture table (16 bytes each: type u32, flags u32, filename M2Array 8B)
+  const TEX_DEF_SIZE = 16;
+  const texTypes: number[] = [];
+  for (let t = 0; t < m2.textures.count; t++) {
+    const to = m2.textures.ofs + t * TEX_DEF_SIZE;
+    texTypes.push(m2.view.getUint32(to, true)); // texture type at offset 0
+  }
+
+  // Parse texture lookup table (uint16 array)
+  const texLookup: number[] = [];
+  for (let t = 0; t < m2.textureLookup.count; t++) {
+    texLookup.push(m2.view.getUint16(m2.textureLookup.ofs + t * 2, true));
+  }
+
+  // Build submesh index → texture type mapping via batch chain:
+  // batch.texComboIndex → texLookup[i] → texTypes[j]
+  const submeshTexType = new Map<number, number>();
+  for (const batch of skin.batches) {
+    const si = batch.skinSectionIndex;
+    if (submeshTexType.has(si)) continue; // first batch wins
+    const lookupIdx = batch.texComboIndex;
+    if (lookupIdx < texLookup.length) {
+      const texIdx = texLookup[lookupIdx];
+      if (texIdx < texTypes.length) {
+        submeshTexType.set(si, texTypes[texIdx]);
+      }
+    }
+  }
+
   // Build output vertex buffer — raw bind-pose vertices with skinning data.
   // M2 vertex (48 bytes): pos(3f) boneWeights(4u8) boneIndices(4u8) normal(3f) uv1(2f) uv2(2f)
   // Output (40 bytes): pos(3f) normal(3f) uv(2f) boneIndices(4u8) boneWeights(4u8)
@@ -286,11 +344,13 @@ function convertModel(model: CharacterModel) {
   }
 
   let groups = skin.submeshes
+    .map((s, origIdx) => ({ ...s, origIdx }))
     .filter(s => s.indexCount > 0 && s.id !== 65535)
     .map(s => ({
       id: s.id,
       indexStart: s.indexStart,
       indexCount: s.indexCount,
+      textureType: submeshTexType.get(s.origIdx) ?? -1,
     }));
 
   const indexBuffer = skin.rawTriangles;
