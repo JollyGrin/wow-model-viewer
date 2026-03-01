@@ -29,6 +29,12 @@ const TEXTURE_FILES = [
   // Sword weapon texture (displayId 1956, Milestone 1)
   'Item\\ObjectComponents\\Weapon\\Sword_2H_Claymore_B_02Green.blp',
 
+  // Chest armor body textures (displayId 3413, Milestone 3)
+  // ItemDisplayInfo stores base name; actual MPQ files use _U (unisex) suffix
+  'Item\\TextureComponents\\ArmUpperTexture\\Plate_A_01Silver_Sleeve_AU_U.blp',
+  'Item\\TextureComponents\\TorsoUpperTexture\\Plate_A_01Silver_Chest_TU_U.blp',
+  'Item\\TextureComponents\\TorsoLowerTexture\\Plate_A_01Silver_Chest_TL_U.blp',
+
   // BaseSection 0: Body skin (skin color variants 00-09)
   'Character\\Human\\Male\\HumanMaleSkin00_00.blp',
   'Character\\Human\\Male\\HumanMaleSkin00_01.blp',

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { composeCharTexture, loadTexImageData, CharRegion } from './charTexture';
 
 export interface BoneInfo {
   parent: number;
@@ -11,6 +12,13 @@ export interface LoadedModel {
   group: THREE.Group;
   bones: THREE.Bone[];
   boneData: BoneInfo[];
+}
+
+/** Equipment texture URLs for body armor compositing. GeosetGroup overrides are item-specific — not all chest items change geometry. */
+export interface ChestEquipment {
+  armUpperTex?: string;   // URL e.g. /item-textures/ArmUpperTexture/Plate_A_01Silver_Sleeve_AU_U.tex
+  torsoUpperTex?: string; // URL e.g. /item-textures/TorsoUpperTexture/Plate_A_01Silver_Chest_TU_U.tex
+  torsoLowerTex?: string; // URL e.g. /item-textures/TorsoLowerTexture/Plate_A_01Silver_Chest_TL_U.tex
 }
 
 interface AttachmentPoint {
@@ -48,6 +56,7 @@ const DESIRED_GROUPS: Array<{ group: number; preferred: number; strict?: boolean
 function resolveDefaultGeosets(
   groups: Array<{ id: number }>,
   hairstyle: number = 5,
+  groupOverrides?: Map<number, number>, // group → meshId (e.g. 8 → 802 for short sleeves)
 ): Set<number> {
   // Index available geosets by group
   const byGroup = new Map<number, number[]>();
@@ -69,6 +78,16 @@ function resolveDefaultGeosets(
       result.add(target);
     } else if (!strict) {
       result.add(Math.min(...available));
+    }
+  }
+
+  // Apply per-group overrides (e.g. chest enabling geoset 802 for short sleeves)
+  if (groupOverrides) {
+    for (const [grp, meshId] of groupOverrides) {
+      const available = byGroup.get(grp);
+      if (available?.includes(meshId)) {
+        result.add(meshId);
+      }
     }
   }
 
@@ -208,6 +227,7 @@ export async function loadModel(
   options?: {
     enabledGeosets?: Set<number>;
     weapon?: string; // URL to item dir, e.g. '/items/weapon/sword-2h-claymore-b-02'
+    chest?: ChestEquipment;
   },
 ): Promise<LoadedModel> {
   const texturesDir = `${modelDir}/textures/`;
@@ -220,12 +240,42 @@ export async function loadModel(
   const manifest: ModelManifest = await manifestRes.json();
   const binBuffer = await binRes.arrayBuffer();
 
-  const geosets = options?.enabledGeosets ?? resolveDefaultGeosets(manifest.groups);
+  const geosets = options?.enabledGeosets ?? resolveDefaultGeosets(manifest.groups, 5);
 
-  // Load textures
+  // Load skin texture — with equipment compositing when chest is provided
   let skinTexture: THREE.Texture;
   try {
-    skinTexture = await loadTexture(`${texturesDir}skin.tex`);
+    if (options?.chest) {
+      const baseImageData = await loadTexImageData(`${texturesDir}skin.tex`);
+      const layers: Array<{ imageData: ImageData; region: CharRegion; layer: number }> = [];
+
+      async function tryAddLayer(url: string | undefined, region: CharRegion) {
+        if (!url) return;
+        try {
+          layers.push({ imageData: await loadTexImageData(url), region, layer: 20 });
+        } catch { /* missing texture — skip region */ }
+      }
+
+      await tryAddLayer(options.chest.armUpperTex, CharRegion.ARM_UPPER);
+      await tryAddLayer(options.chest.torsoUpperTex, CharRegion.TORSO_UPPER);
+      await tryAddLayer(options.chest.torsoLowerTex, CharRegion.TORSO_LOWER);
+
+      const canvas = composeCharTexture(baseImageData, layers);
+      // Read composited pixels back and upload as DataTexture (preserves flipY=false convention)
+      const compositedPixels = new Uint8Array(
+        canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data.buffer,
+      );
+      skinTexture = new THREE.DataTexture(compositedPixels, canvas.width, canvas.height, THREE.RGBAFormat);
+      skinTexture.needsUpdate = true;
+      skinTexture.magFilter = THREE.LinearFilter;
+      skinTexture.minFilter = THREE.LinearMipmapLinearFilter;
+      skinTexture.generateMipmaps = true;
+      skinTexture.wrapS = THREE.RepeatWrapping;
+      skinTexture.wrapT = THREE.RepeatWrapping;
+      skinTexture.flipY = false;
+    } else {
+      skinTexture = await loadTexture(`${texturesDir}skin.tex`);
+    }
   } catch {
     skinTexture = new THREE.DataTexture(
       new Uint8Array([128, 128, 128, 255]), 1, 1, THREE.RGBAFormat,
