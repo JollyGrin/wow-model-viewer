@@ -19,9 +19,9 @@ const QUALITY_COLOR: Record<number, string> = {
 
 // --- Catalog types ---
 
-interface WeaponEntry   { itemId: number; name: string; quality: number; slug: string; subclass?: string; }
-interface HelmetEntry   { itemId?: number; name: string; quality: number; slug: string; helmetGeosetVisID: [number, number]; variants: string[]; }
-interface ShoulderEntry { itemId?: number; name: string; quality: number; slug: string; hasRight: boolean; }
+interface WeaponEntry   { itemId: number; name: string; quality: number; slug: string; texture: string; subclass?: string; }
+interface HelmetEntry   { itemId?: number; name: string; quality: number; slug: string; texture: string; helmetGeosetVisID: [number, number]; variants: string[]; }
+interface ShoulderEntry { itemId?: number; name: string; quality: number; slug: string; texture: string; hasRight: boolean; }
 interface ChestEntry    { itemId?: number; name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; armLowerBase?: string; torsoLowerBase?: string; legUpperBase?: string; legLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
 interface LegsEntry     { itemId?: number; name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
 interface BootsEntry    { itemId?: number; name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
@@ -41,7 +41,7 @@ let catalog: ItemCatalog | null = null;
 
 // Active selections
 const selection: {
-  weapon?: string;
+  weapon?: WeaponEntry;
   helmet?: HelmetEntry;
   shoulder?: ShoulderEntry;
   chest?: ChestEntry;
@@ -52,7 +52,12 @@ const selection: {
 
 export function getWeaponPath(): string | undefined {
   if (!selection.weapon) return undefined;
-  return `/items/weapon/${selection.weapon}`;
+  return `/items/weapon/${selection.weapon.slug}`;
+}
+
+export function getWeaponTexture(): string | undefined {
+  if (!selection.weapon?.texture) return undefined;
+  return `/items/weapon/${selection.weapon.slug}/textures/${selection.weapon.texture}.tex`;
 }
 
 export function getArmorOptions(): BodyArmor | undefined {
@@ -62,12 +67,14 @@ export function getArmorOptions(): BodyArmor | undefined {
   if (selection.helmet) {
     armor.helmet = selection.helmet.slug;
     armor.helmetGeosetVisID = selection.helmet.helmetGeosetVisID;
+    armor.helmetTexture = selection.helmet.texture;
   }
 
   // --- Shoulders ---
   if (selection.shoulder) {
     armor.shoulderSlug = selection.shoulder.slug;
     armor.shoulderHasRight = selection.shoulder.hasRight;
+    armor.shoulderTexture = selection.shoulder.texture;
   }
 
   // --- Layer 5: Chest ---
@@ -266,7 +273,7 @@ function buildPanel(panel: HTMLElement, onChange: () => void) {
   // Weapon
   const { container: wCont, select: wSel } = buildFilteredSelect(
     'equip-weapon', catalog.weapons, weaponDisplayName,
-    entry => { selection.weapon = entry?.slug; onChange(); },
+    entry => { selection.weapon = entry; onChange(); },
   );
   panel.appendChild(makeRow('Weapon', wCont, wSel, 'weapon', onChange));
 

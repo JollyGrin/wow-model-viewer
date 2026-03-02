@@ -233,16 +233,49 @@ function findShieldSlug(modelName: string): string | undefined {
   return undefined;
 }
 
+// --- Texture slug helpers ---
+
+/** Convert a BLP/ModelTexture name to a tex slug (lowercase, underscores to hyphens). */
+function toTexSlug(texName: string): string {
+  return texName.toLowerCase().replace(/_/g, '-');
+}
+
+/** Get the tex slug for an IDI record's ModelTexture[0], verified against disk.
+ *  Falls back to first available texture if the IDI texture doesn't exist. */
+function idiTexSlugVerified(idi: IDIRecord, itemType: string, slug: string): string {
+  const mt = idi.ModelTexture?.[0];
+  if (mt) {
+    const ts = toTexSlug(mt);
+    const texPath = resolve(ROOT, 'public/items', itemType, slug, 'textures', `${ts}.tex`);
+    if (existsSync(texPath)) return ts;
+  }
+  return firstAvailableTex(itemType, slug);
+}
+
+/** Pick the first available .tex file from a slug's textures/ dir. */
+function firstAvailableTex(itemType: string, slug: string): string {
+  const texDir = resolve(ROOT, 'public/items', itemType, slug, 'textures');
+  if (!existsSync(texDir)) return '';
+  for (const f of readdirSync(texDir)) {
+    if (f.endsWith('.tex') && f !== 'main.tex') {
+      return basename(f, '.tex');
+    }
+  }
+  // Fallback to main.tex if that's all there is
+  if (existsSync(resolve(texDir, 'main.tex'))) return 'main';
+  return '';
+}
+
 // --- Build catalog entries from items DB ---
 
-interface WeaponEntry { itemId: number; name: string; quality: number; slug: string; subclass?: string; }
+interface WeaponEntry { itemId: number; name: string; quality: number; slug: string; texture: string; subclass?: string; }
 interface ChestEntry  { itemId?: number; name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; armLowerBase?: string; torsoLowerBase?: string; legUpperBase?: string; legLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
 interface LegsEntry   { itemId?: number; name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
 interface BootsEntry  { itemId?: number; name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
 interface GlovesEntry { itemId?: number; name: string; quality: number; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
-interface HelmetEntry { itemId?: number; name: string; quality: number; slug: string; helmetGeosetVisID: [number, number]; variants: string[]; }
-interface ShoulderEntry { itemId?: number; name: string; quality: number; slug: string; hasRight: boolean; }
-interface ShieldEntry { itemId?: number; name: string; quality: number; slug: string; subclass?: string; }
+interface HelmetEntry { itemId?: number; name: string; quality: number; slug: string; texture: string; helmetGeosetVisID: [number, number]; variants: string[]; }
+interface ShoulderEntry { itemId?: number; name: string; quality: number; slug: string; texture: string; hasRight: boolean; }
+interface ShieldEntry { itemId?: number; name: string; quality: number; slug: string; texture: string; subclass?: string; }
 
 /** Infer geoset value (1-3) from texture stem name as fallback when IDI GeosetGroup is 0. */
 function inferGeosetValue(stem: string): number {
@@ -416,14 +449,14 @@ for (const item of items) {
     const slug = findHelmetSlug(idi.ModelName[0]);
     if (slug) {
       const visID = idi.HelmetGeosetVisID ?? [0, 0];
-      helmetItems.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, helmetGeosetVisID: [visID[0], visID[1]], variants: helmetVariants.get(slug) ?? [] });
+      helmetItems.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, texture: idiTexSlugVerified(idi, 'head', slug), helmetGeosetVisID: [visID[0], visID[1]], variants: helmetVariants.get(slug) ?? [] });
       claimedHelmets.add(slug);
       dbMatched++;
     } else { dbNoTex++; }
   } else if (SHOULDER_TYPES.has(item.inventoryType)) {
     const slug = findShoulderSlug(idi.ModelName[0]);
     if (slug) {
-      shoulderItems.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, hasRight: shoulderSlugSet.get(slug) ?? false });
+      shoulderItems.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, texture: idiTexSlugVerified(idi, 'shoulder', slug), hasRight: shoulderSlugSet.get(slug) ?? false });
       claimedShoulders.add(slug);
       dbMatched++;
     } else { dbNoTex++; }
@@ -431,14 +464,14 @@ for (const item of items) {
     const slug = findShieldSlug(idi.ModelName[0]);
     if (slug) {
       const subclass = item.class === 4 ? 'Shield' : undefined;
-      shieldItems.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, subclass });
+      shieldItems.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, texture: idiTexSlugVerified(idi, 'shield', slug), subclass });
       dbMatched++;
     } else { dbNoTex++; }
   } else if (WEAPON_TYPES.has(item.inventoryType)) {
     const slug = findWeaponSlug(idi.ModelName[0]);
     if (slug) {
       const subclass = item.class === 2 ? WEAPON_SUBCLASS[item.subclass] : undefined;
-      weapons.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, subclass });
+      weapons.push({ itemId: item.itemId, name: item.name, quality: item.quality, slug, texture: idiTexSlugVerified(idi, 'weapon', slug), subclass });
       dbMatched++;
     } else {
       dbNoTex++;
@@ -515,7 +548,7 @@ for (const idi of idiRecords) {
   const slug = findHelmetSlug(modelName);
   if (slug && !claimedHelmets.has(slug)) {
     const visID = idi.HelmetGeosetVisID ?? [0, 0];
-    helmetItems.push({ name: slug, quality: 0, slug, helmetGeosetVisID: [visID[0], visID[1]], variants: helmetVariants.get(slug) ?? [] });
+    helmetItems.push({ name: slug, quality: 0, slug, texture: idiTexSlugVerified(idi, 'head', slug), helmetGeosetVisID: [visID[0], visID[1]], variants: helmetVariants.get(slug) ?? [] });
     claimedHelmets.add(slug);
     unclaimedCount++;
   }
@@ -523,7 +556,7 @@ for (const idi of idiRecords) {
 // Helmets without any IDI match
 for (const slug of helmetSlugSet) {
   if (!claimedHelmets.has(slug)) {
-    helmetItems.push({ name: slug, quality: 0, slug, helmetGeosetVisID: [0, 0], variants: helmetVariants.get(slug) ?? [] });
+    helmetItems.push({ name: slug, quality: 0, slug, texture: firstAvailableTex('head', slug), helmetGeosetVisID: [0, 0], variants: helmetVariants.get(slug) ?? [] });
     unclaimedCount++;
   }
 }
@@ -534,7 +567,7 @@ for (const idi of idiRecords) {
   if (!modelName) continue;
   const slug = findShoulderSlug(modelName);
   if (slug && !claimedShoulders.has(slug)) {
-    shoulderItems.push({ name: slug, quality: 0, slug, hasRight: shoulderSlugSet.get(slug) ?? false });
+    shoulderItems.push({ name: slug, quality: 0, slug, texture: idiTexSlugVerified(idi, 'shoulder', slug), hasRight: shoulderSlugSet.get(slug) ?? false });
     claimedShoulders.add(slug);
     unclaimedCount++;
   }
@@ -542,7 +575,7 @@ for (const idi of idiRecords) {
 // Shoulders without any IDI match
 for (const slug of shoulderSlugSet.keys()) {
   if (!claimedShoulders.has(slug)) {
-    shoulderItems.push({ name: slug, quality: 0, slug, hasRight: shoulderSlugSet.get(slug) ?? false });
+    shoulderItems.push({ name: slug, quality: 0, slug, texture: firstAvailableTex('shoulder', slug), hasRight: shoulderSlugSet.get(slug) ?? false });
     unclaimedCount++;
   }
 }
@@ -551,7 +584,7 @@ for (const slug of shoulderSlugSet.keys()) {
 const claimedWeaponSlugs = new Set(weapons.map(w => w.slug));
 for (const slug of weaponSlugSet) {
   if (!claimedWeaponSlugs.has(slug)) {
-    weapons.push({ itemId: 0, name: slug, quality: 0, slug });
+    weapons.push({ itemId: 0, name: slug, quality: 0, slug, texture: firstAvailableTex('weapon', slug) });
     unclaimedCount++;
   }
 }
@@ -560,7 +593,7 @@ for (const slug of weaponSlugSet) {
 const claimedShieldSlugs = new Set(shieldItems.map(s => s.slug));
 for (const slug of shieldSlugSet) {
   if (!claimedShieldSlugs.has(slug)) {
-    shieldItems.push({ name: slug, quality: 0, slug });
+    shieldItems.push({ name: slug, quality: 0, slug, texture: firstAvailableTex('shield', slug) });
     unclaimedCount++;
   }
 }

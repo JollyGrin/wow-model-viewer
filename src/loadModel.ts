@@ -41,10 +41,14 @@ export interface BodyArmor {
   helmet?: string;
   /** HelmetGeosetVisData IDs [male, female] — controls which geosets to hide. */
   helmetGeosetVisID?: [number, number];
+  /** Helmet texture slug — used to pick textures/{slug}.tex instead of main.tex. */
+  helmetTexture?: string;
   /** Shoulder model slug, e.g. 'leather-blood-b-01'. */
   shoulderSlug?: string;
   /** Whether the right shoulder model exists. */
   shoulderHasRight?: boolean;
+  /** Shoulder texture slug — used to pick textures/{slug}.tex instead of main.tex. */
+  shoulderTexture?: string;
 }
 
 interface AttachmentPoint {
@@ -305,6 +309,7 @@ export async function loadModel(
   options?: {
     enabledGeosets?: Set<number>;
     weapon?: string; // URL to item dir, e.g. '/items/weapon/sword-2h-claymore-b-02'
+    weaponTexture?: string; // URL to weapon texture, e.g. '/items/weapon/{slug}/textures/{tex}.tex'
     armor?: BodyArmor;
   },
 ): Promise<LoadedModel> {
@@ -553,7 +558,7 @@ export async function loadModel(
       socket.position.set(att.pos[0], att.pos[1], att.pos[2]);
       bone.add(socket);
       try {
-        const weaponGroup = await loadItemModel(options.weapon);
+        const weaponGroup = await loadItemModel(options.weapon, options.weaponTexture);
         socket.add(weaponGroup);
       } catch (err) {
         console.warn(`Failed to load weapon from ${options.weapon}:`, err);
@@ -569,7 +574,8 @@ export async function loadModel(
     const att = manifest.attachments.find(a => a.id === 11); // Head
     if (att && att.bone < skeleton.bones.length) {
       const helmDir = `/items/head/${options.armor.helmet}/${modelSlug}`;
-      const helmTexUrl = `/items/head/${options.armor.helmet}/textures/main.tex`;
+      const helmTexSlug = options.armor.helmetTexture || 'main';
+      const helmTexUrl = `/items/head/${options.armor.helmet}/textures/${helmTexSlug}.tex`;
       const bone = skeleton.bones[att.bone];
       const socket = new THREE.Group();
       socket.position.set(att.pos[0], att.pos[1], att.pos[2]);
@@ -586,7 +592,8 @@ export async function loadModel(
   // Shoulder attachment — L to attachment 6 (ShoulderLeft), R to attachment 5 (ShoulderRight)
   if (options?.armor?.shoulderSlug && manifest.attachments) {
     const slugBase = `/items/shoulder/${options.armor.shoulderSlug}`;
-    const shoulderTexUrl = `${slugBase}/textures/main.tex`;
+    const shoulderTexSlug = options.armor.shoulderTexture || 'main';
+    const shoulderTexUrl = `${slugBase}/textures/${shoulderTexSlug}.tex`;
 
     // Left shoulder (attachment ID 6)
     const leftAtt = manifest.attachments.find(a => a.id === 6);

@@ -13,9 +13,9 @@
  *   uv        2×float32   8B  offset 24
  *
  * Output structures:
- *   Weapons/Shields: public/items/{weapon|shield}/{slug}/model.bin + model.json + textures/main.tex
- *   Helmets: public/items/head/{slug}/{race-gender}/model.bin + model.json + shared textures/main.tex
- *   Shoulders: public/items/shoulder/{slug}/{left|right}/model.bin + model.json + shared textures/main.tex
+ *   Weapons/Shields: public/items/{weapon|shield}/{slug}/model.bin + model.json + textures/{tex-slug}.tex (one per variant)
+ *   Helmets: public/items/head/{slug}/{race-gender}/model.bin + model.json + shared textures/{tex-slug}.tex
+ *   Shoulders: public/items/shoulder/{slug}/{left|right}/model.bin + model.json + shared textures/{tex-slug}.tex
  *
  * Usage: bun run scripts/extract-mpq-items.ts
  */
@@ -168,26 +168,55 @@ interface DisplayRecord {
 const displayInfoRaw = readFileSync(resolve(ROOT, 'data/dbc/ItemDisplayInfo.json'), 'utf-8');
 const displayRecords: DisplayRecord[] = JSON.parse(displayInfoRaw.split('\n')[14]);
 
-// Map: lowercase model stem (no ext) → first ModelTexture value
-const modelTextureMap = new Map<string, string>();
+// Helmet race-gender suffix → slug mapping (placed here because helmetBaseToTextures uses it)
+const RACE_GENDER_SUFFIXES: Record<string, string> = {
+  'hum': 'human-male', 'huf': 'human-female',
+  'orm': 'orc-male', 'orf': 'orc-female',
+  'dwm': 'dwarf-male', 'dwf': 'dwarf-female',
+  'nim': 'night-elf-male', 'nif': 'night-elf-female',
+  'scm': 'scourge-male', 'scf': 'scourge-female',
+  'tam': 'tauren-male', 'taf': 'tauren-female',
+  'gnm': 'gnome-male', 'gnf': 'gnome-female',
+  'trm': 'troll-male', 'trf': 'troll-female',
+  'bem': 'blood-elf-male', 'bef': 'blood-elf-female',
+  'gom': 'goblin-male', 'gof': 'goblin-female',
+};
+
+// Map: lowercase model stem (no ext) → ALL unique ModelTexture values
+const m2StemToTextures = new Map<string, Set<string>>();
 for (const rec of displayRecords) {
   if (rec.ModelName?.[0] && rec.ModelTexture?.[0]) {
     const stem = basename(rec.ModelName[0], extname(rec.ModelName[0])).toLowerCase();
-    if (!modelTextureMap.has(stem)) {
-      modelTextureMap.set(stem, rec.ModelTexture[0]);
-    }
+    if (!m2StemToTextures.has(stem)) m2StemToTextures.set(stem, new Set());
+    m2StemToTextures.get(stem)!.add(rec.ModelTexture[0]);
   }
 }
 
-// Shoulder-specific: strips L/RShoulder_ prefix for lookup
-const shoulderTextureMap = new Map<string, string>();
+// Shoulder-specific: strips L/RShoulder_ prefix → ALL unique ModelTexture values
+const shoulderBaseToTextures = new Map<string, Set<string>>();
 for (const rec of displayRecords) {
   if (rec.ModelName?.[0] && rec.ModelTexture?.[0]) {
     const stem = basename(rec.ModelName[0], extname(rec.ModelName[0])).toLowerCase();
     if (stem.startsWith('lshoulder_') || stem.startsWith('rshoulder_')) {
       const base = stem.replace(/^[lr]shoulder_/, '');
-      if (!shoulderTextureMap.has(base)) {
-        shoulderTextureMap.set(base, rec.ModelTexture[0]);
+      if (!shoulderBaseToTextures.has(base)) shoulderBaseToTextures.set(base, new Set());
+      shoulderBaseToTextures.get(base)!.add(rec.ModelTexture[0]);
+    }
+  }
+}
+
+// Helmet-specific: strips race-gender suffix → ALL unique ModelTexture values
+const helmetBaseToTextures = new Map<string, Set<string>>();
+for (const rec of displayRecords) {
+  if (rec.ModelName?.[0] && rec.ModelTexture?.[0]) {
+    const stem = basename(rec.ModelName[0], extname(rec.ModelName[0])).toLowerCase();
+    const lastUnder = stem.lastIndexOf('_');
+    if (lastUnder >= 0) {
+      const suffix = stem.slice(lastUnder + 1);
+      if (RACE_GENDER_SUFFIXES[suffix]) {
+        const baseStem = stem.slice(0, lastUnder);
+        if (!helmetBaseToTextures.has(baseStem)) helmetBaseToTextures.set(baseStem, new Set());
+        helmetBaseToTextures.get(baseStem)!.add(rec.ModelTexture[0]);
       }
     }
   }
@@ -235,65 +264,47 @@ function buildIndex(typeDir: string, ext: string): FileIndex {
   return index;
 }
 
-// Helmet race-gender suffix → slug mapping
-const RACE_GENDER_SUFFIXES: Record<string, string> = {
-  'hum': 'human-male', 'huf': 'human-female',
-  'orm': 'orc-male', 'orf': 'orc-female',
-  'dwm': 'dwarf-male', 'dwf': 'dwarf-female',
-  'nim': 'night-elf-male', 'nif': 'night-elf-female',
-  'scm': 'scourge-male', 'scf': 'scourge-female',
-  'tam': 'tauren-male', 'taf': 'tauren-female',
-  'gnm': 'gnome-male', 'gnf': 'gnome-female',
-  'trm': 'troll-male', 'trf': 'troll-female',
-  'bem': 'blood-elf-male', 'bef': 'blood-elf-female',
-  'gom': 'goblin-male', 'gof': 'goblin-female',
-};
-
 // ─── BLP Lookup ─────────────────────────────────────────────────────────────
 
-function findBlp(stem: string, blpIndex: FileIndex): { mpq: any; path: string } | null {
+/** Find a specific BLP by texture name in the BLP index. */
+function findBlpByName(texName: string, blpIndex: FileIndex): { mpq: any; path: string } | null {
+  return blpIndex.get(texName.toLowerCase()) ?? null;
+}
+
+/** Fallback BLP finder: exact match or prefix match (for M2s with no IDI entry). */
+function findBlpFallback(stem: string, blpIndex: FileIndex): { mpq: any; path: string; blpStem: string } | null {
   const stemLower = stem.toLowerCase();
 
-  // 1. IDI lookup
-  const modelTexture = modelTextureMap.get(stemLower);
-  if (modelTexture) {
-    const entry = blpIndex.get(modelTexture.toLowerCase());
-    if (entry) return entry;
-  }
-
-  // 2. Exact match
+  // 1. Exact match
   const exact = blpIndex.get(stemLower);
-  if (exact) return exact;
+  if (exact) return { ...exact, blpStem: stemLower };
 
-  // 3. Prefix match (color variant)
+  // 2. Prefix match (color variant)
   for (const [key, entry] of blpIndex) {
-    if (key.startsWith(stemLower) && key !== stemLower) return entry;
+    if (key.startsWith(stemLower) && key !== stemLower) return { ...entry, blpStem: key };
   }
 
   return null;
 }
 
-function findShoulderBlp(baseName: string, blpIndex: FileIndex): { mpq: any; path: string } | null {
+/** Fallback BLP finder for shoulders. */
+function findShoulderBlpFallback(baseName: string, blpIndex: FileIndex): { mpq: any; path: string; blpStem: string } | null {
   const baseLower = baseName.toLowerCase();
-
-  // 1. IDI lookup (shoulder-specific: strips L/RShoulder_)
-  const modelTexture = shoulderTextureMap.get(baseLower);
-  if (modelTexture) {
-    const entry = blpIndex.get(modelTexture.toLowerCase());
-    if (entry) return entry;
-  }
-
-  // 2. "shoulder_{baseName}" match
   const shoulderKey = `shoulder_${baseLower}`;
-  const exact = blpIndex.get(shoulderKey);
-  if (exact) return exact;
 
-  // 3. Prefix match
+  const exact = blpIndex.get(shoulderKey);
+  if (exact) return { ...exact, blpStem: shoulderKey };
+
   for (const [key, entry] of blpIndex) {
-    if (key.startsWith(shoulderKey) && key !== shoulderKey) return entry;
+    if (key.startsWith(shoulderKey) && key !== shoulderKey) return { ...entry, blpStem: key };
   }
 
   return null;
+}
+
+/** Convert a BLP texture name to a slug for the textures/ dir. */
+function texSlug(blpStem: string): string {
+  return blpStem.toLowerCase().replace(/_/g, '-');
 }
 
 // ─── Process Weapons ────────────────────────────────────────────────────────
@@ -304,34 +315,74 @@ function processWeapons() {
   const blpIndex = buildIndex('Weapon', 'blp');
   console.log(`  Found ${m2Index.size} unique M2s, ${blpIndex.size} unique BLPs in MPQs`);
 
-  let converted = 0, skipped = 0, missingBlp = 0, errors = 0;
+  let convertedModels = 0, skippedModels = 0, convertedTextures = 0, missingBlp = 0, errors = 0;
 
   for (const [stemLower, m2Entry] of m2Index) {
     const slug = stemLower.replace(/_/g, '-');
     const outDir = resolve(ROOT, 'public/items/weapon', slug);
     const outJson = resolve(outDir, 'model.json');
 
-    if (existsSync(outJson)) { skipped++; continue; }
+    // Convert model geometry once
+    if (!existsSync(outJson)) {
+      try {
+        const m2Data = readMpqFile(m2Entry.mpq, m2Entry.path);
+        convertM2ToModelFiles(m2Data, outDir);
+        convertedModels++;
+      } catch (err: any) {
+        errors++;
+        if (errors <= 5) console.error(`  M2 ERROR: ${slug} — ${err.message}`);
+        continue;
+      }
+    } else {
+      skippedModels++;
+    }
 
-    const blpEntry = findBlp(stemLower, blpIndex);
-    if (!blpEntry) { missingBlp++; continue; }
+    // Convert all IDI texture variants
+    const texNames = m2StemToTextures.get(stemLower);
+    let anyTex = false;
+    if (texNames) {
+      for (const texName of texNames) {
+        const ts = texSlug(texName);
+        const texPath = resolve(outDir, 'textures', `${ts}.tex`);
+        if (existsSync(texPath)) { anyTex = true; continue; }
+        const blpEntry = findBlpByName(texName, blpIndex);
+        if (!blpEntry) continue;
+        try {
+          const blpData = readMpqFile(blpEntry.mpq, blpEntry.path);
+          convertBlpToTex(blpData, texPath);
+          convertedTextures++;
+          anyTex = true;
+        } catch (err: any) {
+          errors++;
+          if (errors <= 5) console.error(`  TEX ERROR: ${slug}/${ts} — ${err.message}`);
+        }
+      }
+    }
 
-    try {
-      const m2Data = readMpqFile(m2Entry.mpq, m2Entry.path);
-      convertM2ToModelFiles(m2Data, outDir);
-
-      const blpData = readMpqFile(blpEntry.mpq, blpEntry.path);
-      convertBlpToTex(blpData, resolve(outDir, 'textures', 'main.tex'));
-
-      converted++;
-    } catch (err: any) {
-      errors++;
-      if (errors <= 5) console.error(`  ERROR: ${slug} — ${err.message}`);
+    // Fallback: prefix match for M2s with no IDI texture
+    if (!anyTex) {
+      const fb = findBlpFallback(stemLower, blpIndex);
+      if (fb) {
+        const ts = texSlug(fb.blpStem);
+        const texPath = resolve(outDir, 'textures', `${ts}.tex`);
+        if (!existsSync(texPath)) {
+          try {
+            const blpData = readMpqFile(fb.mpq, fb.path);
+            convertBlpToTex(blpData, texPath);
+            convertedTextures++;
+          } catch (err: any) {
+            errors++;
+            if (errors <= 5) console.error(`  FB TEX ERROR: ${slug}/${ts} — ${err.message}`);
+          }
+        }
+      } else {
+        missingBlp++;
+      }
     }
   }
 
-  console.log(`  Converted: ${converted}, Skipped: ${skipped}, Missing BLP: ${missingBlp}, Errors: ${errors}`);
-  return { converted, skipped, missingBlp, errors };
+  console.log(`  Models: ${convertedModels} new, ${skippedModels} skipped. Textures: ${convertedTextures} new. Missing BLP: ${missingBlp}, Errors: ${errors}`);
+  return { convertedModels, skippedModels, convertedTextures, missingBlp, errors };
 }
 
 // ─── Process Shields ────────────────────────────────────────────────────────
@@ -342,34 +393,71 @@ function processShields() {
   const blpIndex = buildIndex('Shield', 'blp');
   console.log(`  Found ${m2Index.size} unique M2s, ${blpIndex.size} unique BLPs in MPQs`);
 
-  let converted = 0, skipped = 0, missingBlp = 0, errors = 0;
+  let convertedModels = 0, skippedModels = 0, convertedTextures = 0, missingBlp = 0, errors = 0;
 
   for (const [stemLower, m2Entry] of m2Index) {
     const slug = stemLower.replace(/_/g, '-');
     const outDir = resolve(ROOT, 'public/items/shield', slug);
     const outJson = resolve(outDir, 'model.json');
 
-    if (existsSync(outJson)) { skipped++; continue; }
+    if (!existsSync(outJson)) {
+      try {
+        const m2Data = readMpqFile(m2Entry.mpq, m2Entry.path);
+        convertM2ToModelFiles(m2Data, outDir);
+        convertedModels++;
+      } catch (err: any) {
+        errors++;
+        if (errors <= 5) console.error(`  M2 ERROR: ${slug} — ${err.message}`);
+        continue;
+      }
+    } else {
+      skippedModels++;
+    }
 
-    const blpEntry = findBlp(stemLower, blpIndex);
-    if (!blpEntry) { missingBlp++; continue; }
+    const texNames = m2StemToTextures.get(stemLower);
+    let anyTex = false;
+    if (texNames) {
+      for (const texName of texNames) {
+        const ts = texSlug(texName);
+        const texPath = resolve(outDir, 'textures', `${ts}.tex`);
+        if (existsSync(texPath)) { anyTex = true; continue; }
+        const blpEntry = findBlpByName(texName, blpIndex);
+        if (!blpEntry) continue;
+        try {
+          const blpData = readMpqFile(blpEntry.mpq, blpEntry.path);
+          convertBlpToTex(blpData, texPath);
+          convertedTextures++;
+          anyTex = true;
+        } catch (err: any) {
+          errors++;
+          if (errors <= 5) console.error(`  TEX ERROR: ${slug}/${ts} — ${err.message}`);
+        }
+      }
+    }
 
-    try {
-      const m2Data = readMpqFile(m2Entry.mpq, m2Entry.path);
-      convertM2ToModelFiles(m2Data, outDir);
-
-      const blpData = readMpqFile(blpEntry.mpq, blpEntry.path);
-      convertBlpToTex(blpData, resolve(outDir, 'textures', 'main.tex'));
-
-      converted++;
-    } catch (err: any) {
-      errors++;
-      if (errors <= 5) console.error(`  ERROR: ${slug} — ${err.message}`);
+    if (!anyTex) {
+      const fb = findBlpFallback(stemLower, blpIndex);
+      if (fb) {
+        const ts = texSlug(fb.blpStem);
+        const texPath = resolve(outDir, 'textures', `${ts}.tex`);
+        if (!existsSync(texPath)) {
+          try {
+            const blpData = readMpqFile(fb.mpq, fb.path);
+            convertBlpToTex(blpData, texPath);
+            convertedTextures++;
+          } catch (err: any) {
+            errors++;
+            if (errors <= 5) console.error(`  FB TEX ERROR: ${slug}/${ts} — ${err.message}`);
+          }
+        }
+      } else {
+        missingBlp++;
+      }
     }
   }
 
-  console.log(`  Converted: ${converted}, Skipped: ${skipped}, Missing BLP: ${missingBlp}, Errors: ${errors}`);
-  return { converted, skipped, missingBlp, errors };
+  console.log(`  Models: ${convertedModels} new, ${skippedModels} skipped. Textures: ${convertedTextures} new. Missing BLP: ${missingBlp}, Errors: ${errors}`);
+  return { convertedModels, skippedModels, convertedTextures, missingBlp, errors };
 }
 
 // ─── Process Helmets ────────────────────────────────────────────────────────
@@ -415,24 +503,54 @@ function processHelmets() {
   let convertedGroups = 0, convertedVariants = 0, skippedGroups = 0, skippedVariants = 0;
   let missingBlp = 0, errors = 0;
 
+  let convertedTextures = 0;
+
   for (const [baseSlug, group] of groups) {
     const slugDir = resolve(ROOT, 'public/items/head', baseSlug);
-    const texFile = resolve(slugDir, 'textures', 'main.tex');
 
-    // Convert shared texture if missing
-    if (!existsSync(texFile)) {
-      const blpEntry = findBlp(group.baseStem, blpIndex);
-      if (!blpEntry) { missingBlp++; continue; }
-
-      try {
-        const blpData = readMpqFile(blpEntry.mpq, blpEntry.path);
-        convertBlpToTex(blpData, texFile);
-      } catch (err: any) {
-        errors++;
-        if (errors <= 5) console.error(`  TEX ERROR: ${baseSlug} — ${err.message}`);
-        continue;
+    // Convert all IDI texture variants
+    const texNames = helmetBaseToTextures.get(group.baseStem);
+    let anyTex = false;
+    if (texNames) {
+      for (const texName of texNames) {
+        const ts = texSlug(texName);
+        const texPath = resolve(slugDir, 'textures', `${ts}.tex`);
+        if (existsSync(texPath)) { anyTex = true; continue; }
+        const blpEntry = findBlpByName(texName, blpIndex);
+        if (!blpEntry) continue;
+        try {
+          const blpData = readMpqFile(blpEntry.mpq, blpEntry.path);
+          convertBlpToTex(blpData, texPath);
+          convertedTextures++;
+          anyTex = true;
+        } catch (err: any) {
+          errors++;
+          if (errors <= 5) console.error(`  TEX ERROR: ${baseSlug}/${ts} — ${err.message}`);
+        }
       }
     }
+
+    // Fallback: prefix BLP match
+    if (!anyTex) {
+      const fb = findBlpFallback(group.baseStem, blpIndex);
+      if (fb) {
+        const ts = texSlug(fb.blpStem);
+        const texPath = resolve(slugDir, 'textures', `${ts}.tex`);
+        if (!existsSync(texPath)) {
+          try {
+            const blpData = readMpqFile(fb.mpq, fb.path);
+            convertBlpToTex(blpData, texPath);
+            convertedTextures++;
+            anyTex = true;
+          } catch (err: any) {
+            errors++;
+            if (errors <= 5) console.error(`  FB TEX ERROR: ${baseSlug}/${ts} — ${err.message}`);
+          }
+        } else { anyTex = true; }
+      }
+    }
+
+    if (!anyTex) { missingBlp++; continue; }
 
     let anyNew = false;
     for (const [rg, variant] of group.variants) {
@@ -457,9 +575,9 @@ function processHelmets() {
   }
 
   console.log(`  Groups: ${convertedGroups} new, ${skippedGroups} skipped (of ${groups.size})`);
-  console.log(`  Variants: ${convertedVariants} new, ${skippedVariants} skipped`);
+  console.log(`  Variants: ${convertedVariants} new, ${skippedVariants} skipped. Textures: ${convertedTextures} new`);
   console.log(`  Missing BLP: ${missingBlp}, Errors: ${errors}`);
-  return { convertedGroups, convertedVariants, skippedGroups, skippedVariants, missingBlp, errors };
+  return { convertedGroups, convertedVariants, convertedTextures, skippedGroups, skippedVariants, missingBlp, errors };
 }
 
 // ─── Process Shoulders ──────────────────────────────────────────────────────
@@ -507,7 +625,7 @@ function processShoulders() {
 
   console.log(`  ${groups.size} shoulder base models`);
 
-  let converted = 0, skipped = 0, missingBlp = 0, errors = 0;
+  let convertedModels = 0, skippedModels = 0, convertedTextures = 0, missingBlp = 0, errors = 0;
   let leftCount = 0, rightCount = 0;
 
   for (const [baseSlug, group] of groups) {
@@ -515,22 +633,54 @@ function processShoulders() {
 
     const slugDir = resolve(ROOT, 'public/items/shoulder', baseSlug);
     const leftJson = resolve(slugDir, 'left', 'model.json');
-    const texFile = resolve(slugDir, 'textures', 'main.tex');
 
-    if (existsSync(leftJson)) { skipped++; continue; }
+    const modelExists = existsSync(leftJson);
 
-    // Find and convert shared texture
-    const blpEntry = findShoulderBlp(group.baseName, blpIndex);
-    if (!blpEntry) { missingBlp++; continue; }
-
-    try {
-      const blpData = readMpqFile(blpEntry.mpq, blpEntry.path);
-      convertBlpToTex(blpData, texFile);
-    } catch (err: any) {
-      errors++;
-      if (errors <= 5) console.error(`  TEX ERROR: ${baseSlug} — ${err.message}`);
-      continue;
+    // Convert all IDI texture variants
+    const texNames = shoulderBaseToTextures.get(group.baseName);
+    let anyTex = false;
+    if (texNames) {
+      for (const texName of texNames) {
+        const ts = texSlug(texName);
+        const texPath = resolve(slugDir, 'textures', `${ts}.tex`);
+        if (existsSync(texPath)) { anyTex = true; continue; }
+        const blpEntry = findBlpByName(texName, blpIndex);
+        if (!blpEntry) continue;
+        try {
+          const blpData = readMpqFile(blpEntry.mpq, blpEntry.path);
+          convertBlpToTex(blpData, texPath);
+          convertedTextures++;
+          anyTex = true;
+        } catch (err: any) {
+          errors++;
+          if (errors <= 5) console.error(`  TEX ERROR: ${baseSlug}/${ts} — ${err.message}`);
+        }
+      }
     }
+
+    // Fallback: prefix BLP match for shoulders
+    if (!anyTex) {
+      const fb = findShoulderBlpFallback(group.baseName, blpIndex);
+      if (fb) {
+        const ts = texSlug(fb.blpStem);
+        const texPath = resolve(slugDir, 'textures', `${ts}.tex`);
+        if (!existsSync(texPath)) {
+          try {
+            const blpData = readMpqFile(fb.mpq, fb.path);
+            convertBlpToTex(blpData, texPath);
+            convertedTextures++;
+            anyTex = true;
+          } catch (err: any) {
+            errors++;
+            if (errors <= 5) console.error(`  FB TEX ERROR: ${baseSlug}/${ts} — ${err.message}`);
+          }
+        } else { anyTex = true; }
+      }
+    }
+
+    if (!anyTex) { missingBlp++; continue; }
+
+    if (modelExists) { skippedModels++; continue; }
 
     // Convert L model
     try {
@@ -555,13 +705,13 @@ function processShoulders() {
       }
     }
 
-    converted++;
+    convertedModels++;
   }
 
-  console.log(`  Converted: ${converted}, Skipped: ${skipped} (of ${groups.size})`);
+  console.log(`  Models: ${convertedModels} new, ${skippedModels} skipped (of ${groups.size}). Textures: ${convertedTextures} new`);
   console.log(`  Left: ${leftCount}, Right: ${rightCount}`);
   console.log(`  Missing BLP: ${missingBlp}, Errors: ${errors}`);
-  return { converted, skipped, leftCount, rightCount, missingBlp, errors };
+  return { convertedModels, skippedModels, convertedTextures, leftCount, rightCount, missingBlp, errors };
 }
 
 // ─── Main ───────────────────────────────────────────────────────────────────
@@ -575,7 +725,7 @@ const shStats = processShoulders();
 for (const { mpq } of mpqs) mpq.close();
 
 console.log('\n=== Grand Total ===');
-console.log(`Weapons:   ${wStats.converted} new, ${wStats.skipped} skipped, ${wStats.missingBlp} no BLP, ${wStats.errors} errors`);
-console.log(`Shields:   ${sStats.converted} new, ${sStats.skipped} skipped, ${sStats.missingBlp} no BLP, ${sStats.errors} errors`);
-console.log(`Helmets:   ${hStats.convertedGroups} groups (${hStats.convertedVariants} variants) new, ${hStats.skippedGroups} skipped, ${hStats.missingBlp} no BLP, ${hStats.errors} errors`);
-console.log(`Shoulders: ${shStats.converted} new, ${shStats.skipped} skipped, ${shStats.missingBlp} no BLP, ${shStats.errors} errors`);
+console.log(`Weapons:   ${wStats.convertedModels} models, ${wStats.convertedTextures} textures new, ${wStats.skippedModels} skipped, ${wStats.missingBlp} no BLP, ${wStats.errors} errors`);
+console.log(`Shields:   ${sStats.convertedModels} models, ${sStats.convertedTextures} textures new, ${sStats.skippedModels} skipped, ${sStats.missingBlp} no BLP, ${sStats.errors} errors`);
+console.log(`Helmets:   ${hStats.convertedGroups} groups (${hStats.convertedVariants} variants), ${hStats.convertedTextures} textures new, ${hStats.skippedGroups} skipped, ${hStats.missingBlp} no BLP, ${hStats.errors} errors`);
+console.log(`Shoulders: ${shStats.convertedModels} models (L:${shStats.leftCount} R:${shStats.rightCount}), ${shStats.convertedTextures} textures new, ${shStats.skippedModels} skipped, ${shStats.missingBlp} no BLP, ${shStats.errors} errors`);
