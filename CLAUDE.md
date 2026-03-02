@@ -158,6 +158,15 @@ Examples of things to record:
 | Item models | `data/patch/patch*/Item/ObjectComponents/<Type>/` |
 | Textures | `data/patch/patch*/**/*.blp` |
 
+### Generated Assets (gitignored — must build locally)
+| What | Where | Script |
+|------|-------|--------|
+| Armor tex files | `public/item-textures/` | `bun run scripts/convert-item-textures.ts` |
+| Weapon models | `public/items/weapon/` | `bun run scripts/convert-item.ts` |
+| Item catalog | `public/item-catalog.json` | `bun run scripts/build-item-catalog.ts` |
+
+Run in that order after extracting patch data.
+
 ### External Data Needed (not yet acquired)
 | Source | Purpose |
 |--------|---------|

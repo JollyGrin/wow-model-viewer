@@ -6,7 +6,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test:e2e": "bun run build && bunx playwright test",
-    "test:e2e:headed": "bun run build && bunx playwright test --headed"
+    "test:e2e:headed": "bun run build && bunx playwright test --headed",
+    "build-catalog": "bun run scripts/build-item-catalog.ts"
   },
   "dependencies": {
     "@wowserhq/format": "^0.28.0",
