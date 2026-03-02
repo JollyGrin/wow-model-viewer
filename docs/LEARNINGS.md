@@ -983,3 +983,24 @@ Only 5/20 models have it: gnome-male, gnome-female, human-female, troll-male, tr
 **Impact:** Helmet + shoulder support requires: (1) synthetic head attachment for 15 models, (2) race-gender-specific M2 loading for helmets, (3) geoset hiding via bitmask for helmets, (4) paired L/R loading for shoulders.
 
 **Reference:** `data/dbc/HelmetGeosetVisData.json`, `data/dbc/ItemDisplayInfo.json` (HelmetGeosetVisID field), `data/patch/*/Item/ObjectComponents/Head/`, `data/patch/*/Item/ObjectComponents/Shoulder/`
+
+## [2026-03-02] Per-Item Texture Variants — One M2, Many Colors
+
+**Context:** Many items share the same M2 model geometry but use different BLP textures (color variants). Example: `LShoulder_Leather_C_03.m2` is shared by 32 items — Polar Shoulder Pads needs "Frost" texture, but the old extractor baked only the first IDI match ("Red") as `textures/main.tex`. This affected all item types: weapons, helmets, shoulders, shields.
+
+**Finding: IDI ModelTexture names don't always match BLP filenames**
+The IDI `ModelTexture[0]` field can reference a texture name that doesn't exist as a separate BLP in the MPQ archives. Example: IDI says `Helm_Plate_RaidWarrior_B_01Black` but the actual BLP is just `Helm_Plate_RaidWarrior_B_01.blp` (no "Black" variant BLP). The game client likely handles this through internal color tinting or the name is just a label. The extractor's prefix-match fallback finds the base BLP and writes it under the base name slug.
+
+**Finding: Must verify texture slug against disk in catalog builder**
+Because of the IDI/BLP name mismatch, the catalog builder can't blindly slugify `IDI.ModelTexture[0]` — it would produce a slug like `helm-plate-raidwarrior-b-01black` for a file that's actually named `helm-plate-raidwarrior-b-01.tex`. The fix: `idiTexSlugVerified()` checks if the IDI-named .tex file exists on disk, and falls back to `firstAvailableTex()` (scanning the textures/ directory) if not.
+
+**Finding: Texture variant counts per item type**
+After extracting all variants: 1810 weapon textures (up from ~534 main.tex), 239 shield, 79 helmet, 197 shoulder. Some M2 slugs have 7+ texture variants (e.g., `leather-c-03` shoulders have blue, brown, frost, green, red, white, arathi).
+
+**Impact:** Each catalog entry for weapons/shields/helmets/shoulders now carries a `texture: string` field pointing to the specific texture variant. Runtime loads `textures/{texture}.tex` instead of `textures/main.tex`. No geometry duplication — one `model.bin` per M2 slug, multiple `.tex` files under `textures/`.
+
+**What failed (don't repeat):**
+- Blindly using `idiTexSlug(idi)` without disk verification — produces broken texture URLs for ~30% of items
+- Old approach of `textures/main.tex` single texture per model — loses color variant information, all items sharing a model render identically
+
+**Reference:** `scripts/extract-mpq-items.ts` (m2StemToTextures, helmetBaseToTextures, shoulderBaseToTextures maps), `scripts/build-item-catalog.ts` (idiTexSlugVerified), `src/loadModel.ts` (helmetTexture, shoulderTexture, weaponTexture fields)
