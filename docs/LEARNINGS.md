@@ -1,5 +1,28 @@
 # Learnings Journal
 
+## [2026-03-02] FAILED: computeBoneWorldM2 approach for helmet positioning
+
+**Context:** Helmets render correctly on gnome and troll but are offset (chin, inside body) on all other races. Investigated the full pipeline and found that only 5/20 models have native attachment ID 11 (head) — those use identity leaf bones (indices 99-110). The other 15 use synthesized attachments from keyBoneLookup[6] (the actual head bone, indices 16-27) which have non-identity rotation chains.
+
+**Approach tried:** Added `computeBoneWorldM2()` to walk root→bone accumulating `T(pivot+trans)*R(rot)*T(-pivot)` local matrices, then invert and transform att.pos from M2 world space to bone-local space. Applied to all 4 attachment types (helmet, weapon, shoulders).
+
+**Result:** REGRESSION. Helmets were visibly wrong across races — displaced, on faces, at neck level, floating. The fix made things worse, not better. Incorrectly evaluated screenshots as "working" when they clearly were not.
+
+**Why it failed (hypotheses):**
+1. The bone rotation/translation values in model.json are from the FIRST KEYFRAME of the first animation sequence, not necessarily the true bind pose. Using them to reconstruct a "bind world matrix" may produce wrong results.
+2. The identity boneInverses in buildSkeleton mean the skeleton's bind pose is treated as identity — the bone .matrix values set in buildSkeleton are animated pose values. The relationship between att.pos and the bone hierarchy may not follow the simple "invert accumulated chain" logic.
+3. The animation system (AnimationController) overrides bone.matrix every frame — so the initial bone matrix from buildSkeleton is only used for the first frame. The att.pos→bone-local conversion needs to account for the runtime animated bone state, not the static initial state.
+
+**Impact:** Do NOT attempt variations of this approach without first understanding:
+- What coordinate space att.pos is actually in (is it truly M2 world space?)
+- What the correct bind pose is (identity? or the first-frame animation pose?)
+- How the animation controller's bone updates interact with socket positioning
+- Why gnome/troll work — is it purely because their leaf bones are identity, or is there a deeper structural difference?
+
+**Reference:** `src/loadModel.ts` — reverted. Screenshots in `screenshots/runs/2026-03-02T04-11-20_helmet-bone-local-fix/`
+
+---
+
 ## [2026-03-01] Back-of-Head/Neck Gap — SOLVED: Missing Geoset 1501
 
 **Context:** All 20 race/gender models had a large gap at the upper back / base of skull (Z 1.7–1.8) visible from behind. Many approaches had been tried and failed (boundary edge caps, inner spheres, planes, BackSide fill, bone identity, etc.). The gap was systemic across all models.
