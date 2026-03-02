@@ -145,11 +145,23 @@ async function main() {
     console.log(`    ${REGION_BY_INDEX[i]}: ${regionCounts.get(i) || 0}`);
   }
 
-  // --- Mount MPQ ---
-  console.log('\nMounting texture.MPQ...');
+  // --- Mount MPQs ---
+  console.log('\nMounting MPQ archives...');
   FS.mkdir('/stormjs');
   FS.mount(FS.filesystems.NODEFS, { root: resolve(DATA_DIR, 'model') }, '/stormjs');
-  const mpq = await MPQ.open('/stormjs/texture.MPQ', 'r');
+
+  // Open all available MPQ archives (texture.MPQ has base textures, patch.MPQ has vanilla endgame)
+  const mpqFiles = ['texture.MPQ', 'patch.MPQ'];
+  const mpqs: any[] = [];
+  for (const name of mpqFiles) {
+    try {
+      const m = await MPQ.open(`/stormjs/${name}`, 'r');
+      mpqs.push({ name, mpq: m });
+      console.log(`  Opened ${name}`);
+    } catch {
+      console.log(`  Skipped ${name} (not found)`);
+    }
+  }
 
   // --- Ensure output dirs exist ---
   for (let i = 0; i < 8; i++) {
@@ -188,15 +200,25 @@ async function main() {
       }
 
       // MPQ path: Item\TextureComponents\{Region}\{name}.blp
+      // Try case-insensitive: some MPQs use ITEM\ prefix
       const mpqPath = `Item\\TextureComponents\\${mpqRegion}\\${fullName}.blp`;
 
       try {
-        if (!mpq.hasFile(mpqPath)) {
+        // Search all mounted MPQs for this file
+        let foundMpq: any = null;
+        for (const { mpq: m } of mpqs) {
+          if (m.hasFile(mpqPath)) {
+            foundMpq = m;
+            break;
+          }
+        }
+
+        if (!foundMpq) {
           notFound++;
           continue;
         }
 
-        const file = mpq.openFile(mpqPath);
+        const file = foundMpq.openFile(mpqPath);
         const data = file.read();
         file.close();
 
@@ -215,7 +237,7 @@ async function main() {
     }
   }
 
-  mpq.close();
+  for (const { mpq: m } of mpqs) m.close();
 
   // --- Summary ---
   console.log('\n=== Summary ===');

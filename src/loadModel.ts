@@ -96,7 +96,11 @@ function resolveDefaultGeosets(
   const result = new Set<number>();
   result.add(0);           // body mesh (always)
   // Hair geoset — hide if helmet requires it (group 0 = hair)
-  if (!hiddenGroups?.has(0)) {
+  if (hiddenGroups?.has(0)) {
+    // Enable bald head geoset (1) instead of hairstyle
+    const available0 = byGroup.get(0);
+    if (available0?.includes(1)) result.add(1);
+  } else {
     result.add(hairstyle);
   }
 
@@ -242,7 +246,6 @@ function buildSkeleton(boneData: BoneInfo[]): { skeleton: THREE.Skeleton; roots:
 async function loadItemModel(
   itemDir: string,
   textureUrl?: string,
-  opts?: { polygonOffset?: boolean },
 ): Promise<THREE.Group> {
   interface ItemManifest {
     vertexCount: number;
@@ -287,13 +290,7 @@ async function loadItemModel(
   geom.setAttribute('uv',       new THREE.BufferAttribute(uvs, 2));
   geom.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
 
-  const matOptions: THREE.MeshLambertMaterialParameters = { map: texture, side: THREE.DoubleSide };
-  if (opts?.polygonOffset) {
-    matOptions.polygonOffset = true;
-    matOptions.polygonOffsetFactor = -1;
-    matOptions.polygonOffsetUnits = -1;
-  }
-  const mat = new THREE.MeshLambertMaterial(matOptions);
+  const mat = new THREE.MeshLambertMaterial({ map: texture, side: THREE.DoubleSide });
   const group = new THREE.Group();
   group.add(new THREE.Mesh(geom, mat));
   return group;
@@ -329,28 +326,31 @@ export async function loadModel(
   if (options?.armor?.wristGeoset) armorGeoOverrides.set(9, 900 + options.armor.wristGeoset);
   if (options?.armor?.robeGeoset) armorGeoOverrides.set(13, 1300 + options.armor.robeGeoset);
 
-  // Helmet geoset visibility hiding
+  // Helmet geoset visibility hiding — always hide hair when any helmet is equipped
   let helmetHiddenGroups: Set<number> | undefined;
-  if (options?.armor?.helmet && options.armor.helmetGeosetVisID) {
-    const modelSlug = modelDir.split('/').pop() || '';
-    const raceSlug = modelSlug.replace(/-(?:male|female)$/, '');
-    const genderIdx = modelSlug.endsWith('-female') ? 1 : 0;
-    const raceId = RACE_ID_MAP[raceSlug];
-    const visID = options.armor.helmetGeosetVisID[genderIdx];
+  if (options?.armor?.helmet) {
+    helmetHiddenGroups = new Set<number>();
+    helmetHiddenGroups.add(0); // Always hide hair when helmet equipped
 
-    if (visID && raceId) {
-      const visData = await loadHelmetVisData();
-      const visRecord = visData.find(r => r.ID === visID);
-      if (visRecord) {
-        helmetHiddenGroups = new Set<number>();
-        for (let i = 0; i < HELMET_VIS_GROUPS.length && i < visRecord.HideGeoset.length; i++) {
-          const flag = visRecord.HideGeoset[i];
-          // Interpret as signed int32 bitmask: if bit for this race is set, hide the group
-          if ((flag & (1 << raceId)) !== 0) {
-            helmetHiddenGroups.add(HELMET_VIS_GROUPS[i].group);
+    // Apply HelmetGeosetVisData for additional hiding (facial hair, ears)
+    if (options.armor.helmetGeosetVisID) {
+      const modelSlug = modelDir.split('/').pop() || '';
+      const raceSlug = modelSlug.replace(/-(?:male|female)$/, '');
+      const genderIdx = modelSlug.endsWith('-female') ? 1 : 0;
+      const raceId = RACE_ID_MAP[raceSlug];
+      const visID = options.armor.helmetGeosetVisID[genderIdx];
+
+      if (visID && raceId) {
+        const visData = await loadHelmetVisData();
+        const visRecord = visData.find(r => r.ID === visID);
+        if (visRecord) {
+          for (let i = 0; i < HELMET_VIS_GROUPS.length && i < visRecord.HideGeoset.length; i++) {
+            const flag = visRecord.HideGeoset[i];
+            if ((flag & (1 << raceId)) !== 0) {
+              helmetHiddenGroups.add(HELMET_VIS_GROUPS[i].group);
+            }
           }
         }
-        if (helmetHiddenGroups.size === 0) helmetHiddenGroups = undefined;
       }
     }
   }
@@ -472,9 +472,15 @@ export async function loadModel(
 
   const fullIndexData = new Uint16Array(binBuffer, manifest.vertexBufferSize, manifest.indexCount);
 
+  // Small polygon offset pushes body depth slightly back so helmet/equipment
+  // dome geometry wins depth test in the thin overlap zone (~0.06 units)
+  const hasHelmet = !!options?.armor?.helmet;
   const skinMaterial = new THREE.MeshLambertMaterial({
     map: skinTexture,
     side: THREE.DoubleSide,
+    polygonOffset: hasHelmet,
+    polygonOffsetFactor: hasHelmet ? 1 : 0,
+    polygonOffsetUnits: hasHelmet ? 2000 : 0,
   });
 
   const hairMaterial = hairTexture === skinTexture
@@ -569,16 +575,7 @@ export async function loadModel(
       socket.position.set(att.pos[0], att.pos[1], att.pos[2]);
       bone.add(socket);
       try {
-        const helmetGroup = await loadItemModel(helmDir, helmTexUrl, { polygonOffset: true });
-        // Helmet dome sits inside the character head mesh, losing depth tests.
-        // Clear depth buffer before rendering the helmet so it draws on top of the body.
-        helmetGroup.renderOrder = 1;
-        helmetGroup.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.renderOrder = 1;
-            child.onBeforeRender = (renderer) => { renderer.clearDepth(); };
-          }
-        });
+        const helmetGroup = await loadItemModel(helmDir, helmTexUrl);
         socket.add(helmetGroup);
       } catch (err) {
         console.warn(`Failed to load helmet from ${helmDir}:`, err);

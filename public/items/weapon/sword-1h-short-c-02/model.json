@@ -1,0 +1,8 @@
+{
+  "vertexCount": 64,
+  "indexCount": 144,
+  "triangleCount": 48,
+  "vertexBufferSize": 2048,
+  "indexBufferSize": 288,
+  "vertexStride": 32
+}

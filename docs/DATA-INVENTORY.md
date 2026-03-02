@@ -123,21 +123,33 @@ Other texture.MPQ contents: 1,011 weapon BLPs, 135 shield BLPs, 260 shoulder BLP
 | Weapons | `public/items/weapon/` | 111 models | 51M |
 | Helmets | `public/items/head/` | 90 models (×4 race variants) | — |
 | Shoulders | `public/items/shoulder/` | 28 models (×2 sides) | — |
-| Armor textures | `public/item-textures/` | 9,522 .tex files | 292M |
-| Item catalog | `public/item-catalog.json` | 4,500 items | 1.0M |
+| Armor textures | `public/item-textures/` | 11,425 .tex files | ~350M |
+| Item catalog | `public/item-catalog.json` | 5,060 items | ~1.1M |
 
-**Armor texture breakdown (from patch-3 conversion only):**
+**Armor texture breakdown (patches + texture.MPQ + patch.MPQ):**
 
 | Region | .tex Files |
 |--------|-----------|
-| ArmUpperTexture | 889 |
-| ArmLowerTexture | 1,210 |
-| HandTexture | 539 |
-| TorsoUpperTexture | 1,632 |
-| TorsoLowerTexture | 1,604 |
-| LegUpperTexture | 1,537 |
-| LegLowerTexture | 1,482 |
-| FootTexture | 628 |
+| ArmUpperTexture | 1,048 |
+| ArmLowerTexture | 1,505 |
+| HandTexture | 655 |
+| TorsoUpperTexture | 1,916 |
+| TorsoLowerTexture | 1,881 |
+| LegUpperTexture | 1,842 |
+| LegLowerTexture | 1,810 |
+| FootTexture | 778 |
+
+**Item catalog breakdown:**
+
+| Category | Count | Named (from DB) |
+|----------|-------|-----------------|
+| Weapons | 128 | 20 |
+| Helmets | 239 | 187 |
+| Shoulders | 22 | 3 |
+| Chest | 1,190 | 963 |
+| Legs | 1,674 | 759 |
+| Boots | 942 | 784 |
+| Gloves | 865 | 757 |
 
 ---
 
