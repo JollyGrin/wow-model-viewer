@@ -25,19 +25,10 @@
  * The renderer applies bone transforms via GPU skinning (THREE.SkinnedMesh).
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { resolve } from 'path';
 
 const ROOT = resolve(import.meta.dirname, '..');
-
-// ─── Reference Attachments (from extract-char-attachments.ts) ────────────────
-interface RefAttachment { id: number; bone: number; pos: [number, number, number]; }
-type RefAttachmentMap = Record<string, RefAttachment[]>;
-
-const REF_ATT_PATH = resolve(ROOT, 'data/char-attachments.json');
-const refAttachments: RefAttachmentMap = existsSync(REF_ATT_PATH)
-  ? JSON.parse(readFileSync(REF_ATT_PATH, 'utf-8'))
-  : {};
 
 interface CharacterModel {
   slug: string;
@@ -679,47 +670,32 @@ function convertModel(model: CharacterModel) {
     attachments.push({ id, bone, pos });
   }
 
-  // Head attachment (ID 11): use reference data if available, then crown-bone heuristic
+  // Head attachment (ID 11): crown-bone heuristic
+  // Native att 11 pattern: highest-Z identity-rotation leaf child of head bone,
+  // with X at or forward of head bone X (never behind the head center).
   if (!attachments.find(a => a.id === 11)) {
-    const refAtts = refAttachments[model.slug];
-    const refAtt11 = refAtts?.find((a: RefAttachment) => a.id === 11);
+    if (m2.keyBoneLookup.count > 6) {
+      const headBoneIdx = m2.view.getInt16(m2.keyBoneLookup.ofs + 6 * 2, true);
+      if (headBoneIdx >= 0 && headBoneIdx < bones.length) {
+        const headPivot = bones[headBoneIdx].pivot;
+        const children = bones
+          .map((b, i) => ({ idx: i, ...b }))
+          .filter(b => b.parent === headBoneIdx)
+          .filter(b => {
+            const [rx, ry, rz, rw] = b.rotation;
+            return Math.abs(rw - 1) < 0.01 && Math.abs(rx) < 0.01 && Math.abs(ry) < 0.01 && Math.abs(rz) < 0.01;
+          })
+          .filter(b => !bones.some(other => other.parent === b.idx)); // leaf only
 
-    if (refAtt11) {
-      // Use extracted reference data (from extract-char-attachments.ts)
-      // Always find nearest bone by position — reference may come from a different M2 version
-      let bestBone = 0;
-      let bestDist = Infinity;
-      for (let bi = 0; bi < bones.length; bi++) {
-        const dx = bones[bi].pivot[0] - refAtt11.pos[0];
-        const dy = bones[bi].pivot[1] - refAtt11.pos[1];
-        const dz = bones[bi].pivot[2] - refAtt11.pos[2];
-        const dist = dx * dx + dy * dy + dz * dz;
-        if (dist < bestDist) { bestDist = dist; bestBone = bi; }
-      }
-      attachments.push({ id: 11, bone: bestBone, pos: refAtt11.pos });
-    } else {
-      // Fallback: crown-bone heuristic (keyBoneLookup[6] = head bone)
-      if (m2.keyBoneLookup.count > 6) {
-        const headBoneIdx = m2.view.getInt16(m2.keyBoneLookup.ofs + 6 * 2, true);
-        if (headBoneIdx >= 0 && headBoneIdx < bones.length) {
-          const children = bones
-            .map((b, i) => ({ idx: i, ...b }))
-            .filter(b => b.parent === headBoneIdx)
-            .filter(b => {
-              const [rx, ry, rz, rw] = b.rotation;
-              return Math.abs(rw - 1) < 0.01 && Math.abs(rx) < 0.01 && Math.abs(ry) < 0.01 && Math.abs(rz) < 0.01;
-            })
-            .filter(b => !bones.some(other => other.parent === b.idx)); // leaf only
+        children.sort((a, b) => b.pivot[2] - a.pivot[2]);
 
-          children.sort((a, b) => b.pivot[2] - a.pivot[2]);
-
-          if (children.length > 0) {
-            const crown = children[0];
-            attachments.push({ id: 11, bone: crown.idx, pos: [crown.pivot[0], crown.pivot[1], crown.pivot[2]] });
-          } else {
-            const pivot = bones[headBoneIdx].pivot;
-            attachments.push({ id: 11, bone: headBoneIdx, pos: [pivot[0], pivot[1], pivot[2]] });
-          }
+        if (children.length > 0) {
+          const crown = children[0];
+          // Ensure X is not behind head bone center — native att 11 is always at or forward
+          const x = Math.max(crown.pivot[0], headPivot[0]);
+          attachments.push({ id: 11, bone: crown.idx, pos: [x, crown.pivot[1], crown.pivot[2]] });
+        } else {
+          attachments.push({ id: 11, bone: headBoneIdx, pos: [headPivot[0], headPivot[1], headPivot[2]] });
         }
       }
     }
