@@ -1,5 +1,33 @@
 # Learnings Journal
 
+## [2026-03-03] SOLVED: Helmet attachment positioning for all 20 races
+
+**Context:** Helmets rendered correctly on 5 races with native M2 attachment ID 11 (gnome-M/F, troll-M/F, human-F) but sat ~0.1-0.25 units too low on the other 15 races that used synthesized att 11.
+
+**Root cause:** The synthesis logic in `convert-model.ts` set att 11 to `{ bone: headBoneIdx, pos: headBone.pivot }` — using the head bone itself and its rotation center as the position. But native att 11 uses a **dedicated identity-rotation leaf child bone** of the head bone, whose pivot is at the **crown of the head** (significantly higher Z).
+
+**Fix:** Instead of using the head bone directly, find the topmost identity-rotation leaf child of the head bone:
+1. Get all children of head bone (keyBoneLookup[6])
+2. Filter to identity rotation (quat w ≈ 1, xyz ≈ 0)
+3. Filter to leaf bones (no children of their own)
+4. Pick highest Z pivot (crown of skull)
+5. Fallback to head bone if no suitable child found
+
+**Example (orc-male):**
+- Before: bone 18 (head), pos Z = 2.104 (rotation center of jaw)
+- After: bone 30 (crown, child of 18), pos Z = 2.336 (top of skull)
+- Delta: +0.23 Z units — exactly the offset that made helmets sit too low
+
+**Why the previous computeBoneWorldM2 approach failed:** The problem was never about coordinate space transforms or bind pose matrices. It was simply that we were using the wrong bone — the head bone's pivot is its rotation center (jaw area), not the crown where helmets attach. Native att 11 bones are always identity-rotation leaf children specifically positioned at the crown.
+
+**Impact:** All 20 race/gender models now have correct helmet attachment points. Change is purely in data conversion (`scripts/convert-model.ts`), no runtime changes needed.
+
+**Key principle:** When M2 attachment data is missing and you need to synthesize it, study the STRUCTURE of native attachments carefully. Native att 11 doesn't just point to the head bone — it points to a specific child bone with specific properties (identity rotation, leaf, highest Z). Replicating the attachment means replicating the bone selection pattern, not just grabbing the nearest related bone.
+
+**Reference:** `scripts/convert-model.ts` lines 673-700
+
+---
+
 ## [2026-03-02] FAILED: computeBoneWorldM2 approach for helmet positioning
 
 **Context:** Helmets render correctly on gnome and troll but are offset (chin, inside body) on all other races. Investigated the full pipeline and found that only 5/20 models have native attachment ID 11 (head) — those use identity leaf bones (indices 99-110). The other 15 use synthesized attachments from keyBoneLookup[6] (the actual head bone, indices 16-27) which have non-identity rotation chains.
