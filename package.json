@@ -10,9 +10,11 @@
     "build-catalog": "bun run scripts/build-item-catalog.ts"
   },
   "dependencies": {
+    "@tweakpane/core": "^2.0.5",
     "@wowserhq/format": "^0.28.0",
     "@wowserhq/stormjs": "^0.4.1",
     "three": "^0.182.0",
+    "tweakpane": "^4.0.5",
     "vite": "^7.3.1"
   },
   "devDependencies": {

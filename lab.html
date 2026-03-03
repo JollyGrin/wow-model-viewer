@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>WoW Model Viewer</title>
+  <title>WoW Model Viewer — Shader Lab</title>
   <style>
     body { margin: 0; overflow: hidden; background: #000; }
     canvas { display: block; }
@@ -14,7 +14,7 @@
       gap: 8px;
       z-index: 10;
     }
-    #controls select {
+    #controls select, #controls a {
       background: rgba(0, 0, 0, 0.7);
       color: #e0d8c8;
       border: 1px solid rgba(255, 255, 255, 0.2);
@@ -24,8 +24,9 @@
       border-radius: 4px;
       cursor: pointer;
       outline: none;
+      text-decoration: none;
     }
-    #controls select:hover { border-color: rgba(255, 255, 255, 0.4); }
+    #controls select:hover, #controls a:hover { border-color: rgba(255, 255, 255, 0.4); }
     #controls select:focus { border-color: rgba(200, 180, 120, 0.6); }
 
     /* Equipment panel */
@@ -136,7 +137,7 @@
 </head>
 <body>
   <div id="controls">
-    <a href="/lab.html" style="background:rgba(0,0,0,0.7);color:#e0d8c8;border:1px solid rgba(255,255,255,0.2);padding:6px 10px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;border-radius:4px;text-decoration:none;cursor:pointer;">Lab</a>
+    <a href="/">Viewer</a>
     <select id="race-select"></select>
     <select id="gender-select">
       <option value="male">Male</option>
@@ -146,6 +147,6 @@
   </div>
   <div id="equipment-panel"></div>
   <canvas id="canvas"></canvas>
-  <script type="module" src="/src/main.ts"></script>
+  <script type="module" src="/src/lab.ts"></script>
 </body>
 </html>

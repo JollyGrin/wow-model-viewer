@@ -8,6 +8,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         all: resolve(__dirname, 'all.html'),
+        lab: resolve(__dirname, 'lab.html'),
       },
     },
   },
