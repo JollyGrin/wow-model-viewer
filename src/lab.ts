@@ -71,7 +71,7 @@ scene.add(rimLight)
 const pmremGenerator = new THREE.PMREMGenerator(renderer)
 const envScene = new THREE.Scene()
 envScene.background = new THREE.Color(0x444444)
-let envMap = pmremGenerator.fromScene(envScene, 0.04).texture
+const envMap = pmremGenerator.fromScene(envScene, 0.04).texture
 
 const envParams = { enabled: true, intensity: 0.4 }
 scene.environment = envMap
@@ -85,9 +85,7 @@ composer.addPass(renderPass)
 
 const bloomPass = new UnrealBloomPass(
   new THREE.Vector2(window.innerWidth, window.innerHeight),
-  0.15, // strength
-  0.4,  // radius
-  0.85, // threshold
+  0.15, 0.4, 0.85,
 )
 bloomPass.enabled = true
 composer.addPass(bloomPass)
@@ -107,31 +105,149 @@ composer.addPass(smaaPass)
 const outputPass = new OutputPass()
 composer.addPass(outputPass)
 
-// --- Material presets ---
+// --- Per-category material params ---
 
-interface MatPreset {
+type MatCategory = 'body' | 'hair' | 'item'
+
+interface CategoryParams {
   roughness: number
   metalness: number
 }
 
-const PRESETS: Record<string, MatPreset> = {
-  skin:    { roughness: 0.8, metalness: 0.0 },
-  cloth:   { roughness: 0.9, metalness: 0.0 },
-  leather: { roughness: 0.7, metalness: 0.05 },
-  plate:   { roughness: 0.35, metalness: 0.8 },
-  weapon:  { roughness: 0.3, metalness: 0.9 },
+const catParams: Record<MatCategory, CategoryParams> = {
+  body: { roughness: 0.75, metalness: 0.0 },
+  hair: { roughness: 0.85, metalness: 0.0 },
+  item: { roughness: 0.35, metalness: 0.7 },
 }
 
-const matParams = {
-  roughness: 0.7,
-  metalness: 0.0,
-  preset: 'skin',
+const PRESETS: Record<string, Record<MatCategory, CategoryParams>> = {
+  default: {
+    body: { roughness: 0.75, metalness: 0.0 },
+    hair: { roughness: 0.85, metalness: 0.0 },
+    item: { roughness: 0.35, metalness: 0.7 },
+  },
+  cloth: {
+    body: { roughness: 0.85, metalness: 0.0 },
+    hair: { roughness: 0.9, metalness: 0.0 },
+    item: { roughness: 0.8, metalness: 0.05 },
+  },
+  leather: {
+    body: { roughness: 0.7, metalness: 0.0 },
+    hair: { roughness: 0.85, metalness: 0.0 },
+    item: { roughness: 0.55, metalness: 0.15 },
+  },
+  plate: {
+    body: { roughness: 0.65, metalness: 0.05 },
+    hair: { roughness: 0.85, metalness: 0.0 },
+    item: { roughness: 0.25, metalness: 0.85 },
+  },
+}
+
+// --- Derived texture / shader feature params ---
+
+const derivedParams = {
+  autoRoughness: false,
+  roughnessStrength: 0.6,
+  autoNormal: false,
+  normalStrength: 1.0,
+  sss: false,
+  sssIntensity: 0.5,
+  sssSaturation: 0.5,
+}
+
+// --- Derived texture generators ---
+
+/**
+ * Generate a roughness map from a diffuse texture using luminance inversion.
+ * Bright painted highlights → low roughness (shiny).
+ * Dark/muted areas → high roughness (matte).
+ */
+function generateRoughnessMap(diffuse: THREE.DataTexture, strength: number): THREE.DataTexture {
+  const w = diffuse.image.width
+  const h = diffuse.image.height
+  const src = diffuse.image.data as Uint8Array
+  const out = new Uint8Array(w * h * 4)
+
+  for (let i = 0; i < w * h; i++) {
+    const r = src[i * 4] / 255
+    const g = src[i * 4 + 1] / 255
+    const b = src[i * 4 + 2] / 255
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b
+
+    // Bright pixels (painted specular) → low roughness
+    // strength 0 = uniform 0.5 roughness, strength 1 = full luminance derivation
+    const roughness = Math.max(0, Math.min(1, 1.0 - lum * strength))
+    const val = Math.round(roughness * 255)
+    out[i * 4] = val
+    out[i * 4 + 1] = val
+    out[i * 4 + 2] = val
+    out[i * 4 + 3] = 255
+  }
+
+  const tex = new THREE.DataTexture(out, w, h, THREE.RGBAFormat)
+  tex.needsUpdate = true
+  tex.flipY = false
+  tex.magFilter = THREE.LinearFilter
+  tex.minFilter = THREE.LinearMipmapLinearFilter
+  tex.generateMipmaps = true
+  return tex
+}
+
+/**
+ * Generate a normal map from diffuse using Sobel operator on luminance.
+ * Base strength is baked in; visual intensity controlled via material.normalScale.
+ */
+function generateNormalMap(diffuse: THREE.DataTexture): THREE.DataTexture {
+  const w = diffuse.image.width
+  const h = diffuse.image.height
+  const src = diffuse.image.data as Uint8Array
+  const BASE_STRENGTH = 4.0
+
+  // Grayscale heightmap
+  const gray = new Float32Array(w * h)
+  for (let i = 0; i < w * h; i++) {
+    gray[i] = (0.299 * src[i * 4] + 0.587 * src[i * 4 + 1] + 0.114 * src[i * 4 + 2]) / 255
+  }
+
+  const out = new Uint8Array(w * h * 4)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x
+
+      // 3x3 Sobel neighborhood (clamp at edges)
+      const ym = Math.max(0, y - 1), yp = Math.min(h - 1, y + 1)
+      const xm = Math.max(0, x - 1), xp = Math.min(w - 1, x + 1)
+      const tl = gray[ym * w + xm], t = gray[ym * w + x], tr = gray[ym * w + xp]
+      const l = gray[y * w + xm], r = gray[y * w + xp]
+      const bl = gray[yp * w + xm], b = gray[yp * w + x], br = gray[yp * w + xp]
+
+      const dx = (tr + 2 * r + br) - (tl + 2 * l + bl)
+      const dy = (bl + 2 * b + br) - (tl + 2 * t + tr)
+
+      const nx = -dx * BASE_STRENGTH
+      const ny = -dy * BASE_STRENGTH
+      const nz = 1.0
+      const len = Math.sqrt(nx * nx + ny * ny + nz * nz)
+
+      out[idx * 4] = Math.round(((nx / len) * 0.5 + 0.5) * 255)
+      out[idx * 4 + 1] = Math.round(((ny / len) * 0.5 + 0.5) * 255)
+      out[idx * 4 + 2] = Math.round(((nz / len) * 0.5 + 0.5) * 255)
+      out[idx * 4 + 3] = 255
+    }
+  }
+
+  const tex = new THREE.DataTexture(out, w, h, THREE.RGBAFormat)
+  tex.needsUpdate = true
+  tex.flipY = false
+  tex.magFilter = THREE.LinearFilter
+  tex.minFilter = THREE.LinearMipmapLinearFilter
+  tex.generateMipmaps = true
+  return tex
 }
 
 // --- Tweakpane ---
 
 const pane = new Pane({ title: 'Shader Lab', expanded: true })
-// Position tweakpane on right side
 const paneEl = pane.element.parentElement
 if (paneEl) {
   paneEl.style.position = 'fixed'
@@ -141,7 +257,7 @@ if (paneEl) {
 }
 
 // Renderer folder
-const rendererFolder = pane.addFolder({ title: 'Renderer' })
+const rendererFolder = pane.addFolder({ title: 'Renderer', expanded: false })
 const toneMappingOpts = {
   'ACES Filmic': THREE.ACESFilmicToneMapping,
   'Cineon': THREE.CineonToneMapping,
@@ -162,31 +278,94 @@ toneMappingBlade.on('change', (ev) => {
 rendererFolder.addBinding(rendererParams, 'exposure', { min: 0.1, max: 3.0, step: 0.05 })
   .on('change', (ev: any) => { renderer.toneMappingExposure = ev.value })
 
-// Materials folder
-const matFolder = pane.addFolder({ title: 'Materials' })
-const roughnessBinding = matFolder.addBinding(matParams, 'roughness', { min: 0, max: 1, step: 0.01 })
-roughnessBinding.on('change', () => applyMaterialParams())
-const metalnessBinding = matFolder.addBinding(matParams, 'metalness', { min: 0, max: 1, step: 0.01 })
-metalnessBinding.on('change', () => applyMaterialParams())
+// Materials folder — per-category controls
+const matFolder = pane.addFolder({ title: 'Materials', expanded: false })
+
 const presetBlade = matFolder.addBlade({
   view: 'list',
   label: 'Preset',
   options: Object.keys(PRESETS).map(k => ({ text: k, value: k })),
-  value: matParams.preset,
+  value: 'default',
 }) as ListBladeApi<string>
+
+const catBindings: Array<{ refresh(): void }> = []
+
+function addCategoryFolder(cat: MatCategory, label: string) {
+  const folder = matFolder.addFolder({ title: label, expanded: false })
+  const rB = folder.addBinding(catParams[cat], 'roughness', { min: 0, max: 1, step: 0.01 })
+  rB.on('change', () => applyMaterialParams())
+  const mB = folder.addBinding(catParams[cat], 'metalness', { min: 0, max: 1, step: 0.01 })
+  mB.on('change', () => applyMaterialParams())
+  catBindings.push(rB, mB)
+}
+
+addCategoryFolder('body', 'Body (Skin + Armor)')
+addCategoryFolder('hair', 'Hair')
+addCategoryFolder('item', 'Items (Weapon/Helm/Shoulder)')
+
 presetBlade.on('change', (ev) => {
   const p = PRESETS[ev.value]
-  if (p) {
-    matParams.roughness = p.roughness
-    matParams.metalness = p.metalness
-    roughnessBinding.refresh()
-    metalnessBinding.refresh()
-    applyMaterialParams()
+  if (!p) return
+  for (const cat of ['body', 'hair', 'item'] as MatCategory[]) {
+    catParams[cat].roughness = p[cat].roughness
+    catParams[cat].metalness = p[cat].metalness
   }
+  catBindings.forEach(b => b.refresh())
+  applyMaterialParams()
 })
 
+// Derived Maps folder
+const derivedFolder = pane.addFolder({ title: 'Texture Analysis', expanded: false })
+
+derivedFolder.addBinding(derivedParams, 'autoRoughness', { label: 'Auto Roughness' })
+  .on('change', () => applyShaderFeatures())
+derivedFolder.addBinding(derivedParams, 'roughnessStrength', { label: 'Roughness Strength', min: 0.1, max: 1.5, step: 0.05 })
+  .on('change', () => { if (derivedParams.autoRoughness) applyShaderFeatures() })
+
+derivedFolder.addBinding(derivedParams, 'autoNormal', { label: 'Auto Normal Map' })
+  .on('change', () => applyShaderFeatures())
+derivedFolder.addBinding(derivedParams, 'normalStrength', { label: 'Normal Strength', min: 0, max: 3, step: 0.05 })
+  .on('change', () => {
+    // normalScale can update without regenerating the texture
+    if (!derivedParams.autoNormal || !currentModel) return
+    currentModel.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return
+      const mat = obj.material as THREE.MeshPhysicalMaterial
+      if (mat.normalMap) {
+        mat.normalScale.set(derivedParams.normalStrength, derivedParams.normalStrength)
+      }
+    })
+  })
+
+derivedFolder.addBinding(derivedParams, 'sss', { label: 'Skin SSS' })
+  .on('change', () => applyShaderFeatures())
+derivedFolder.addBinding(derivedParams, 'sssIntensity', { label: 'SSS Intensity', min: 0, max: 1, step: 0.05 })
+  .on('change', () => {
+    if (!derivedParams.sss || !currentModel) return
+    currentModel.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return
+      if (obj.userData.matCategory !== 'body') return
+      const mat = obj.material as THREE.MeshPhysicalMaterial
+      mat.sheen = derivedParams.sssIntensity
+      mat.needsUpdate = true
+    })
+  })
+derivedFolder.addBinding(derivedParams, 'sssSaturation', { label: 'SSS Warmth', min: 0, max: 1, step: 0.05 })
+  .on('change', () => {
+    if (!derivedParams.sss || !currentModel) return
+    currentModel.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return
+      if (obj.userData.matCategory !== 'body') return
+      const mat = obj.material as THREE.MeshPhysicalMaterial
+      // Interpolate from neutral (1,1,1) to warm skin tone (0.9, 0.35, 0.2)
+      const s = derivedParams.sssSaturation
+      mat.sheenColor.setRGB(1 - 0.1 * s, 1 - 0.65 * s, 1 - 0.8 * s)
+      mat.needsUpdate = true
+    })
+  })
+
 // Lighting folder
-const lightFolder = pane.addFolder({ title: 'Lighting' })
+const lightFolder = pane.addFolder({ title: 'Lighting', expanded: false })
 const hemiParams = {
   skyColor: { r: 0x8e / 255, g: 0xc5 / 255, b: 0xff / 255 },
   groundColor: { r: 0x6b / 255, g: 0x4f / 255, b: 0x2a / 255 },
@@ -218,7 +397,7 @@ lightFolder.addBinding(rimParams, 'intensity', { label: 'Rim Intensity', min: 0,
   .on('change', (ev: any) => { rimLight.intensity = ev.value })
 
 // Environment folder
-const envFolder = pane.addFolder({ title: 'Environment' })
+const envFolder = pane.addFolder({ title: 'Environment', expanded: false })
 envFolder.addBinding(envParams, 'enabled', { label: 'Enable' })
   .on('change', (ev: any) => {
     scene.environment = ev.value ? envMap : null
@@ -227,7 +406,7 @@ envFolder.addBinding(envParams, 'intensity', { label: 'Intensity', min: 0, max: 
   .on('change', (ev: any) => { scene.environmentIntensity = ev.value })
 
 // Post-processing folder
-const postFolder = pane.addFolder({ title: 'Post-Processing' })
+const postFolder = pane.addFolder({ title: 'Post-Processing', expanded: false })
 const bloomParams = { enabled: true, threshold: 0.85, strength: 0.15, radius: 0.4 }
 postFolder.addBinding(bloomParams, 'enabled', { label: 'Bloom' })
   .on('change', (ev: any) => { bloomPass.enabled = ev.value })
@@ -245,7 +424,6 @@ postFolder.addBinding(ssaoParams, 'radius', { label: 'SSAO Radius', min: 0.01, m
   .on('change', (ev: any) => { ssaoPass.kernelRadius = ev.value })
 postFolder.addBinding(ssaoParams, 'intensity', { label: 'SSAO Intensity', min: 0, max: 3, step: 0.05 })
   .on('change', (ev: any) => {
-    // SSAOPass doesn't have a direct intensity param — adjust minDistance as proxy
     ssaoPass.minDistance = 0.001 / Math.max(ev.value, 0.01)
   })
 
@@ -253,26 +431,50 @@ const smaaParams = { enabled: true }
 postFolder.addBinding(smaaParams, 'enabled', { label: 'SMAA' })
   .on('change', (ev: any) => { smaaPass.enabled = ev.value })
 
-// --- Material swap: Lambert -> Standard ---
+// --- Material classification & upgrade ---
+
+/** Classify a mesh by scene graph position:
+ *  - SkinnedMesh with Bone children → 'body'
+ *  - SkinnedMesh without Bone children → 'hair'
+ *  - Regular Mesh → 'item' (weapons, helmets, shoulders)
+ */
+function classifyMesh(mesh: THREE.Mesh): MatCategory {
+  if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) {
+    const hasBoneChild = mesh.children.some(c => (c as THREE.Bone).isBone)
+    return hasBoneChild ? 'body' : 'hair'
+  }
+  return 'item'
+}
 
 function applyMaterialParams() {
   if (!currentModel) return
   currentModel.traverse((obj) => {
-    if (obj instanceof THREE.Mesh && obj.material instanceof THREE.MeshStandardMaterial) {
-      obj.material.roughness = matParams.roughness
-      obj.material.metalness = matParams.metalness
-      obj.material.needsUpdate = true
-    }
+    if (!(obj instanceof THREE.Mesh)) return
+    const mat = obj.material
+    if (!(mat instanceof THREE.MeshStandardMaterial)) return
+    const cat = obj.userData.matCategory as MatCategory | undefined
+    if (!cat) return
+    const p = catParams[cat]
+    mat.roughness = p.roughness
+    mat.metalness = p.metalness
+    mat.needsUpdate = true
   })
 }
 
+/** Convert Lambert → MeshPhysicalMaterial. Uses Physical for all meshes so we can
+ *  toggle sheen/SSS without swapping material types later. Physical renders
+ *  identically to Standard when extra features are at zero. */
 function upgradeMaterials(group: THREE.Group) {
   group.traverse((obj) => {
     if (!(obj instanceof THREE.Mesh)) return
     const mat = obj.material
     if (!(mat instanceof THREE.MeshLambertMaterial)) return
 
-    const std = new THREE.MeshStandardMaterial({
+    const cat = classifyMesh(obj)
+    obj.userData.matCategory = cat
+    const p = catParams[cat]
+
+    const phys = new THREE.MeshPhysicalMaterial({
       map: mat.map,
       color: mat.color.clone(),
       side: mat.side,
@@ -282,12 +484,63 @@ function upgradeMaterials(group: THREE.Group) {
       polygonOffset: mat.polygonOffset,
       polygonOffsetFactor: mat.polygonOffsetFactor,
       polygonOffsetUnits: mat.polygonOffsetUnits,
-      roughness: matParams.roughness,
-      metalness: matParams.metalness,
+      roughness: p.roughness,
+      metalness: p.metalness,
     })
 
     mat.dispose()
-    obj.material = std
+    obj.material = phys
+  })
+}
+
+/**
+ * Apply/remove derived texture maps and SSS based on current derivedParams.
+ * Safe to call repeatedly — disposes old textures before creating new ones.
+ */
+function applyShaderFeatures(target?: THREE.Group) {
+  const group = target || currentModel
+  if (!group) return
+
+  group.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh)) return
+    const mat = obj.material
+    if (!(mat instanceof THREE.MeshPhysicalMaterial)) return
+    const cat = obj.userData.matCategory as MatCategory
+    const diffuse = mat.map
+
+    // --- Auto roughness map ---
+    if (derivedParams.autoRoughness && diffuse instanceof THREE.DataTexture) {
+      if (mat.roughnessMap) mat.roughnessMap.dispose()
+      mat.roughnessMap = generateRoughnessMap(diffuse, derivedParams.roughnessStrength)
+    } else if (!derivedParams.autoRoughness && mat.roughnessMap) {
+      mat.roughnessMap.dispose()
+      mat.roughnessMap = null
+    }
+
+    // --- Auto normal map ---
+    if (derivedParams.autoNormal && diffuse instanceof THREE.DataTexture) {
+      // Only regenerate if no normal map exists yet (strength changes use normalScale)
+      if (!mat.normalMap) {
+        mat.normalMap = generateNormalMap(diffuse)
+      }
+      mat.normalScale.set(derivedParams.normalStrength, derivedParams.normalStrength)
+    } else if (!derivedParams.autoNormal && mat.normalMap) {
+      mat.normalMap.dispose()
+      mat.normalMap = null
+      mat.normalScale.set(1, 1)
+    }
+
+    // --- SSS (body only) ---
+    if (cat === 'body' && derivedParams.sss) {
+      mat.sheen = derivedParams.sssIntensity
+      mat.sheenRoughness = 0.8
+      const s = derivedParams.sssSaturation
+      mat.sheenColor.setRGB(1 - 0.1 * s, 1 - 0.65 * s, 1 - 0.8 * s)
+    } else {
+      mat.sheen = 0
+    }
+
+    mat.needsUpdate = true
   })
 }
 
@@ -323,7 +576,10 @@ function disposeModel(group: THREE.Group) {
     if (obj instanceof THREE.Mesh) {
       obj.geometry.dispose()
       if (obj.material instanceof THREE.Material) {
-        if ((obj.material as any).map) (obj.material as any).map.dispose()
+        const m = obj.material as any
+        if (m.map) m.map.dispose()
+        if (m.roughnessMap) m.roughnessMap.dispose()
+        if (m.normalMap) m.normalMap.dispose()
         obj.material.dispose()
       }
     }
@@ -392,8 +648,9 @@ export async function switchModel() {
       disposeModel(currentModel)
     }
 
-    // Upgrade Lambert -> Standard before adding to scene
+    // Upgrade Lambert → Physical, then apply derived maps
     upgradeMaterials(loaded.group)
+    applyShaderFeatures(loaded.group)
 
     scene.add(loaded.group)
     currentModel = loaded.group
