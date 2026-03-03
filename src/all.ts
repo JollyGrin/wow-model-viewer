@@ -1,7 +1,6 @@
 import * as THREE from 'three'
-import { loadModel } from './loadModel'
+import { loadModel, type BodyArmor } from './loadModel'
 import { loadAnimations, AnimationController } from './animation'
-import { initEquipmentUI, getWeaponPath, getWeaponTexture, getArmorOptions } from './equipmentUI'
 
 const RACES = [
   { label: 'Blood Elf', slug: 'blood-elf' },
@@ -18,8 +17,97 @@ const RACES = [
 
 const TOPBAR_H = 44
 
+// --- Catalog types (mirrored from equipmentUI) ---
+
+interface WeaponEntry   { itemId: number; name: string; quality: number; slug: string; texture: string; }
+interface HelmetEntry   { name: string; quality: number; slug: string; texture: string; helmetGeosetVisID: [number, number]; variants: string[]; }
+interface ShoulderEntry { name: string; quality: number; slug: string; texture: string; hasRight: boolean; }
+interface ChestEntry    { name: string; quality: number; torsoUpperBase: string; armUpperBase?: string; armLowerBase?: string; torsoLowerBase?: string; legUpperBase?: string; legLowerBase?: string; sleeveGeoset?: number; robeGeoset?: number; }
+interface LegsEntry     { name: string; quality: number; legUpperBase: string; legLowerBase?: string; robeGeoset?: number; }
+interface BootsEntry    { name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
+interface GlovesEntry   { name: string; quality: number; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
+
+interface ItemCatalog {
+  weapons: WeaponEntry[]
+  helmets: HelmetEntry[]
+  shoulders: ShoulderEntry[]
+  chest: ChestEntry[]
+  legs: LegsEntry[]
+  boots: BootsEntry[]
+  gloves: GlovesEntry[]
+}
+
+let catalog: ItemCatalog | null = null
+
+// --- Random equipment state ---
+
+let currentWeapon: WeaponEntry | undefined
+let currentArmor: BodyArmor | undefined
+
+function pickRandom<T>(arr: T[]): T | undefined {
+  if (arr.length === 0) return undefined
+  return arr[Math.floor(Math.random() * arr.length)]
+}
+
+function randomizeEquipment() {
+  if (!catalog) return
+
+  const weapon = pickRandom(catalog.weapons)
+  const helmet = pickRandom(catalog.helmets)
+  const shoulder = pickRandom(catalog.shoulders)
+  const chest = pickRandom(catalog.chest)
+  const legs = pickRandom(catalog.legs)
+  const boots = pickRandom(catalog.boots)
+  const gloves = pickRandom(catalog.gloves)
+
+  currentWeapon = weapon
+
+  const armor: BodyArmor = {}
+
+  if (helmet) {
+    armor.helmet = helmet.slug
+    armor.helmetGeosetVisID = helmet.helmetGeosetVisID
+    armor.helmetTexture = helmet.texture
+  }
+  if (shoulder) {
+    armor.shoulderSlug = shoulder.slug
+    armor.shoulderHasRight = shoulder.hasRight
+    armor.shoulderTexture = shoulder.texture
+  }
+  if (chest) {
+    armor.armUpperBase = chest.armUpperBase
+    armor.torsoUpperBase = chest.torsoUpperBase
+    armor.torsoLowerBase = chest.torsoLowerBase
+    armor.sleeveGeoset = chest.sleeveGeoset || undefined
+    armor.robeGeoset = chest.robeGeoset || undefined
+    if (armor.robeGeoset) {
+      armor.legUpperBase = chest.legUpperBase
+      armor.legLowerBase = chest.legLowerBase
+      armor.armLowerBase = chest.armLowerBase
+    }
+  }
+  if (legs && !armor.robeGeoset) {
+    armor.legUpperBase = legs.legUpperBase
+    if (legs.legLowerBase) armor.legLowerBase = legs.legLowerBase
+    if (legs.robeGeoset) armor.robeGeoset = legs.robeGeoset
+  }
+  const isDress = !!armor.robeGeoset
+  if (boots) {
+    armor.footBase = boots.footBase
+    armor.footGeoset = boots.geosetValue || undefined
+    if (!isDress && boots.legLowerBase) armor.legLowerBase = boots.legLowerBase
+  }
+  if (gloves) {
+    armor.handBase = gloves.handBase
+    armor.handGeoset = gloves.geosetValue || undefined
+    if (gloves.armLowerBase) armor.armLowerBase = gloves.armLowerBase
+    if (!isDress) armor.wristGeoset = gloves.wristGeoset || undefined
+  }
+
+  currentArmor = Object.values(armor).some(v => v) ? armor : undefined
+}
+
 // --- Adaptive grid layout ---
-// Try column counts and pick the one that maximizes minimum cell dimension
 
 interface GridLayout {
   cols: number
@@ -36,7 +124,6 @@ function computeGrid(areaW: number, areaH: number, count: number): GridLayout {
     const rows = Math.ceil(count / cols)
     const cellW = areaW / cols
     const cellH = areaH / rows
-    // Score: minimize wasted space while keeping cells roughly square
     const minDim = Math.min(cellW, cellH)
     if (minDim > bestScore) {
       bestScore = minDim
@@ -121,7 +208,6 @@ function resize() {
     labelEls[i].style.top = `${y + grid.cellH - 22}px`
     labelEls[i].style.width = `${grid.cellW}px`
 
-    // Update camera aspect
     cells[i].camera.aspect = grid.cellW / grid.cellH
     cells[i].camera.updateProjectionMatrix()
   }
@@ -155,18 +241,13 @@ function frameCameraForCell(cell: RaceCell) {
   cell.model.position.z = -center.z
 
   const targetY = center.y
-
-  // Compute distance needed to fit model in the cell's viewport
   const fovRad = THREE.MathUtils.degToRad(cell.camera.fov)
   const aspect = cell.camera.aspect
 
-  // Vertical: how far to fit height
   const distV = (size.y / 2) / Math.tan(fovRad / 2)
-  // Horizontal: how far to fit width (model rotates, so use max of x/z)
   const hExtent = Math.max(size.x, size.z) / 2
   const distH = hExtent / (Math.tan(fovRad / 2) * aspect)
-
-  const dist = Math.max(distV, distH) * 1.15 // 15% padding
+  const dist = Math.max(distV, distH) * 1.15
 
   cell.camera.position.set(dist, targetY, 0)
   cell.camera.lookAt(0, targetY, 0)
@@ -174,7 +255,7 @@ function frameCameraForCell(cell: RaceCell) {
 
 // --- Animation dropdown ---
 const animSelect = document.getElementById('anim-select') as HTMLSelectElement
-let currentAnimId = 0 // default: Stand
+let currentAnimId = 0
 
 function populateAnimDropdown(controller: AnimationController) {
   animSelect.innerHTML = ''
@@ -205,6 +286,14 @@ function setAnimForAll(animId: number) {
   }
 }
 
+function setAnimForCell(cell: RaceCell, animId: number) {
+  if (!cell.animController) return
+  const anims = cell.animController.getAnimationList()
+  const match = anims.find(a => a.animId === animId && a.subAnimId === 0)
+    || anims.find(a => a.animId === animId)
+  if (match) cell.animController.setSequence(match.seqIndex)
+}
+
 animSelect.addEventListener('change', () => {
   setAnimForAll(parseInt(animSelect.value, 10))
 })
@@ -218,6 +307,11 @@ async function loadAllModels() {
   const gen = ++loadGeneration
   animDropdownPopulated = false
 
+  const weaponPath = currentWeapon ? `/items/weapon/${currentWeapon.slug}` : undefined
+  const weaponTexture = currentWeapon?.texture
+    ? `/items/weapon/${currentWeapon.slug}/textures/${currentWeapon.texture}.tex`
+    : undefined
+
   const promises = RACES.map(async (race, i) => {
     const cell = cells[i]
     const slug = `${race.slug}-${currentGender}`
@@ -226,9 +320,9 @@ async function loadAllModels() {
     try {
       const [loaded, animData] = await Promise.all([
         loadModel(modelDir, {
-          weapon: getWeaponPath(),
-          weaponTexture: getWeaponTexture(),
-          armor: getArmorOptions(),
+          weapon: weaponPath,
+          weaponTexture: weaponTexture,
+          armor: currentArmor,
         }),
         loadAnimations(modelDir),
       ])
@@ -247,13 +341,11 @@ async function loadAllModels() {
       cell.model = loaded.group
       cell.animController = new AnimationController(animData, loaded.boneData, loaded.bones)
 
-      // Populate animation dropdown from first loaded model
       if (!animDropdownPopulated) {
         populateAnimDropdown(cell.animController)
         animDropdownPopulated = true
       }
 
-      // Set current animation
       setAnimForCell(cell, currentAnimId)
       frameCameraForCell(cell)
     } catch (err) {
@@ -264,16 +356,7 @@ async function loadAllModels() {
   await Promise.all(promises)
 }
 
-function setAnimForCell(cell: RaceCell, animId: number) {
-  if (!cell.animController) return
-  const anims = cell.animController.getAnimationList()
-  const match = anims.find(a => a.animId === animId && a.subAnimId === 0)
-    || anims.find(a => a.animId === animId)
-  if (match) cell.animController.setSequence(match.seqIndex)
-}
-
 // --- Gender toggle ---
-const genderSelect = document.getElementById('gender-select') as HTMLSelectElement
 const toggleBtns = document.querySelectorAll<HTMLButtonElement>('.toggle-btn')
 
 toggleBtns.forEach(btn => {
@@ -282,15 +365,27 @@ toggleBtns.forEach(btn => {
     if (gender === currentGender) return
     currentGender = gender
     toggleBtns.forEach(b => b.classList.toggle('active', b === btn))
-    // Keep hidden select in sync for equipmentUI helmet filtering
-    genderSelect.value = gender
-    genderSelect.dispatchEvent(new Event('change'))
     loadAllModels()
   })
 })
 
-// --- Equipment panel ---
-initEquipmentUI(() => loadAllModels())
+// --- Randomize All button ---
+document.getElementById('randomize-all')!.addEventListener('click', () => {
+  randomizeEquipment()
+  loadAllModels()
+})
+
+// --- Load catalog then start ---
+fetch('/item-catalog.json')
+  .then(r => r.json())
+  .then((data: ItemCatalog) => {
+    catalog = data
+    loadAllModels()
+  })
+  .catch(err => {
+    console.warn('Could not load item-catalog.json:', err)
+    loadAllModels()
+  })
 
 // --- Render loop ---
 let lastFrameTime = performance.now()
@@ -318,7 +413,6 @@ function animate() {
       cell.animController.update(delta)
     }
 
-    // setViewport/setScissor expect CSS pixels — Three.js applies pixelRatio internally
     const x = col * grid.cellW
     const y = h - (row + 1) * grid.cellH
     const vw = grid.cellW
@@ -331,6 +425,4 @@ function animate() {
   }
 }
 
-// --- Start ---
-loadAllModels()
 animate()

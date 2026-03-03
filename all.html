@@ -75,8 +75,20 @@
     }
     #controls select:hover { border-color: rgba(255, 255, 255, 0.4); }
     #controls select:focus { border-color: rgba(200, 180, 120, 0.6); }
+    #randomize-all {
+      background: rgba(200, 180, 120, 0.12);
+      border: 1px solid rgba(200, 180, 120, 0.35);
+      border-radius: 4px;
+      color: rgba(200, 180, 120, 0.9);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 5px 14px;
+      letter-spacing: 0.04em;
+    }
+    #randomize-all:hover { background: rgba(200, 180, 120, 0.25); }
 
-    /* --- Canvas area (right of equipment panel, below topbar) --- */
+    /* --- Canvas area --- */
     #canvas-wrap {
       position: absolute;
       top: 44px;
@@ -103,99 +115,6 @@
       letter-spacing: 0.04em;
       text-shadow: 0 1px 3px rgba(0,0,0,0.8);
     }
-
-    /* --- Equipment panel --- */
-    #equipment-panel {
-      position: absolute;
-      top: 50px;
-      right: 12px;
-      z-index: 10;
-      background: rgba(0, 0, 0, 0.82);
-      border: 1px solid rgba(200, 180, 120, 0.25);
-      border-radius: 6px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      width: 260px;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      max-height: calc(100vh - 70px);
-      overflow-y: auto;
-    }
-    .equip-title {
-      color: rgba(200, 180, 120, 0.9);
-      font-size: 12px;
-      text-align: center;
-      letter-spacing: 0.08em;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-    .equip-row { display: flex; flex-direction: column; gap: 3px; }
-    .equip-row-header { display: flex; align-items: center; justify-content: space-between; }
-    .equip-label {
-      color: rgba(200, 180, 120, 0.85);
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .equip-select-wrap { display: flex; flex-direction: column; gap: 3px; }
-    .equip-search {
-      background: rgba(0, 0, 0, 0.5);
-      color: #e0d8c8;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 4px 6px;
-      font-size: 11px;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      border-radius: 3px;
-      outline: none;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .equip-search::placeholder { color: rgba(255, 255, 255, 0.3); }
-    .equip-search:focus { border-color: rgba(200, 180, 120, 0.5); }
-    .equip-row select {
-      background: rgba(0, 0, 0, 0.6);
-      color: #e0d8c8;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 2px 4px;
-      font-size: 11px;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      border-radius: 3px;
-      cursor: pointer;
-      outline: none;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .equip-row select option { background: #1a1a1a; padding: 2px 4px; }
-    .equip-row select:focus { border-color: rgba(200, 180, 120, 0.5); }
-    .equip-dice {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 3px;
-      color: #e0d8c8;
-      font-size: 12px;
-      cursor: pointer;
-      padding: 1px 4px;
-      line-height: 1;
-      flex-shrink: 0;
-    }
-    .equip-dice:hover { background: rgba(255, 255, 255, 0.18); }
-    #equip-randomize-all {
-      margin-top: 2px;
-      background: rgba(200, 180, 120, 0.12);
-      border: 1px solid rgba(200, 180, 120, 0.35);
-      border-radius: 4px;
-      color: rgba(200, 180, 120, 0.9);
-      font-family: 'Segoe UI', Arial, sans-serif;
-      font-size: 12px;
-      cursor: pointer;
-      padding: 5px 0;
-    }
-    #equip-randomize-all:hover { background: rgba(200, 180, 120, 0.25); }
-
-    /* Hidden selects for equipmentUI compatibility */
-    .hidden-compat { display: none; }
   </style>
 </head>
 <body>
@@ -206,22 +125,13 @@
       <button class="toggle-btn" data-gender="female">Female</button>
     </div>
     <select id="anim-select"></select>
+    <button id="randomize-all">Randomize All</button>
   </div>
-
-  <!-- Hidden selects for equipmentUI.ts getCurrentModelSlug() compatibility -->
-  <select id="race-select" class="hidden-compat">
-    <option value="human" selected>Human</option>
-  </select>
-  <select id="gender-select" class="hidden-compat">
-    <option value="male">Male</option>
-    <option value="female">Female</option>
-  </select>
 
   <div id="canvas-wrap">
     <canvas id="canvas"></canvas>
     <div id="labels"></div>
   </div>
-  <div id="equipment-panel"></div>
   <script type="module" src="/src/all.ts"></script>
 </body>
 </html>
