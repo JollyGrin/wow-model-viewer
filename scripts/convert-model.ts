@@ -676,8 +676,28 @@ function convertModel(model: CharacterModel) {
     if (m2.keyBoneLookup.count > 6) {
       const headBoneIdx = m2.view.getInt16(m2.keyBoneLookup.ofs + 6 * 2, true);
       if (headBoneIdx >= 0 && headBoneIdx < bones.length) {
-        const pivot = bones[headBoneIdx].pivot;
-        attachments.push({ id: 11, bone: headBoneIdx, pos: [pivot[0], pivot[1], pivot[2]] });
+        // Find topmost identity-rotation leaf child of head bone (= crown bone)
+        // Native att 11 uses a dedicated leaf child bone, not the head bone itself.
+        const children = bones
+          .map((b, i) => ({ idx: i, ...b }))
+          .filter(b => b.parent === headBoneIdx)
+          .filter(b => {
+            const [rx, ry, rz, rw] = b.rotation;
+            return Math.abs(rw - 1) < 0.01 && Math.abs(rx) < 0.01 && Math.abs(ry) < 0.01 && Math.abs(rz) < 0.01;
+          })
+          .filter(b => !bones.some(other => other.parent === b.idx)); // leaf only
+
+        // Pick highest Z child (crown of head)
+        children.sort((a, b) => b.pivot[2] - a.pivot[2]);
+
+        if (children.length > 0) {
+          const crown = children[0];
+          attachments.push({ id: 11, bone: crown.idx, pos: [crown.pivot[0], crown.pivot[1], crown.pivot[2]] });
+        } else {
+          // Fallback: use head bone directly (previous behavior)
+          const pivot = bones[headBoneIdx].pivot;
+          attachments.push({ id: 11, bone: headBoneIdx, pos: [pivot[0], pivot[1], pivot[2]] });
+        }
       }
     }
   }
