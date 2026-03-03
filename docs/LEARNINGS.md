@@ -1,5 +1,20 @@
 # Learnings Journal
 
+## [2026-03-03] MPQ att 11 extraction: most vanilla races lack native head attachment
+
+**Context:** Attempted to extract real att 11 from model.MPQ and patch.MPQ to replace the crown-bone synthesis heuristic.
+
+**Finding:** Most vanilla character M2 files (orc, human-M, dwarf, night-elf, scourge, tauren, blood-elf) do NOT define attachment ID 11 in any source. They max out at att ID 8 (knees). Only gnome-M/F, troll-M/F have native att 11 in both MPQ and patch files. Human-F has it in patch-6 only. Goblin-M/F have it in patch.MPQ but NOT in the extracted patch-7 files (different model versions -- patch-7 goblin is 6.9MB Turtle WoW custom vs 1.6MB MPQ original).
+
+**Impact:**
+- Crown-bone heuristic remains necessary for 13/20 races
+- Added `scripts/extract-char-attachments.ts` to extract all available reference data
+- `convert-model.ts` now consults `data/char-attachments.json` before falling back to heuristic
+- Goblin att 11 now uses MPQ reference position ([0.016, 0, 1.310]) with nearest-bone remapping
+- The first 3 entries in M2 attachment arrays are garbage (float 1.0f/0.0f reinterpreted as uint32 IDs) -- filter by WANTED_ATTACHMENT_IDS
+
+**Reference:** `scripts/extract-char-attachments.ts`, `data/char-attachments.json`
+
 ## [2026-03-03] SOLVED: Helmet attachment positioning for all 20 races
 
 **Context:** Helmets rendered correctly on 5 races with native M2 attachment ID 11 (gnome-M/F, troll-M/F, human-F) but sat ~0.1-0.25 units too low on the other 15 races that used synthesized att 11.
