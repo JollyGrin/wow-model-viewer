@@ -671,8 +671,10 @@ function convertModel(model: CharacterModel) {
   }
 
   // Head attachment (ID 11): crown-bone heuristic
-  // Native att 11 pattern: highest-Z identity-rotation leaf child of head bone,
-  // with X at or forward of head bone X (never behind the head center).
+  // Native att 11 pattern: highest-Z identity-rotation leaf child of head bone.
+  // When the crown bone is behind the head center (hunched races like orc),
+  // mirror the offset forward — the helmet sits as far forward of center as the
+  // crown bone is behind it.
   if (!attachments.find(a => a.id === 11)) {
     if (m2.keyBoneLookup.count > 6) {
       const headBoneIdx = m2.view.getInt16(m2.keyBoneLookup.ofs + 6 * 2, true);
@@ -691,8 +693,10 @@ function convertModel(model: CharacterModel) {
 
         if (children.length > 0) {
           const crown = children[0];
-          // Ensure X is not behind head bone center — native att 11 is always at or forward
-          const x = Math.max(crown.pivot[0], headPivot[0]);
+          // If crown bone is behind head center, mirror the offset forward
+          const x = crown.pivot[0] >= headPivot[0]
+            ? crown.pivot[0]
+            : headPivot[0] + (headPivot[0] - crown.pivot[0]);
           attachments.push({ id: 11, bone: crown.idx, pos: [x, crown.pivot[1], crown.pivot[2]] });
         } else {
           attachments.push({ id: 11, bone: headBoneIdx, pos: [headPivot[0], headPivot[1], headPivot[2]] });
