@@ -1,5 +1,13 @@
 # Learnings Journal
 
+## [2026-03-06] Orc male helmet offset — crown bone behind head center
+
+**Context:** Orc male was the only race with a slightly offset helmet. All 19 other race/gender combos rendered correctly.
+**Finding:** The crown-bone heuristic picks the highest-Z identity-rotation leaf child of the head bone. For orc male (hunched posture), the highest-Z bone (bone 30, X=0.057) sits at the **back** of the skull crown, well behind the head bone center (X=0.125). The `Math.max(crown.x, head.x)` clamp brought X to 0.125 (delta=0 from head), but every other race has a **positive** X delta (0.04–0.17 forward of head center). Removing the clamp entirely (X=0.057) made it far worse — the helmet moved backward.
+**Fix:** Mirror the offset: when crown bone is behind head center, set `x = headPivot.x + (headPivot.x - crown.x)`. For orc male: X=0.193, delta=+0.068, matching the typical forward offset range. Only orc-male and dwarf-female (tiny 0.009 diff) are affected; all other races have crown.x >= head.x naturally.
+**Impact:** Hunched-posture races have skull geometry where the highest point is behind the head rotation center. The helmet attachment should be symmetrically forward, not clamped to center.
+**Reference:** `scripts/convert-model.ts` lines 673-703, `public/models/orc-male/model.json` attachments
+
 ## [2026-03-03] MPQ att 11 extraction: most vanilla races lack native head attachment
 
 **Context:** Attempted to extract real att 11 from model.MPQ and patch.MPQ to replace the crown-bone synthesis heuristic.
