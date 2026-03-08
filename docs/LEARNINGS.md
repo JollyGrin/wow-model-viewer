@@ -1089,21 +1089,41 @@ After extracting all variants: 1810 weapon textures (up from ~534 main.tex), 239
 
 2. **Broken textureType in model.json**: The M2 v256 texture lookup chain (`batch.texComboIndex → textureLookup[i] → textures[j]`) is broken. The `textureLookup` M2Array values (0–57) far exceed the 3-entry texture definitions table (indices 0, 1, 2 for skin/hair/cape). This causes `textureType` in model.json to be either `-1` (out of bounds) or incorrectly resolved to `1` (skin) when it should be `6` (hair).
 
-**Fix approach:**
-- Extracted and converted hair.tex for all 19 missing races from texture.MPQ and patch BLPs.
-- In `loadModel.ts`, changed texture assignment priority: check geoset ID heuristic FIRST (HAIR_GEOSETS_FALLBACK for IDs 2-13, isFacialHairGeoset for 100-399), then fall back to textureType. This overrides the broken converter output.
+**Fix approach (final, after two regression rounds):**
+1. Extracted and converted hair.tex for all 19 missing races from texture.MPQ and patch BLPs.
+2. In `loadModel.ts`, implemented a three-tier hair texture assignment with a pre-pass:
+   - **Pre-pass**: scan all groups to find which hair geoset IDs have any unresolved (-1) entry → `hasUnresolvedPass` set. If a geoset ID has an unresolved entry, it means the M2 has dual-pass rendering (one skin pass, one hair pass) and the converter successfully split them.
+   - **Tier 1** (explicit): `textureType === 6` → always hair.
+   - **Tier 2** (unresolved fallback): `textureType < 0` on hairstyle (2-13) or facial hair (100-399) geosets → hair. This is the original fallback and handles orc/dwarf beards.
+   - **Tier 3** (lost hair pass): hairstyle geosets (2-13 ONLY, NOT facial hair) where textureType resolved to 0/1/2 but there is NO unresolved (-1) entry for that geoset ID → hair. This catches tauren (all type=1) and night elf (all type=0) where the converter's broken lookup "succeeded" but gave the wrong answer.
+
+**Critical distinction — hairstyle (2-13) vs facial hair (100-399):**
+- Hairstyle geosets ALWAYS need at least one hair-textured pass. If no pass resolved to hair or -1, the hair pass was "lost" → override to hair.
+- Facial hair geosets may legitimately be ALL skin-textured (e.g., human male beard geosets 101/201/301 are face geometry UV-mapped to skin atlas, NOT colored beard hair). Only use hair when explicitly -1 (unresolved) or type 6.
 
 **What failed (don't repeat):**
-- Trusting `textureType` from model.json for hair classification — the v256 texture lookup chain gives wrong results
-- Only checking `textureType === -1` (unresolved) — many geosets have `textureType=1` (incorrectly resolved to skin)
-- Blanket override of ALL geosets 1-13 to hair — some submeshes (like geoset 0 body, or facial detail submeshes with textureType=1) legitimately use skin texture in multi-pass rendering. Need per-geoset-ID heuristic, not per-textureType override.
+- Trusting `textureType` from model.json for hair classification — the v256 texture lookup chain gives wrong results for ALL 20 models
+- Only checking `textureType === -1` (unresolved) — many geosets have textureType=0/1/2/8 (incorrectly resolved)
+- **Blanket override of ALL geosets 2-13 to hair** — caused black patches on human face and scourge jaw. Some hairstyle geoset IDs have dual submeshes (one skin, one hair). The skin submesh has valid textureType=1 and must stay on skin material.
+- **Applying "lost hair pass" logic to facial hair geosets (100-399)** — human male geosets 101/201/301 have type=1 with no unresolved pass, but they're LEGITIMATELY skin-textured face geometry, not lost hair passes. Only hairstyle geosets (2-13) should get the "lost hair pass" override.
 
-**Regression risk:** Forcing geosets 2-13 to hair texture could cause black patches on races where those geoset IDs have submeshes that are skin-textured geometry (e.g., human male face area, scourge jaw). The body mesh geoset 0 has TWO submeshes — one textureType=1 (skin body) and one textureType=0 (hardcoded/cape anchor). Similarly, some "hairstyle" geoset IDs may have dual submeshes.
+**Per-race texture type patterns on hairstyle geosets:**
+| Race | textureType on geosets 2-13 | Handling |
+|------|----------------------------|----------|
+| Human male | -1 (hair) + 1 (skin) dual pass | Tier 2 + trust type=1 |
+| Orc male | -1 (hair) + 1 (skin) dual pass | Tier 2 + trust type=1 |
+| Dwarf male | all -1 | Tier 2 |
+| Night elf | all 0 (hardcoded, wrong) | Tier 3 (lost hair pass) |
+| Tauren male | all 1 (skin, wrong) | Tier 3 (lost hair pass) |
+| Scourge male | all 8 (fur) | Excluded from Tier 3 (type=8 kept as skin) |
+| Gnome male | 1 + 2 (cape, wrong) | Tier 3 (lost hair pass) |
+| Human female | all 2 (cape, wrong) | Tier 3 (lost hair pass) |
 
 **Key data:**
 - All character M2s have exactly 3 textures: type=1 (skin), type=6 (hair), type=2 (cape)
 - CharSections type=3 TextureName[0] = hair texture path (empty for human/orc — derived from race+style+color)
 - Tauren hair texture is `TaurenMaleFaceLower04_18.blp` (face texture doubles as mane color)
 - Orc: `Character\Orc\Hair00_00.blp` (8 colors, 00-07), Dwarf: `Hair00_09.blp` (10 colors)
+- Hair BLP sources: texture.MPQ for orc/dwarf/troll/tauren, patch-3/5/6 for other races
 
-**Reference:** `src/loadModel.ts` lines 162-172 (isFacialHairGeoset), lines 517-519 (isHair logic)
+**Reference:** `src/loadModel.ts` lines 165-172 (isFacialHairGeoset), lines 507-553 (isHair three-tier logic with pre-pass)
