@@ -505,18 +505,47 @@ export async function loadModel(
       });
 
   // Collect indices: skin vs hair, based on per-submesh textureType from M2 batch data.
-  // textureType comes from the M2 batch → textureLookup → textureTable chain.
-  // Fallback for legacy model.json without textureType: use geoset group heuristic.
+  //
+  // The M2 v256 texture lookup chain is broken in the converter — textureType
+  // often resolves to wrong values (0/1/2/8 instead of 6 for hair geosets).
+  // Strategy: for hair/facial-hair geosets, use a pre-pass to detect whether
+  // a geoset ID has any unresolved (-1) entry. If so, type=1 entries for that
+  // same ID are legitimate skin passes (multi-pass rendering). If not, all
+  // entries are "lost" hair passes and should use hair texture.
   const skinIndexList: number[] = [];
   const hairIndexList: number[] = [];
+
+  // Pre-pass: find which hair geoset IDs have an unresolved (-1) entry.
+  // Those IDs have dual-pass rendering where type=1 entries are real skin passes.
+  const hasUnresolvedPass = new Set<number>();
+  for (const g of manifest.groups) {
+    if (g.textureType < 0 && (HAIR_GEOSETS_FALLBACK.has(g.id) || isFacialHairGeoset(g.id))) {
+      hasUnresolvedPass.add(g.id);
+    }
+  }
 
   for (const g of manifest.groups) {
     if (!geosets.has(g.id)) continue;
     if (g.textureType === 2) continue; // cape-textured geometry — skip when no cape equipped
     if (g.id === 0 && g.textureType === 0) continue; // hardcoded-texture body submesh (cape anchors)
-    const isHair = g.textureType !== undefined && g.textureType >= 0
-      ? g.textureType === HAIR_TEX_TYPE
-      : HAIR_GEOSETS_FALLBACK.has(g.id) || isFacialHairGeoset(g.id);
+
+    let isHair = false;
+    const isHairGeoset = HAIR_GEOSETS_FALLBACK.has(g.id) || isFacialHairGeoset(g.id);
+
+    if (g.textureType === HAIR_TEX_TYPE) {
+      // Explicitly hair (type 6) — always trust
+      isHair = true;
+    } else if (g.textureType < 0 && isHairGeoset) {
+      // Unresolved on a hair geoset — use hair texture
+      isHair = true;
+    } else if (g.textureType === 1 && isHairGeoset && !hasUnresolvedPass.has(g.id)) {
+      // Type=1 on a hair geoset with NO unresolved pass → lost hair pass (e.g. tauren)
+      isHair = true;
+    } else if (g.textureType !== 1 && g.textureType !== 8 && isHairGeoset && !hasUnresolvedPass.has(g.id)) {
+      // Type=0/2/other on a hair geoset with NO unresolved pass → lost hair pass (e.g. night elf type=0)
+      isHair = true;
+    }
+
     const target = isHair ? hairIndexList : skinIndexList;
     for (let i = 0; i < g.indexCount; i++) {
       target.push(fullIndexData[g.indexStart + i]);

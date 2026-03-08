@@ -1078,3 +1078,32 @@ After extracting all variants: 1810 weapon textures (up from ~534 main.tex), 239
 - Old approach of `textures/main.tex` single texture per model — loses color variant information, all items sharing a model render identically
 
 **Reference:** `scripts/extract-mpq-items.ts` (m2StemToTextures, helmetBaseToTextures, shoulderBaseToTextures maps), `scripts/build-item-catalog.ts` (idiTexSlugVerified), `src/loadModel.ts` (helmetTexture, shoulderTexture, weaponTexture fields)
+
+## [2026-03-08] Hair/beard texture assignment — broken M2 v256 texture lookup chain
+
+**Context:** Orc beard, dwarf beard, tauren mane, night elf hair, scourge hair, goblin hair, troll hair all rendering with skin texture instead of hair texture.
+
+**Root cause (two issues):**
+
+1. **Missing hair.tex files**: Only human-male had a hair.tex. All other 19 races were missing it, causing `loadModel.ts` to fall back to skin texture (`hairTexture = skinTexture`). Hair BLPs for orc/dwarf/troll are in base texture.MPQ (not in patch extractions). Tauren uses `TaurenMaleFaceLower04_18.blp` as its hair texture (per CharSections type=3). Other races have Hair*.blp in patch-3/5/6.
+
+2. **Broken textureType in model.json**: The M2 v256 texture lookup chain (`batch.texComboIndex → textureLookup[i] → textures[j]`) is broken. The `textureLookup` M2Array values (0–57) far exceed the 3-entry texture definitions table (indices 0, 1, 2 for skin/hair/cape). This causes `textureType` in model.json to be either `-1` (out of bounds) or incorrectly resolved to `1` (skin) when it should be `6` (hair).
+
+**Fix approach:**
+- Extracted and converted hair.tex for all 19 missing races from texture.MPQ and patch BLPs.
+- In `loadModel.ts`, changed texture assignment priority: check geoset ID heuristic FIRST (HAIR_GEOSETS_FALLBACK for IDs 2-13, isFacialHairGeoset for 100-399), then fall back to textureType. This overrides the broken converter output.
+
+**What failed (don't repeat):**
+- Trusting `textureType` from model.json for hair classification — the v256 texture lookup chain gives wrong results
+- Only checking `textureType === -1` (unresolved) — many geosets have `textureType=1` (incorrectly resolved to skin)
+- Blanket override of ALL geosets 1-13 to hair — some submeshes (like geoset 0 body, or facial detail submeshes with textureType=1) legitimately use skin texture in multi-pass rendering. Need per-geoset-ID heuristic, not per-textureType override.
+
+**Regression risk:** Forcing geosets 2-13 to hair texture could cause black patches on races where those geoset IDs have submeshes that are skin-textured geometry (e.g., human male face area, scourge jaw). The body mesh geoset 0 has TWO submeshes — one textureType=1 (skin body) and one textureType=0 (hardcoded/cape anchor). Similarly, some "hairstyle" geoset IDs may have dual submeshes.
+
+**Key data:**
+- All character M2s have exactly 3 textures: type=1 (skin), type=6 (hair), type=2 (cape)
+- CharSections type=3 TextureName[0] = hair texture path (empty for human/orc — derived from race+style+color)
+- Tauren hair texture is `TaurenMaleFaceLower04_18.blp` (face texture doubles as mane color)
+- Orc: `Character\Orc\Hair00_00.blp` (8 colors, 00-07), Dwarf: `Hair00_09.blp` (10 colors)
+
+**Reference:** `src/loadModel.ts` lines 162-172 (isFacialHairGeoset), lines 517-519 (isHair logic)
