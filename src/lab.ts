@@ -72,6 +72,7 @@ const pmremGenerator = new THREE.PMREMGenerator(renderer)
 const envScene = new THREE.Scene()
 envScene.background = new THREE.Color(0x444444)
 const envMap = pmremGenerator.fromScene(envScene, 0.04).texture
+pmremGenerator.dispose()
 
 const envParams = { enabled: true, intensity: 0.4 }
 scene.environment = envMap
@@ -114,12 +115,6 @@ interface CategoryParams {
   metalness: number
 }
 
-const catParams: Record<MatCategory, CategoryParams> = {
-  body: { roughness: 0.75, metalness: 0.0 },
-  hair: { roughness: 0.85, metalness: 0.0 },
-  item: { roughness: 0.35, metalness: 0.7 },
-}
-
 const PRESETS: Record<string, Record<MatCategory, CategoryParams>> = {
   default: {
     body: { roughness: 0.75, metalness: 0.0 },
@@ -143,6 +138,13 @@ const PRESETS: Record<string, Record<MatCategory, CategoryParams>> = {
   },
 }
 
+// Live params initialized from default preset
+const catParams: Record<MatCategory, CategoryParams> = {
+  body: { ...PRESETS.default.body },
+  hair: { ...PRESETS.default.hair },
+  item: { ...PRESETS.default.item },
+}
+
 // --- Derived texture / shader feature params ---
 
 const derivedParams = {
@@ -153,6 +155,10 @@ const derivedParams = {
   sss: false,
   sssIntensity: 0.5,
   sssSaturation: 0.5,
+}
+
+function sssColor(saturation: number): [number, number, number] {
+  return [1 - 0.1 * saturation, 1 - 0.65 * saturation, 1 - 0.8 * saturation]
 }
 
 // --- Derived texture generators ---
@@ -347,7 +353,7 @@ derivedFolder.addBinding(derivedParams, 'sssIntensity', { label: 'SSS Intensity'
       if (obj.userData.matCategory !== 'body') return
       const mat = obj.material as THREE.MeshPhysicalMaterial
       mat.sheen = derivedParams.sssIntensity
-      mat.needsUpdate = true
+      mat.sheenRoughness = 0.8
     })
   })
 derivedFolder.addBinding(derivedParams, 'sssSaturation', { label: 'SSS Warmth', min: 0, max: 1, step: 0.05 })
@@ -357,10 +363,7 @@ derivedFolder.addBinding(derivedParams, 'sssSaturation', { label: 'SSS Warmth', 
       if (!(obj instanceof THREE.Mesh)) return
       if (obj.userData.matCategory !== 'body') return
       const mat = obj.material as THREE.MeshPhysicalMaterial
-      // Interpolate from neutral (1,1,1) to warm skin tone (0.9, 0.35, 0.2)
-      const s = derivedParams.sssSaturation
-      mat.sheenColor.setRGB(1 - 0.1 * s, 1 - 0.65 * s, 1 - 0.8 * s)
-      mat.needsUpdate = true
+      mat.sheenColor.setRGB(...sssColor(derivedParams.sssSaturation))
     })
   })
 
@@ -457,7 +460,6 @@ function applyMaterialParams() {
     const p = catParams[cat]
     mat.roughness = p.roughness
     mat.metalness = p.metalness
-    mat.needsUpdate = true
   })
 }
 
@@ -534,8 +536,7 @@ function applyShaderFeatures(target?: THREE.Group) {
     if (cat === 'body' && derivedParams.sss) {
       mat.sheen = derivedParams.sssIntensity
       mat.sheenRoughness = 0.8
-      const s = derivedParams.sssSaturation
-      mat.sheenColor.setRGB(1 - 0.1 * s, 1 - 0.65 * s, 1 - 0.8 * s)
+      mat.sheenColor.setRGB(...sssColor(derivedParams.sssSaturation))
     } else {
       mat.sheen = 0
     }
@@ -708,5 +709,4 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix()
   renderer.setSize(w, h)
   composer.setSize(w, h)
-  bloomPass.resolution.set(w, h)
 })
