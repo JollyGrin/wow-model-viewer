@@ -538,11 +538,12 @@ export async function loadModel(
     } else if (g.textureType < 0 && isHairGeoset) {
       // Unresolved on a hair geoset — use hair texture
       isHair = true;
-    } else if (g.textureType === 1 && isHairGeoset && !hasUnresolvedPass.has(g.id)) {
-      // Type=1 on a hair geoset with NO unresolved pass → lost hair pass (e.g. tauren)
+    } else if (g.textureType === 1 && HAIR_GEOSETS_FALLBACK.has(g.id) && !hasUnresolvedPass.has(g.id)) {
+      // Type=1 on a hairstyle geoset (2-13) with NO unresolved pass → lost hair pass (e.g. tauren)
+      // Only for hairstyle geosets, NOT facial hair (100-399) — those type=1 entries are real skin
       isHair = true;
-    } else if (g.textureType !== 1 && g.textureType !== 8 && isHairGeoset && !hasUnresolvedPass.has(g.id)) {
-      // Type=0/2/other on a hair geoset with NO unresolved pass → lost hair pass (e.g. night elf type=0)
+    } else if (g.textureType !== 1 && g.textureType !== 8 && HAIR_GEOSETS_FALLBACK.has(g.id) && !hasUnresolvedPass.has(g.id)) {
+      // Type=0/2/other on a hairstyle geoset with NO unresolved pass → lost hair pass (e.g. night elf type=0)
       isHair = true;
     }
 
