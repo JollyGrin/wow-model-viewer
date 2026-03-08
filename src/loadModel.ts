@@ -162,6 +162,15 @@ const HAIR_TEX_TYPE = 6;
 // Fallback for legacy model.json without textureType: geoset IDs that use hair texture
 const HAIR_GEOSETS_FALLBACK = new Set([2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
+// Facial hair geoset groups (1, 2, 3) whose unresolved submeshes should use hair texture.
+// The M2 texture lookup chain is broken in our converter (v256 format quirk), so
+// submeshes that should map to hair texture (type 6) get textureType=-1 instead.
+// When textureType is unresolved (-1) and the geoset is in groups 1-3, use hair.
+function isFacialHairGeoset(geosetId: number): boolean {
+  const group = Math.floor(geosetId / 100);
+  return group >= 1 && group <= 3;
+}
+
 // --- Race-gender maps for helmet/shoulder loading ---
 
 const RACE_ID_MAP: Record<string, number> = {
@@ -507,7 +516,7 @@ export async function loadModel(
     if (g.id === 0 && g.textureType === 0) continue; // hardcoded-texture body submesh (cape anchors)
     const isHair = g.textureType !== undefined && g.textureType >= 0
       ? g.textureType === HAIR_TEX_TYPE
-      : HAIR_GEOSETS_FALLBACK.has(g.id);
+      : HAIR_GEOSETS_FALLBACK.has(g.id) || isFacialHairGeoset(g.id);
     const target = isHair ? hairIndexList : skinIndexList;
     for (let i = 0; i < g.indexCount; i++) {
       target.push(fullIndexData[g.indexStart + i]);
