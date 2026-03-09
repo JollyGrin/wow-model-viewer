@@ -27,8 +27,14 @@ interface LegsEntry     { itemId?: number; name: string; quality: number; legUpp
 interface BootsEntry    { itemId?: number; name: string; quality: number; footBase: string; legLowerBase?: string; geosetValue: number; }
 interface GlovesEntry   { itemId?: number; name: string; quality: number; handBase: string; armLowerBase?: string; geosetValue: number; wristGeoset?: number; }
 
+interface ShieldEntry  { itemId?: number; name: string; quality: number; slug: string; texture: string; subclass?: string; }
+
+/** Combined offhand entry — can be a weapon or a shield. */
+type OffhandEntry = (WeaponEntry | ShieldEntry) & { _type: 'weapon' | 'shield' };
+
 interface ItemCatalog {
   weapons:   WeaponEntry[];
+  shields:   ShieldEntry[];
   helmets:   HelmetEntry[];
   shoulders: ShoulderEntry[];
   chest:     ChestEntry[];
@@ -42,6 +48,7 @@ let catalog: ItemCatalog | null = null;
 // Active selections
 const selection: {
   weapon?: WeaponEntry;
+  offhand?: OffhandEntry;
   helmet?: HelmetEntry;
   shoulder?: ShoulderEntry;
   chest?: ChestEntry;
@@ -58,6 +65,18 @@ export function getWeaponPath(): string | undefined {
 export function getWeaponTexture(): string | undefined {
   if (!selection.weapon?.texture) return undefined;
   return `/items/weapon/${selection.weapon.slug}/textures/${selection.weapon.texture}.tex`;
+}
+
+export function getOffhandPath(): string | undefined {
+  if (!selection.offhand) return undefined;
+  const dir = selection.offhand._type === 'shield' ? 'shield' : 'weapon';
+  return `/items/${dir}/${selection.offhand.slug}`;
+}
+
+export function getOffhandTexture(): string | undefined {
+  if (!selection.offhand?.texture) return undefined;
+  const dir = selection.offhand._type === 'shield' ? 'shield' : 'weapon';
+  return `/items/${dir}/${selection.offhand.slug}/textures/${selection.offhand.texture}.tex`;
 }
 
 export function getArmorOptions(): BodyArmor | undefined {
@@ -134,6 +153,11 @@ export function getArmorOptions(): BodyArmor | undefined {
 function weaponDisplayName(w: WeaponEntry): string {
   if (!w.itemId) return w.slug;
   return w.subclass ? `[${w.subclass}] ${w.name}` : w.name;
+}
+
+function offhandDisplayName(o: OffhandEntry): string {
+  const prefix = o._type === 'shield' ? '[Shield]' : (o as WeaponEntry).subclass ? `[${(o as WeaponEntry).subclass}]` : '[Weapon]';
+  return `${prefix} ${o.name}`;
 }
 
 function itemDisplayName(item: { itemId?: number; name: string }): string {
@@ -277,6 +301,17 @@ function buildPanel(panel: HTMLElement, onChange: () => void) {
   );
   panel.appendChild(makeRow('Weapon', wCont, wSel, 'weapon', onChange));
 
+  // Offhand (combined weapons + shields)
+  const offhandItems: OffhandEntry[] = [
+    ...catalog.shields.map(s => ({ ...s, _type: 'shield' as const })),
+    ...catalog.weapons.map(w => ({ ...w, _type: 'weapon' as const })),
+  ];
+  const { container: ohCont, select: ohSel } = buildFilteredSelect(
+    'equip-offhand', offhandItems, offhandDisplayName,
+    entry => { selection.offhand = entry; onChange(); },
+  );
+  panel.appendChild(makeRow('Offhand', ohCont, ohSel, 'offhand', onChange));
+
   // Head — filtered by current race-gender variants
   const helmetsForRace = () => catalog!.helmets.filter(h => h.variants.includes(getCurrentModelSlug()));
   let currentHelmets = helmetsForRace();
@@ -356,7 +391,7 @@ function buildPanel(panel: HTMLElement, onChange: () => void) {
   randomAll.id = 'equip-randomize-all';
   randomAll.textContent = 'Randomize All';
   randomAll.addEventListener('click', () => {
-    for (const s of [wSel, hSel, sSel, cSel, lSel, bSel, gSel]) {
+    for (const s of [wSel, ohSel, hSel, sSel, cSel, lSel, bSel, gSel]) {
       randomizeSlot(s, () => {});
     }
     onChange();

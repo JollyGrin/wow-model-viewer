@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { loadModel } from './loadModel'
 import { loadAnimations, AnimationController } from './animation'
-import { initEquipmentUI, getWeaponPath, getWeaponTexture, getArmorOptions } from './equipmentUI'
+import { initEquipmentUI, getWeaponPath, getWeaponTexture, getOffhandPath, getOffhandTexture, getArmorOptions } from './equipmentUI'
 
 const RACES = [
   { label: 'Blood Elf', slug: 'blood-elf' },
@@ -145,6 +145,8 @@ export async function switchModel() {
       loadModel(modelDir, {
         weapon: getWeaponPath(),
         weaponTexture: getWeaponTexture(),
+        offhand: getOffhandPath(),
+        offhandTexture: getOffhandTexture(),
         armor: getArmorOptions(),
       }),
       loadAnimations(modelDir),

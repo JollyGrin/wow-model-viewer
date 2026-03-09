@@ -319,6 +319,8 @@ export async function loadModel(
     enabledGeosets?: Set<number>;
     weapon?: string; // URL to item dir, e.g. '/items/weapon/sword-2h-claymore-b-02'
     weaponTexture?: string; // URL to weapon texture, e.g. '/items/weapon/{slug}/textures/{tex}.tex'
+    offhand?: string; // URL to offhand item dir (weapon or shield)
+    offhandTexture?: string; // URL to offhand texture
     armor?: BodyArmor;
   },
 ): Promise<LoadedModel> {
@@ -604,6 +606,25 @@ export async function loadModel(
       }
     } else if (!att) {
       console.warn('No HandRight attachment point (ID 1) found in manifest');
+    }
+  }
+
+  // Offhand attachment — attach item to HandLeft bone (attachment ID 2)
+  if (options?.offhand && manifest.attachments) {
+    const att = manifest.attachments.find(a => a.id === 2); // HandLeft
+    if (att && att.bone < skeleton.bones.length) {
+      const bone = skeleton.bones[att.bone];
+      const socket = new THREE.Group();
+      socket.position.set(att.pos[0], att.pos[1], att.pos[2]);
+      bone.add(socket);
+      try {
+        const offhandGroup = await loadItemModel(options.offhand, options.offhandTexture);
+        socket.add(offhandGroup);
+      } catch (err) {
+        console.warn(`Failed to load offhand from ${options.offhand}:`, err);
+      }
+    } else if (!att) {
+      console.warn('No HandLeft attachment point (ID 2) found in manifest');
     }
   }
 
