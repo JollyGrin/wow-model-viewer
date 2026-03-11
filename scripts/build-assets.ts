@@ -5,13 +5,16 @@
  * Run this after setup-from-client.ts has populated data/.
  * Executes the full pipeline in the correct order:
  *
- *   1. extract-mpq-items.ts      - M2+BLP from MPQs -> public/items/
- *   2. extract-mpq-textures.ts   - BLP from MPQs -> public/item-textures/
- *   3. convert-model.ts          - Character M2s -> public/models/ (20 races)
- *   4. convert-textures.ts       - Character BLPs -> skin + hair textures
- *   5. convert-item-textures.ts  - Patch BLPs -> public/item-textures/
- *   6. convert-item.ts           - Patch M2+BLP -> public/items/weapon/
- *   7. build-item-catalog.ts     - Index all items -> public/item-catalog.json
+ *   1. extract-mpq-items.ts         - M2+BLP from MPQs -> public/items/
+ *   2. extract-mpq-textures.ts      - BLP from MPQs -> public/item-textures/
+ *   3. extract-char-attachments.ts  - Attachment points from M2s -> data/char-attachments.json
+ *   4. convert-model.ts             - Character M2s -> public/models/ (20 races)
+ *   5. convert-textures.ts          - Character BLPs -> skin + hair textures
+ *   6. convert-item-textures.ts     - Patch BLPs -> public/item-textures/
+ *   7. convert-item.ts              - Patch M2+BLP -> public/items/weapon/
+ *   8. convert-head-item.ts         - Helmet M2+BLP -> public/items/head/
+ *   9. convert-shoulder-item.ts     - Shoulder M2+BLP -> public/items/shoulder/
+ *  10. build-item-catalog.ts        - Index all items -> public/item-catalog.json
  *
  * Usage:
  *   bun run scripts/build-assets.ts
@@ -53,13 +56,16 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { name: 'Extract item models from MPQs',     script: 'scripts/extract-mpq-items.ts',     needsMpq: true },
-  { name: 'Extract item textures from MPQs',   script: 'scripts/extract-mpq-textures.ts',  needsMpq: true },
-  { name: 'Convert character models',           script: 'scripts/convert-model.ts',          needsMpq: false },
-  { name: 'Convert character textures',         script: 'scripts/convert-textures.ts',       needsMpq: false },
-  { name: 'Convert patch item textures',        script: 'scripts/convert-item-textures.ts',  needsMpq: false },
-  { name: 'Convert patch item models',          script: 'scripts/convert-item.ts',           needsMpq: false },
-  { name: 'Build item catalog',                 script: 'scripts/build-item-catalog.ts',     needsMpq: false },
+  { name: 'Extract item models from MPQs',     script: 'scripts/extract-mpq-items.ts',          needsMpq: true },
+  { name: 'Extract item textures from MPQs',   script: 'scripts/extract-mpq-textures.ts',       needsMpq: true },
+  { name: 'Extract character attachments',      script: 'scripts/extract-char-attachments.ts',   needsMpq: true },
+  { name: 'Convert character models',           script: 'scripts/convert-model.ts',              needsMpq: false },
+  { name: 'Convert character textures',         script: 'scripts/convert-textures.ts',           needsMpq: false },
+  { name: 'Convert patch item textures',        script: 'scripts/convert-item-textures.ts',      needsMpq: false },
+  { name: 'Convert patch weapon models',        script: 'scripts/convert-item.ts',               needsMpq: false },
+  { name: 'Convert helmet models',              script: 'scripts/convert-head-item.ts',          needsMpq: false },
+  { name: 'Convert shoulder models',            script: 'scripts/convert-shoulder-item.ts',      needsMpq: false },
+  { name: 'Build item catalog',                 script: 'scripts/build-item-catalog.ts',         needsMpq: false },
 ];
 
 console.log('=== Asset Build Pipeline ===\n');
