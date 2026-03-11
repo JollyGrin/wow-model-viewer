@@ -2,12 +2,13 @@
   "name": "model-viewer",
   "type": "module",
   "scripts": {
+    "setup": "bun run scripts/setup-from-client.ts",
+    "build-assets": "bun run scripts/build-assets.ts",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test:e2e": "bun run build && bunx playwright test",
-    "test:e2e:headed": "bun run build && bunx playwright test --headed",
-    "build-catalog": "bun run scripts/build-item-catalog.ts"
+    "test:e2e:headed": "bun run build && bunx playwright test --headed"
   },
   "dependencies": {
     "@tweakpane/core": "^2.0.5",

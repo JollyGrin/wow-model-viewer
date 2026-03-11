@@ -158,25 +158,59 @@ Examples of things to record:
 | Item models | `data/patch/patch*/Item/ObjectComponents/<Type>/` |
 | Textures | `data/patch/patch*/**/*.blp` |
 
-### Generated Assets (gitignored — must build locally)
-| What | Where | Script |
-|------|-------|--------|
-| Armor tex files | `public/item-textures/` | `bun run scripts/convert-item-textures.ts` |
-| Weapon models | `public/items/weapon/` | `bun run scripts/convert-item.ts` |
-| Item catalog | `public/item-catalog.json` | `bun run scripts/build-item-catalog.ts` |
+### Generated Assets (gitignored — built by `bun run build-assets`)
+| What | Where |
+|------|-------|
+| Character models | `public/models/` |
+| Weapon models | `public/items/weapon/` |
+| Shield models | `public/items/shield/` |
+| Helmet models | `public/items/head/` |
+| Shoulder models | `public/items/shoulder/` |
+| Armor region textures | `public/item-textures/` |
+| Item catalog | `public/item-catalog.json` |
 
-Run in that order after extracting patch data.
+### Asset Pipeline
 
-### External Data Needed (not yet acquired)
-| Source | Purpose |
-|--------|---------|
-| `thatsmybis/classic-wow-item-db` | SQL: itemId -> displayId mapping |
+Two commands to go from game client to running viewer:
+
+```bash
+bun run setup -- /path/to/TurtleWoW   # extract raw data from client
+bun run build-assets                    # convert everything to web format
+bun run dev                             # start viewer
+```
+
+`build-assets` runs 10 steps in order (see `scripts/build-assets.ts`):
+1. `extract-mpq-items.ts` — Item M2+BLP from MPQ archives
+2. `extract-mpq-textures.ts` — Item textures from MPQ archives
+3. `extract-char-attachments.ts` — Helmet attachment points
+4. `convert-model.ts` — Character M2 → web format (20 races)
+5. `convert-textures.ts` — Character skin + hair BLP → .tex
+6. `convert-item-textures.ts` — Patch armor BLP → .tex
+7. `convert-item.ts` — Patch weapon M2 → web format
+8. `convert-head-item.ts` — Helmet M2 → web format (per race/gender)
+9. `convert-shoulder-item.ts` — Shoulder M2 → web format (L/R pairs)
+10. `build-item-catalog.ts` — Index all items → catalog JSON
+
+### Scripts Directory
+
+**Pipeline** (run by `build-assets.ts`): The 10 converter/extractor scripts above.
+
+**Setup**: `setup-from-client.ts` (full client extraction), `extract-from-mpq.ts` (base MPQ extraction), `parse-item-db.ts` (item DB download).
+
+**Archive** (`scripts/archive/`): Historical investigation/diagnostic scripts from development. Not part of the pipeline.
+
+### Equipment Architecture
+
+Two rendering systems:
+- **3D models** (weapon, shield, helmet, shoulder): Separate M2 meshes attached to skeleton bones via attachment points
+- **Texture-only** (chest, legs, boots, gloves): BLP textures composited onto the character's 256x256 skin atlas. No separate geometry — uses body mesh geoset swapping for coverage levels.
 
 ### Tech Stack
 | Tool | Purpose |
 |------|---------|
-| Three.js | WebGL rendering |
-| `@wowserhq/format` | M2, BLP, DBC, SKIN parsing |
-| `@wowserhq/stormjs` | MPQ extraction (if needed) |
+| Three.js | WebGL rendering with GPU skinning |
+| `@wowserhq/format` | M2, BLP, DBC binary format parsing |
+| `@wowserhq/stormjs` | MPQ archive extraction |
+| Vite | Dev server and bundling |
 | vitest | Unit/integration tests |
 | Playwright + Claude Vision | Visual regression tests |
