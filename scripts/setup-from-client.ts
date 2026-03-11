@@ -594,10 +594,15 @@ The path should point to the TurtleWoW installation root folder
           try {
             const file = mpq.openFile(internalPath);
             const data = file.read();
+            // IMPORTANT: Copy data immediately before closing the file or doing anything else.
+            // stormjs returns a Uint8Array view into the WASM heap. If the heap is reallocated
+            // by a subsequent operation, the view becomes stale and produces garbage.
+            // data.slice(0) creates an independent copy that is safe to use later.
+            const copy = data.slice(0);
             file.close();
 
             mkdirSync(resolve(outPath, '..'), { recursive: true });
-            writeFileSync(outPath, data);
+            writeFileSync(outPath, copy);
             extracted++;
           } catch {
             // Some files in MPQ listings can't be read — skip silently
@@ -673,8 +678,9 @@ The path should point to the TurtleWoW installation root folder
             if (m.hasFile(mpqPath)) {
               const file = m.openFile(mpqPath);
               const data = file.read();
+              const copy = data.slice(0); // copy before WASM heap reallocation
               file.close();
-              dbcBuf = Buffer.from(data);
+              dbcBuf = Buffer.from(copy);
               source = mName;
             }
             m.close();
@@ -691,8 +697,9 @@ The path should point to the TurtleWoW installation root folder
           if (m.hasFile(mpqPath)) {
             const file = m.openFile(mpqPath);
             const data = file.read();
+            const copy = data.slice(0); // copy before WASM heap reallocation
             file.close();
-            dbcBuf = Buffer.from(data);
+            dbcBuf = Buffer.from(copy);
             source = dbcMpqName;
           }
           m.close();
