@@ -1,3 +1,5 @@
+import { assetUrl } from './assetBase';
+
 /**
  * Character Texture Compositor
  *
@@ -122,7 +124,7 @@ function burnComponent(
  * .tex format: uint16 width + uint16 height + RGBA pixels.
  */
 export async function loadTexImageData(url: string): Promise<ImageData> {
-  const res = await fetch(url);
+  const res = await fetch(assetUrl(url));
   const buf = await res.arrayBuffer();
   const headerView = new DataView(buf, 0, 4);
   const width = headerView.getUint16(0, true);

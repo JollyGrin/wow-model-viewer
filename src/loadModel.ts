@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { composeCharTexture, loadTexImageData, CharRegion } from './charTexture';
+import { assetUrl } from './assetBase';
 
 export interface BoneInfo {
   parent: number;
@@ -137,7 +138,7 @@ function resolveDefaultGeosets(
 }
 
 async function loadTexture(url: string): Promise<THREE.DataTexture> {
-  const res = await fetch(url);
+  const res = await fetch(assetUrl(url));
   if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
   const buf = await res.arrayBuffer();
   const headerView = new DataView(buf, 0, 4);
@@ -200,7 +201,7 @@ let helmetVisDataCache: HelmetVisRecord[] | null = null;
 async function loadHelmetVisData(): Promise<HelmetVisRecord[]> {
   if (helmetVisDataCache) return helmetVisDataCache;
   try {
-    const res = await fetch('/data/HelmetGeosetVisData.json');
+    const res = await fetch(assetUrl('/data/HelmetGeosetVisData.json'));
     helmetVisDataCache = await res.json();
   } catch {
     helmetVisDataCache = [];
@@ -269,8 +270,8 @@ async function loadItemModel(
   }
 
   const [manifest, binBuf, texture] = await Promise.all([
-    fetch(`${itemDir}/model.json`).then(r => r.json()) as Promise<ItemManifest>,
-    fetch(`${itemDir}/model.bin`).then(r => r.arrayBuffer()),
+    fetch(assetUrl(`${itemDir}/model.json`)).then(r => r.json()) as Promise<ItemManifest>,
+    fetch(assetUrl(`${itemDir}/model.bin`)).then(r => r.arrayBuffer()),
     loadTexture(textureUrl ?? `${itemDir}/textures/main.tex`),
   ]);
 
@@ -327,8 +328,8 @@ export async function loadModel(
   const texturesDir = `${modelDir}/textures/`;
 
   const [manifestRes, binRes] = await Promise.all([
-    fetch(`${modelDir}/model.json`),
-    fetch(`${modelDir}/model.bin`),
+    fetch(assetUrl(`${modelDir}/model.json`)),
+    fetch(assetUrl(`${modelDir}/model.bin`)),
   ]);
 
   const manifest: ModelManifest = await manifestRes.json();

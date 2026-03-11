@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>WoW Model Viewer</title>
+  <title>Chronicle Model Viewer</title>
   <style>
     body { margin: 0; overflow: hidden; background: #000; }
     canvas { display: block; }
@@ -136,8 +136,7 @@
 </head>
 <body>
   <div id="controls">
-    <a href="/lab.html" style="background:rgba(0,0,0,0.7);color:#e0d8c8;border:1px solid rgba(255,255,255,0.2);padding:6px 10px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;border-radius:4px;text-decoration:none;cursor:pointer;">Lab</a>
-    <a href="/chron.html" style="background:rgba(0,0,0,0.7);color:#e0d8c8;border:1px solid rgba(255,255,255,0.2);padding:6px 10px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;border-radius:4px;text-decoration:none;cursor:pointer;">Chron</a>
+    <a href="/" style="background:rgba(0,0,0,0.7);color:#e0d8c8;border:1px solid rgba(255,255,255,0.2);padding:6px 10px;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;border-radius:4px;text-decoration:none;cursor:pointer;">Local</a>
     <select id="race-select"></select>
     <select id="gender-select">
       <option value="male">Male</option>
@@ -147,6 +146,6 @@
   </div>
   <div id="equipment-panel"></div>
   <canvas id="canvas"></canvas>
-  <script type="module" src="/src/main.ts"></script>
+  <script type="module" src="/src/chron.ts"></script>
 </body>
 </html>

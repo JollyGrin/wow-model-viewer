@@ -15,4 +15,6 @@ screenshots/
 test-results/
 playwright-report/
 .envrc
+.env
+.env.local
 

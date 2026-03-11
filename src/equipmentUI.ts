@@ -6,6 +6,7 @@
  */
 
 import type { BodyArmor } from './loadModel';
+import { assetUrl } from './assetBase';
 
 // --- Quality colors (WoW standard) ---
 const QUALITY_COLOR: Record<number, string> = {
@@ -273,7 +274,7 @@ export function initEquipmentUI(onChange: () => void): void {
   const panel = document.getElementById('equipment-panel');
   if (!panel) return;
 
-  fetch('/item-catalog.json')
+  fetch(assetUrl('/item-catalog.json'))
     .then(r => r.json())
     .then((data: ItemCatalog) => {
       catalog = data;

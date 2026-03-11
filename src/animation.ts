@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { assetUrl } from './assetBase';
 
 // --- anims.bin Parser ---
 
@@ -34,7 +35,7 @@ interface AnimData {
 }
 
 export async function loadAnimations(modelDir: string): Promise<AnimData> {
-  const res = await fetch(`${modelDir}/anims.bin`);
+  const res = await fetch(assetUrl(`${modelDir}/anims.bin`));
   if (!res.ok) throw new Error(`Failed to fetch ${modelDir}/anims.bin: ${res.status}`);
   const buf = await res.arrayBuffer();
   const view = new DataView(buf);
