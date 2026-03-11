@@ -600,6 +600,7 @@ export async function loadModel(
       bone.add(socket);
       try {
         const weaponGroup = await loadItemModel(options.weapon, options.weaponTexture);
+        weaponGroup.traverse(obj => { if (obj instanceof THREE.Mesh) obj.userData.itemType = 'weapon'; });
         socket.add(weaponGroup);
       } catch (err) {
         console.warn(`Failed to load weapon from ${options.weapon}:`, err);
@@ -619,6 +620,7 @@ export async function loadModel(
       bone.add(socket);
       try {
         const offhandGroup = await loadItemModel(options.offhand, options.offhandTexture);
+        offhandGroup.traverse(obj => { if (obj instanceof THREE.Mesh) obj.userData.itemType = 'weapon'; });
         socket.add(offhandGroup);
       } catch (err) {
         console.warn(`Failed to load offhand from ${options.offhand}:`, err);
@@ -642,6 +644,12 @@ export async function loadModel(
       bone.add(socket);
       try {
         const helmetGroup = await loadItemModel(helmDir, helmTexUrl);
+        helmetGroup.traverse(obj => {
+          if (obj instanceof THREE.Mesh) {
+            obj.userData.itemType = 'helmet';
+            obj.userData.itemSlug = options.armor!.helmet!;
+          }
+        });
         socket.add(helmetGroup);
       } catch (err) {
         console.warn(`Failed to load helmet from ${helmDir}:`, err);
@@ -664,6 +672,12 @@ export async function loadModel(
       bone.add(socket);
       try {
         const leftGroup = await loadItemModel(`${slugBase}/left`, shoulderTexUrl);
+        leftGroup.traverse(obj => {
+          if (obj instanceof THREE.Mesh) {
+            obj.userData.itemType = 'shoulder';
+            obj.userData.itemSlug = options.armor!.shoulderSlug!;
+          }
+        });
         socket.add(leftGroup);
       } catch (err) {
         console.warn(`Failed to load left shoulder:`, err);
@@ -680,6 +694,12 @@ export async function loadModel(
         bone.add(socket);
         try {
           const rightGroup = await loadItemModel(`${slugBase}/right`, shoulderTexUrl);
+          rightGroup.traverse(obj => {
+            if (obj instanceof THREE.Mesh) {
+              obj.userData.itemType = 'shoulder';
+              obj.userData.itemSlug = options.armor!.shoulderSlug!;
+            }
+          });
           socket.add(rightGroup);
         } catch (err) {
           console.warn(`Failed to load right shoulder:`, err);

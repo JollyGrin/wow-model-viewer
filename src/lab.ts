@@ -6,6 +6,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js'
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js'
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { Pane, type ListBladeApi } from 'tweakpane'
 import { loadModel } from './loadModel'
 import { loadAnimations, AnimationController } from './animation'
@@ -36,6 +37,8 @@ renderer.setClearColor(0x333333)
 renderer.toneMapping = THREE.ACESFilmicToneMapping
 renderer.toneMappingExposure = 1.0
 renderer.outputColorSpace = THREE.SRGBColorSpace
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
 const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100)
@@ -56,6 +59,17 @@ scene.add(hemiLight)
 
 const keyLight = new THREE.DirectionalLight(0xfff0dd, 0.85)
 keyLight.position.set(3, 2, 0)
+keyLight.castShadow = true
+keyLight.shadow.mapSize.width = 1024
+keyLight.shadow.mapSize.height = 1024
+keyLight.shadow.camera.near = 0.1
+keyLight.shadow.camera.far = 15
+keyLight.shadow.camera.left = -3
+keyLight.shadow.camera.right = 3
+keyLight.shadow.camera.top = 4
+keyLight.shadow.camera.bottom = -1
+keyLight.shadow.bias = -0.002
+keyLight.shadow.normalBias = 0.02
 scene.add(keyLight)
 
 const fillLight = new THREE.DirectionalLight(0xffe8d0, 0.35)
@@ -65,6 +79,16 @@ scene.add(fillLight)
 const rimLight = new THREE.DirectionalLight(0xaaccff, 0.5)
 rimLight.position.set(-1, 2, -3)
 scene.add(rimLight)
+
+// --- Ground shadow plane ---
+
+const shadowParams = { enabled: true, opacity: 0.35 }
+const groundMat = new THREE.ShadowMaterial({ opacity: shadowParams.opacity })
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), groundMat)
+ground.rotation.x = -Math.PI / 2
+ground.position.y = 0
+ground.receiveShadow = true
+scene.add(ground)
 
 // --- Environment map (procedural) ---
 
@@ -106,44 +130,86 @@ composer.addPass(smaaPass)
 const outputPass = new OutputPass()
 composer.addPass(outputPass)
 
+// Vignette pass (after tone mapping)
+const VignetteShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    offset: { value: 1.0 },
+    darkness: { value: 1.0 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float offset;
+    uniform float darkness;
+    varying vec2 vUv;
+    void main() {
+      vec4 texel = texture2D(tDiffuse, vUv);
+      vec2 uv = (vUv - vec2(0.5)) * vec2(offset);
+      float vig = 1.0 - dot(uv, uv);
+      texel.rgb *= mix(1.0, smoothstep(0.0, 1.0, vig), darkness);
+      gl_FragColor = texel;
+    }
+  `,
+}
+const vignettePass = new ShaderPass(VignetteShader)
+vignettePass.enabled = true
+composer.addPass(vignettePass)
+
 // --- Per-category material params ---
 
-type MatCategory = 'body' | 'hair' | 'item'
+type MatCategory = 'body' | 'hair' | 'weapon' | 'armorHeavy' | 'armorLight'
 
 interface CategoryParams {
   roughness: number
   metalness: number
 }
 
-const PRESETS: Record<string, Record<MatCategory, CategoryParams>> = {
-  default: {
-    body: { roughness: 0.75, metalness: 0.0 },
-    hair: { roughness: 0.85, metalness: 0.0 },
-    item: { roughness: 0.35, metalness: 0.7 },
-  },
-  cloth: {
-    body: { roughness: 0.85, metalness: 0.0 },
-    hair: { roughness: 0.9, metalness: 0.0 },
-    item: { roughness: 0.8, metalness: 0.05 },
-  },
-  leather: {
-    body: { roughness: 0.7, metalness: 0.0 },
-    hair: { roughness: 0.85, metalness: 0.0 },
-    item: { roughness: 0.55, metalness: 0.15 },
-  },
-  plate: {
-    body: { roughness: 0.65, metalness: 0.05 },
-    hair: { roughness: 0.85, metalness: 0.0 },
-    item: { roughness: 0.25, metalness: 0.85 },
-  },
+const catParams: Record<MatCategory, CategoryParams> = {
+  body:       { roughness: 0.75, metalness: 0.0 },
+  hair:       { roughness: 0.85, metalness: 0.0 },
+  weapon:     { roughness: 0.30, metalness: 0.75 },
+  armorHeavy: { roughness: 0.25, metalness: 0.80 },
+  armorLight: { roughness: 0.65, metalness: 0.10 },
 }
 
-// Live params initialized from default preset
-const catParams: Record<MatCategory, CategoryParams> = {
-  body: { ...PRESETS.default.body },
-  hair: { ...PRESETS.default.hair },
-  item: { ...PRESETS.default.item },
+/** Infer armor weight class from item slug (plate/mail → heavy, leather/cloth/robe → light). */
+function inferArmorClass(slug: string): 'armorHeavy' | 'armorLight' {
+  const s = slug.toLowerCase()
+  if (s.includes('plate') || s.includes('mail') || s.includes('chain') || s.includes('pvp') || s.includes('dk-')) return 'armorHeavy'
+  return 'armorLight'
 }
+
+// --- Rim light params (shared uniforms — updating .value updates all materials) ---
+
+const rimLightParams = {
+  enabled: true,
+  color: new THREE.Color(0.35, 0.55, 1.0),
+  intensity: 0.7,
+  power: 3.0,
+}
+const rimUniforms = {
+  uRimColor: { value: rimLightParams.color },
+  uRimIntensity: { value: rimLightParams.intensity },
+  uRimPower: { value: rimLightParams.power },
+  uRimEnabled: { value: 1.0 },
+}
+
+// --- Weapon enchant params ---
+
+const enchantParams = {
+  enabled: false,
+  color: new THREE.Color(0.3, 0.6, 1.0),
+  size: 6.0,
+  speed: 2.0,
+}
+let enchantParticles: THREE.Points[] = []
 
 // --- Derived texture / shader feature params ---
 
@@ -287,13 +353,6 @@ rendererFolder.addBinding(rendererParams, 'exposure', { min: 0.1, max: 3.0, step
 // Materials folder — per-category controls
 const matFolder = pane.addFolder({ title: 'Materials', expanded: false })
 
-const presetBlade = matFolder.addBlade({
-  view: 'list',
-  label: 'Preset',
-  options: Object.keys(PRESETS).map(k => ({ text: k, value: k })),
-  value: 'default',
-}) as ListBladeApi<string>
-
 const catBindings: Array<{ refresh(): void }> = []
 
 function addCategoryFolder(cat: MatCategory, label: string) {
@@ -305,20 +364,11 @@ function addCategoryFolder(cat: MatCategory, label: string) {
   catBindings.push(rB, mB)
 }
 
-addCategoryFolder('body', 'Body (Skin + Armor)')
+addCategoryFolder('body', 'Body (Skin)')
 addCategoryFolder('hair', 'Hair')
-addCategoryFolder('item', 'Items (Weapon/Helm/Shoulder)')
-
-presetBlade.on('change', (ev) => {
-  const p = PRESETS[ev.value]
-  if (!p) return
-  for (const cat of ['body', 'hair', 'item'] as MatCategory[]) {
-    catParams[cat].roughness = p[cat].roughness
-    catParams[cat].metalness = p[cat].metalness
-  }
-  catBindings.forEach(b => b.refresh())
-  applyMaterialParams()
-})
+addCategoryFolder('weapon', 'Weapon')
+addCategoryFolder('armorHeavy', 'Plate / Mail')
+addCategoryFolder('armorLight', 'Leather / Cloth')
 
 // Derived Maps folder
 const derivedFolder = pane.addFolder({ title: 'Texture Analysis', expanded: false })
@@ -434,19 +484,96 @@ const smaaParams = { enabled: true }
 postFolder.addBinding(smaaParams, 'enabled', { label: 'SMAA' })
   .on('change', (ev: any) => { smaaPass.enabled = ev.value })
 
+const vignetteParams = { enabled: true, darkness: 1.0 }
+postFolder.addBinding(vignetteParams, 'enabled', { label: 'Vignette' })
+  .on('change', (ev: any) => { vignettePass.enabled = ev.value })
+postFolder.addBinding(vignetteParams, 'darkness', { label: 'Vignette Darkness', min: 0, max: 2, step: 0.05 })
+  .on('change', (ev: any) => { vignettePass.uniforms.darkness.value = ev.value })
+
+// --- Effects folder (Rim Light, Shadows, Enchant) ---
+
+const fxFolder = pane.addFolder({ title: 'Effects', expanded: true })
+
+// Rim Light controls
+const rimFolder = fxFolder.addFolder({ title: 'Rim Light', expanded: false })
+const rimTpParams = {
+  enabled: rimLightParams.enabled,
+  color: { r: rimLightParams.color.r, g: rimLightParams.color.g, b: rimLightParams.color.b },
+  intensity: rimLightParams.intensity,
+  power: rimLightParams.power,
+}
+rimFolder.addBinding(rimTpParams, 'enabled', { label: 'Enabled' })
+  .on('change', (ev: any) => {
+    rimLightParams.enabled = ev.value
+    rimUniforms.uRimEnabled.value = ev.value ? 1.0 : 0.0
+  })
+rimFolder.addBinding(rimTpParams, 'color', { label: 'Color', color: { type: 'float' } })
+  .on('change', (ev: any) => {
+    rimLightParams.color.setRGB(ev.value.r, ev.value.g, ev.value.b)
+  })
+rimFolder.addBinding(rimTpParams, 'intensity', { label: 'Intensity', min: 0, max: 2, step: 0.05 })
+  .on('change', (ev: any) => { rimUniforms.uRimIntensity.value = ev.value })
+rimFolder.addBinding(rimTpParams, 'power', { label: 'Power', min: 1, max: 8, step: 0.1 })
+  .on('change', (ev: any) => { rimUniforms.uRimPower.value = ev.value })
+
+// Shadow controls
+const shadowFolder = fxFolder.addFolder({ title: 'Shadows', expanded: false })
+shadowFolder.addBinding(shadowParams, 'enabled', { label: 'Enabled' })
+  .on('change', (ev: any) => {
+    ground.visible = ev.value
+    keyLight.castShadow = ev.value
+  })
+shadowFolder.addBinding(shadowParams, 'opacity', { label: 'Opacity', min: 0, max: 1, step: 0.05 })
+  .on('change', (ev: any) => { groundMat.opacity = ev.value })
+
+// Weapon Enchant controls
+const enchantFolder = fxFolder.addFolder({ title: 'Weapon Enchant', expanded: false })
+const enchantTpParams = {
+  enabled: enchantParams.enabled,
+  color: { r: enchantParams.color.r, g: enchantParams.color.g, b: enchantParams.color.b },
+  size: enchantParams.size,
+  speed: enchantParams.speed,
+}
+enchantFolder.addBinding(enchantTpParams, 'enabled', { label: 'Enabled' })
+  .on('change', (ev: any) => {
+    enchantParams.enabled = ev.value
+    setupEnchantParticles(currentModel)
+  })
+enchantFolder.addBinding(enchantTpParams, 'color', { label: 'Color', color: { type: 'float' } })
+  .on('change', (ev: any) => {
+    enchantParams.color.setRGB(ev.value.r, ev.value.g, ev.value.b)
+    for (const p of enchantParticles) {
+      (p.material as THREE.ShaderMaterial).uniforms.uColor.value.copy(enchantParams.color)
+    }
+  })
+enchantFolder.addBinding(enchantTpParams, 'size', { label: 'Size', min: 1, max: 20, step: 0.5 })
+  .on('change', (ev: any) => {
+    enchantParams.size = ev.value
+    for (const p of enchantParticles) {
+      (p.material as THREE.ShaderMaterial).uniforms.uSize.value = ev.value
+    }
+  })
+enchantFolder.addBinding(enchantTpParams, 'speed', { label: 'Speed', min: 0.5, max: 5, step: 0.1 })
+  .on('change', (ev: any) => { enchantParams.speed = ev.value })
+
 // --- Material classification & upgrade ---
 
-/** Classify a mesh by scene graph position:
- *  - SkinnedMesh with Bone children → 'body'
- *  - SkinnedMesh without Bone children → 'hair'
- *  - Regular Mesh → 'item' (weapons, helmets, shoulders)
- */
+/** Classify a mesh using itemType tags from loadModel + scene graph structure. */
 function classifyMesh(mesh: THREE.Mesh): MatCategory {
+  // Check for tagged item meshes first
+  const itemType = mesh.userData.itemType as string | undefined
+  if (itemType === 'weapon') return 'weapon'
+  if (itemType === 'helmet' || itemType === 'shoulder') {
+    const slug = (mesh.userData.itemSlug as string) || ''
+    return inferArmorClass(slug)
+  }
+  // SkinnedMesh classification
   if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) {
     const hasBoneChild = mesh.children.some(c => (c as THREE.Bone).isBone)
     return hasBoneChild ? 'body' : 'hair'
   }
-  return 'item'
+  // Untagged regular mesh (shield, etc.) — default to weapon
+  return 'weapon'
 }
 
 function applyMaterialParams() {
@@ -463,9 +590,8 @@ function applyMaterialParams() {
   })
 }
 
-/** Convert Lambert → MeshPhysicalMaterial. Uses Physical for all meshes so we can
- *  toggle sheen/SSS without swapping material types later. Physical renders
- *  identically to Standard when extra features are at zero. */
+/** Convert Lambert → MeshPhysicalMaterial with rim lighting injection.
+ *  Uses Physical for all meshes so we can toggle sheen/SSS without swapping types. */
 function upgradeMaterials(group: THREE.Group) {
   group.traverse((obj) => {
     if (!(obj instanceof THREE.Mesh)) return
@@ -490,8 +616,126 @@ function upgradeMaterials(group: THREE.Group) {
       metalness: p.metalness,
     })
 
+    // Inject rim lighting via onBeforeCompile (shared uniforms update all materials)
+    phys.onBeforeCompile = (shader) => {
+      shader.uniforms.uRimColor = rimUniforms.uRimColor
+      shader.uniforms.uRimIntensity = rimUniforms.uRimIntensity
+      shader.uniforms.uRimPower = rimUniforms.uRimPower
+      shader.uniforms.uRimEnabled = rimUniforms.uRimEnabled
+
+      shader.fragmentShader =
+        'uniform vec3 uRimColor;\nuniform float uRimIntensity;\nuniform float uRimPower;\nuniform float uRimEnabled;\n' +
+        shader.fragmentShader
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <output_fragment>',
+        `// Rim lighting
+        vec3 rimVD = normalize(vViewPosition);
+        float rimDot = max(dot(rimVD, normal), 0.0);
+        float rimF = pow(1.0 - rimDot, uRimPower) * uRimIntensity * uRimEnabled;
+        outgoingLight += uRimColor * rimF;
+
+        #include <output_fragment>
+        `,
+      )
+    }
+
+    // Enable shadow casting on character/item meshes
+    obj.castShadow = true
+
     mat.dispose()
     obj.material = phys
+  })
+}
+
+// --- Weapon enchant particle system ---
+
+function createEnchantPoints(color: THREE.Color): THREE.Points {
+  const COUNT = 60
+  const positions = new Float32Array(COUNT * 3)
+  const phases = new Float32Array(COUNT)
+
+  for (let i = 0; i < COUNT; i++) {
+    // Random positions along weapon blade (local space)
+    positions[i * 3 + 0] = (Math.random() - 0.5) * 0.2
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 0.2
+    positions[i * 3 + 2] = Math.random() * 1.2
+    phases[i] = Math.random() * Math.PI * 2
+  }
+
+  const geom = new THREE.BufferGeometry()
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geom.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1))
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uColor: { value: color.clone() },
+      uSize: { value: enchantParams.size },
+      uSpeed: { value: enchantParams.speed },
+    },
+    vertexShader: `
+      attribute float aPhase;
+      uniform float uTime;
+      uniform float uSize;
+      uniform float uSpeed;
+      varying float vAlpha;
+
+      void main() {
+        vec3 pos = position;
+        float t = uTime * uSpeed + aPhase;
+        pos.x += sin(t * 2.0) * 0.12;
+        pos.y += cos(t * 2.0) * 0.12;
+        pos.z += sin(t * 0.7) * 0.1;
+
+        vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+        gl_Position = projectionMatrix * mvPos;
+        gl_PointSize = uSize * (1.0 / -mvPos.z);
+
+        vAlpha = 0.4 + 0.6 * abs(sin(t * 1.5));
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uColor;
+      varying float vAlpha;
+
+      void main() {
+        float d = length(gl_PointCoord - vec2(0.5));
+        if (d > 0.5) discard;
+        float glow = 1.0 - d * 2.0;
+        glow = glow * glow;
+        gl_FragColor = vec4(uColor * glow * 2.0, vAlpha * glow);
+      }
+    `,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  })
+
+  return new THREE.Points(geom, mat)
+}
+
+function setupEnchantParticles(group: THREE.Group | null) {
+  // Clean up old particles
+  for (const p of enchantParticles) {
+    p.parent?.remove(p)
+    p.geometry.dispose()
+    ;(p.material as THREE.ShaderMaterial).dispose()
+  }
+  enchantParticles = []
+
+  if (!enchantParams.enabled || !group) return
+
+  // Find weapon meshes and add particles to their parent socket
+  group.traverse(obj => {
+    if (obj instanceof THREE.Mesh && obj.userData.itemType === 'weapon') {
+      const parent = obj.parent
+      if (parent) {
+        const pts = createEnchantPoints(enchantParams.color)
+        parent.add(pts)
+        enchantParticles.push(pts)
+      }
+    }
   })
 }
 
@@ -649,12 +893,15 @@ export async function switchModel() {
       disposeModel(currentModel)
     }
 
-    // Upgrade Lambert → Physical, then apply derived maps
+    // Upgrade Lambert → Physical, then apply derived maps + enchant particles
     upgradeMaterials(loaded.group)
     applyShaderFeatures(loaded.group)
 
     scene.add(loaded.group)
     currentModel = loaded.group
+
+    // Setup enchant particles on weapon meshes (if enabled)
+    setupEnchantParticles(loaded.group)
 
     animController = new AnimationController(animData, loaded.boneData, loaded.bones)
     populateAnimDropdown(animController)
@@ -694,6 +941,12 @@ function animate() {
 
   if (animController) {
     animController.update(delta)
+  }
+
+  // Update enchant particle time
+  const timeSec = now / 1000
+  for (const p of enchantParticles) {
+    (p.material as THREE.ShaderMaterial).uniforms.uTime.value = timeSec
   }
 
   controls.update()
