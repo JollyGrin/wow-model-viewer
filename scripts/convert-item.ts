@@ -178,47 +178,31 @@ function writeTexFile(outPath: string, width: number, height: number, rgba: Uint
   return output.byteLength;
 }
 
-// Find the companion BLP for an M2 stem.
-// Strategy:
-//   1. ItemDisplayInfo lookup: find ModelTexture for this M2 stem, look up that BLP
-//   2. Exact stem match: {stem}.blp
-//   3. First BLP starting with stem (any color variant)
-function findCompanionBlp(stem: string): string | null {
+// Find ALL companion BLPs for an M2 stem (handles color variants).
+// Returns every BLP whose lowercase-no-ext key starts with the stem.
+// Each entry has a texSlug (hyphenated, lowercase) and blpPath.
+interface CompanionBlp { texSlug: string; blpPath: string; }
+
+function findAllCompanionBlps(stem: string): CompanionBlp[] {
   const stemLower = stem.toLowerCase();
-
-  // 1. ItemDisplayInfo lookup
-  const modelTexture = modelTextureMap.get(stemLower);
-  if (modelTexture) {
-    const texLower = modelTexture.toLowerCase();
-    const fromDbi = blpIndex.get(texLower);
-    if (fromDbi) return fromDbi;
-  }
-
-  // 2. Exact stem match
-  const exact = blpIndex.get(stemLower);
-  if (exact) return exact;
-
-  // 3. First BLP starting with stem (color variant)
-  const prefix = stemLower;
-  for (const [key, path] of blpIndex) {
-    if (key.startsWith(prefix) && key !== prefix) {
-      return path;
+  const results: CompanionBlp[] = [];
+  for (const [key, blpPath] of blpIndex) {
+    if (key === stemLower || key.startsWith(stemLower)) {
+      results.push({ texSlug: key.replace(/_/g, '-'), blpPath });
     }
   }
-
-  return null;
+  return results;
 }
 
 const VERTEX_STRIDE = 32;
 
-function convertWeapon(weapon: WeaponM2): {
-  vertexCount: number; triangleCount: number; submeshCount: number; binSize: number; texSize: number; texDims: string;
+function convertWeapon(weapon: WeaponM2, companions: CompanionBlp[]): {
+  vertexCount: number; triangleCount: number; submeshCount: number; binSize: number; texCount: number;
 } {
   const outDir = resolve(ROOT, 'public/items/weapon', weapon.slug);
   const outBin = resolve(outDir, 'model.bin');
   const outJson = resolve(outDir, 'model.json');
   const outTexDir = resolve(outDir, 'textures');
-  const outTex = resolve(outTexDir, 'main.tex');
 
   const buf = readFileSync(weapon.m2Path);
   const m2 = parseItemM2(buf);
@@ -268,22 +252,22 @@ function convertWeapon(weapon: WeaponM2): {
   };
   writeFileSync(outJson, JSON.stringify(manifest, null, 2));
 
-  // Convert BLP texture
-  const blpPath = findCompanionBlp(weapon.stem)!;
-  const blpData = readFileSync(blpPath);
-  const blp = new Blp();
-  blp.load(blpData as any);
-  const image = blp.getImage(0, BLP_IMAGE_FORMAT.IMAGE_ABGR8888);
-  const rgba = new Uint8Array(image.data);
-  const texBytes = writeTexFile(outTex, image.width, image.height, rgba);
+  // Convert all companion BLP textures (one .tex per color variant)
+  for (const { texSlug, blpPath } of companions) {
+    const outTex = resolve(outTexDir, `${texSlug}.tex`);
+    const blpData = readFileSync(blpPath);
+    const blp = new Blp();
+    blp.load(blpData as any);
+    const image = blp.getImage(0, BLP_IMAGE_FORMAT.IMAGE_ABGR8888);
+    writeTexFile(outTex, image.width, image.height, new Uint8Array(image.data));
+  }
 
   return {
     vertexCount,
     triangleCount: manifest.triangleCount,
     submeshCount: skin.submeshes.length,
     binSize: binData.byteLength,
-    texSize: texBytes,
-    texDims: `${image.width}x${image.height}`,
+    texCount: companions.length,
   };
 }
 
@@ -299,24 +283,28 @@ function main() {
 
   for (const weapon of weaponM2s) {
     const outJson = resolve(ROOT, 'public/items/weapon', weapon.slug, 'model.json');
+    const outTextures = resolve(ROOT, 'public/items/weapon', weapon.slug, 'textures');
 
-    // Skip if already converted
-    if (existsSync(outJson)) {
+    // Skip if already converted — model.json exists AND at least one .tex file is present
+    const texFiles = existsSync(outTextures)
+      ? readdirSync(outTextures).filter(f => f.endsWith('.tex'))
+      : [];
+    if (existsSync(outJson) && texFiles.length > 0) {
       skipped++;
       continue;
     }
 
-    // Check companion BLP exists
-    const blpPath = findCompanionBlp(weapon.stem);
-    if (!blpPath) {
+    // Find all companion BLPs (color variants)
+    const companions = findAllCompanionBlps(weapon.stem);
+    if (companions.length === 0) {
       console.warn(`  SKIP (no BLP): ${weapon.slug}`);
       missingBlp++;
       continue;
     }
 
     try {
-      const result = convertWeapon(weapon);
-      console.log(`  OK: ${weapon.slug} — ${result.vertexCount}v ${result.triangleCount}t ${result.texDims}`);
+      const result = convertWeapon(weapon, companions);
+      console.log(`  OK: ${weapon.slug} — ${result.vertexCount}v ${result.triangleCount}t tex:${result.texCount}`);
       converted++;
     } catch (err: any) {
       console.error(`  ERROR: ${weapon.slug} — ${err.message}`);
